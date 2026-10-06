@@ -114,3 +114,23 @@ func TestWakeHelperWithoutAModelSaysSo(t *testing.T) {
 		t.Fatalf("the helper with no model printed:\n%s", got)
 	}
 }
+
+// Regression: Nyra's own voice set off her detector while she talked (it
+// runs at 0.1 then), cutting her off and hearing her words as the owner's.
+// wake_threshold_speaking now reaches the helper.
+func TestSpeakingThresholdReachesTheHelper(t *testing.T) {
+	w := &wakeHelper{model: "m.onnx", thresh: 0.25, out: "/tmp/x.wav"}
+	for _, e := range w.env() {
+		if strings.HasPrefix(e, "WAKE_THRESHOLD_SPEAKING=") {
+			t.Fatalf("unset, but the helper was told %s", e)
+		}
+	}
+	w.threshSpeaking = 0.6
+	found := false
+	for _, e := range w.env() {
+		found = found || e == "WAKE_THRESHOLD_SPEAKING=0.60"
+	}
+	if !found {
+		t.Fatalf("env %v", w.env())
+	}
+}

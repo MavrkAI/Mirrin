@@ -3,6 +3,7 @@ package daemon
 import (
 	"context"
 	"encoding/json"
+	"github.com/MavrkAI/Mirrin/internal/memory"
 	"slices"
 	"strings"
 	"testing"
@@ -281,5 +282,31 @@ func TestAnswerTaskTrustsOnlyTheOwnersWords(t *testing.T) {
 	got := td.ch.next(t)
 	if !strings.Contains(got, "make it 8pm\n(The chat model read this as: ") || !strings.Contains(got, "go by their words") || strings.Count(got, "now") > 60 {
 		t.Fatalf("the task heard %q", got)
+	}
+}
+
+// Asked "cancel the Bali flight task? Yes or no.", the owner said "Yes,
+// cancel." The "cancel" read as a no, so the yes was refused and they were
+// asked to say "yes 26" instead. The words naming the action itself agree.
+func TestAYesThatRepeatsTheActionIsAYes(t *testing.T) {
+	td := newTestDaemon(t, settler(nil))
+	cancel := memory.Approval{ID: 26, Tool: "cancel_task", Summary: `Cancel the task "Book Bali flights"`}
+	for _, c := range []struct {
+		words         string
+		approve, read bool
+	}{
+		{"Yes, cancel.", true, true},
+		{"yes cancel that", true, true},
+		{"No, don't cancel it.", false, true},
+		{"no", false, true},
+	} {
+		if approve, clear := td.leaning(c.words, cancel); approve != c.approve || clear != c.read {
+			t.Errorf("%q: approve %v clear %v", c.words, approve, clear)
+		}
+	}
+	// For anything else, "cancel" is still a no.
+	send := memory.Approval{ID: 1, Tool: "send", Summary: "send: to boss"}
+	if _, clear := td.leaning("yes, cancel", send); clear {
+		t.Error(`"yes, cancel" to a send read as clear`)
 	}
 }

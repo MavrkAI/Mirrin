@@ -156,7 +156,7 @@ func (d *Daemon) resolveApprovalTool(ctx context.Context, call tools.Call) (stri
 	if strings.Contains(words, "?") {
 		return "", fmt.Errorf("their message asks something rather than answering; answer them, then %s", ask)
 	}
-	said, clear := d.leaning(words)
+	said, clear := d.leaning(words, *ap)
 	if !clear && lean != 0 {
 		// After a yes and "which one?", a reply that only picks one carries
 		// that yes ("the landlord one"). Only a reply that plainly picks
@@ -224,7 +224,10 @@ func (d *Daemon) settledText(reply string, err error) (string, error) {
 
 // leaning reads whether the owner's words say yes or no: clear only when
 // they hold a yes and no no ("the landlord one, go ahead"), or the reverse.
-func (d *Daemon) leaning(text string) (approve, clear bool) {
+// Asked "cancel the flight task?", the "cancel" in "Yes, cancel." names
+// what they're agreeing to, not a no; see actionWords.
+func (d *Daemon) leaning(text string, ap memory.Approval) (approve, clear bool) {
+	action := actionWords(ap)
 	names := d.twinNames()
 	words := strings.FieldsFunc(text, func(r rune) bool {
 		return unicode.IsSpace(r) || strings.ContainsRune(",.;:!?()\"“”-—–", r)
@@ -234,9 +237,10 @@ func (d *Daemon) leaning(text string) (approve, clear bool) {
 		n := 0
 		for try := min(3, len(words)-i); try > 0; try-- {
 			if r, ok := approvals.ParseReply(strings.Join(words[i:i+try], " "), names...); ok {
-				if r.Approve {
+				switch {
+				case r.Approve:
 					yes = true
-				} else {
+				case !action[strings.ToLower(words[i])]:
 					no = true
 				}
 				n = try
@@ -582,3 +586,22 @@ func (d *Daemon) TickReminder(ctx context.Context, id int64) error {
 }
 
 var _ api.ReminderTicker = (*Daemon)(nil)
+
+// actionWords are the words naming what ap would do ("cancel" for
+// cancel_task or "Cancel the task …"), which a reply repeats when it agrees.
+func actionWords(ap memory.Approval) map[string]bool {
+	m := map[string]bool{}
+	for _, w := range strings.FieldsFunc(strings.ToLower(ap.Tool+" "+firstWord(ap.Summary)), func(r rune) bool {
+		return !unicode.IsLetter(r)
+	}) {
+		m[w] = true
+	}
+	return m
+}
+
+func firstWord(s string) string {
+	if f := strings.Fields(s); len(f) > 0 {
+		return f[0]
+	}
+	return ""
+}

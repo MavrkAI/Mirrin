@@ -132,3 +132,47 @@ func TestVoiceChecksServePushToTalk(t *testing.T) {
 		t.Errorf("listening after repair: %+v (started %d)", r, started)
 	}
 }
+
+// In a room with a fan running (about 1% background) the follow-up window
+// wanted speech at 2.75%, more than a voice across the desk gives, so every
+// follow-up after a reply was "nothing heard". A normal voice over that
+// room must count as speech; the room itself must not.
+func TestFollowupHearsSpeechOverANoisyRoom(t *testing.T) {
+	py, err := exec.LookPath("python3")
+	if err != nil {
+		if py, err = exec.LookPath("python"); err != nil {
+			t.Skip("no Python")
+		}
+	}
+	dir := t.TempDir()
+	stubs := filepath.Join(dir, "stubs")
+	for name, body := range map[string]string{
+		"numpy.py":                 "",
+		"soundfile.py":             "",
+		"openwakeword/__init__.py": "",
+		"openwakeword/model.py":    "class Model:\n    pass\n",
+	} {
+		p := filepath.Join(stubs, name)
+		_ = os.MkdirAll(filepath.Dir(p), 0o755)
+		if err := os.WriteFile(p, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(dir, "wake_helper.py"), wakeScript, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	script := `
+import sys
+sys.path.insert(0, sys.argv[1]); sys.path.insert(0, sys.argv[2])
+import wake_helper as wh
+for noise, voice in ((0.011, 0.022), (0.015, 0.028), (0.004, 0.009)):
+    assert voice > wh.speech_floor(noise), (noise, voice, wh.speech_floor(noise))
+    assert noise * 1.3 < wh.speech_floor(noise), (noise, wh.speech_floor(noise))
+assert wh.speech_floor(0.0) >= 0.005  # a silent room still needs real sound
+print("ok")
+`
+	out, err := exec.Command(py, "-c", script, stubs, dir).CombinedOutput()
+	if err != nil || strings.TrimSpace(string(out)) != "ok" {
+		t.Fatalf("%v\n%s", err, out)
+	}
+}

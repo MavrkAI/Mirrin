@@ -34,9 +34,12 @@ type wakeHelper struct {
 	model    string
 	thresh   float64
 	talkOver string
-	out      string
-	maxSec   int
-	follow   int
+	// threshSpeaking is the detector's threshold while the twin talks; 0
+	// keeps the helper's own (very sensitive, so a spoken name interrupts).
+	threshSpeaking float64
+	out            string
+	maxSec         int
+	follow         int
 
 	mu     sync.Mutex
 	cmd    *exec.Cmd
@@ -96,19 +99,7 @@ func (w *wakeHelper) start(ctx context.Context) error {
 		_ = os.WriteFile(p, wakeScript, 0o644)
 	}
 	cmd := exec.CommandContext(ctx, filepath.Join(w.dir, "venv", pyBin()), filepath.Join(w.dir, "wake_helper.py"))
-	ratio := map[string]string{"off": "0", "low": "2.2", "normal": "1.6", "high": "1.3"}[w.talkOver]
-	if ratio == "" {
-		ratio = "1.6"
-	}
-	cmd.Env = append(os.Environ(),
-		"TALKOVER_RATIO="+ratio,
-		"WAKE_MODEL="+w.model,
-		fmt.Sprintf("WAKE_THRESHOLD=%.2f", w.thresh),
-		"WAKE_OUT="+w.out,
-		"WAKE_CLIP="+strings.TrimSuffix(w.out, ".wav")+"-wake.wav",
-		fmt.Sprintf("MAX_SECONDS=%d", w.maxSec),
-		fmt.Sprintf("FOLLOWUP_SECONDS=%d", w.follow),
-	)
+	cmd.Env = append(os.Environ(), w.env()...)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return err
@@ -248,4 +239,25 @@ func SetupWake(ctx context.Context, dir string, w io.Writer) error {
 		fmt.Fprintln(w, "openWakeWord is ready.")
 	}
 	return nil
+}
+
+// env is what the helper is told about this detector.
+func (w *wakeHelper) env() []string {
+	ratio := map[string]string{"off": "0", "low": "2.2", "normal": "1.6", "high": "1.3"}[w.talkOver]
+	if ratio == "" {
+		ratio = "1.6"
+	}
+	env := []string{
+		"TALKOVER_RATIO=" + ratio,
+		"WAKE_MODEL=" + w.model,
+		fmt.Sprintf("WAKE_THRESHOLD=%.2f", w.thresh),
+		"WAKE_OUT=" + w.out,
+		"WAKE_CLIP=" + strings.TrimSuffix(w.out, ".wav") + "-wake.wav",
+		fmt.Sprintf("MAX_SECONDS=%d", w.maxSec),
+		fmt.Sprintf("FOLLOWUP_SECONDS=%d", w.follow),
+	}
+	if w.threshSpeaking > 0 {
+		env = append(env, fmt.Sprintf("WAKE_THRESHOLD_SPEAKING=%.2f", w.threshSpeaking))
+	}
+	return env
 }

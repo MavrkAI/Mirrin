@@ -271,6 +271,7 @@ func New(cfg config.Voice, agentName, dataDir string) *Channel {
 		default:
 			c.wake = newWakeHelper(cfg.KokoroDir, cfg.WakeModel, cfg.WakeThreshold, dataDir, cfg.MaxSeconds, cfg.FollowupSeconds)
 			c.wake.talkOver = cfg.TalkOver
+			c.wake.threshSpeaking = cfg.WakeThresholdSpeaking
 		}
 	}
 	return c

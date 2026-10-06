@@ -600,11 +600,8 @@ func (m *Manager) Cancel(id string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	t, ok := m.tasks[id]
-	if !ok {
-		return fmt.Errorf("no task %s", id)
-	}
-	if !t.open() && t.Status != Paused {
-		return fmt.Errorf("task %s is already %s", id, t.Status)
+	if err := cancellable(id, t, ok); err != nil {
+		return err
 	}
 	t.Status = Cancelled
 	t.Updated = time.Now()
@@ -802,6 +799,7 @@ func (m *Manager) Tools() []tools.Tool {
 					return "no background tasks", nil
 				}
 				var b strings.Builder
+				b.WriteString(openLine(list))
 				for _, t := range list {
 					b.WriteString(t.Board())
 				}
@@ -818,7 +816,7 @@ func (m *Manager) Tools() []tools.Tool {
 				}
 				return "retrying " + in.ID, nil
 			}),
-		tools.New("cancel_task", "Stop a background task.", tools.Schema(map[string]tools.Prop{"id": {Type: "string", Required: true}}), tools.RiskWrite,
+		tools.WithSummaryAndCheck(tools.New("cancel_task", "Stop a background task.", tools.Schema(map[string]tools.Prop{"id": {Type: "string", Required: true}}), tools.RiskWrite,
 			func(ctx context.Context, call tools.Call) (string, error) {
 				var in struct{ ID string }
 				if err := tools.Decode(call, &in); err != nil {
@@ -828,6 +826,6 @@ func (m *Manager) Tools() []tools.Tool {
 					return "", err
 				}
 				return "cancelled " + in.ID, nil
-			}),
+			}), m.cancelSummary, m.cancelCheck),
 	}
 }

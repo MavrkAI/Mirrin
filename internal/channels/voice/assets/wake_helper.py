@@ -150,6 +150,17 @@ def rms(chunk):
     return float(np.sqrt(np.mean(chunk.astype(np.float32) ** 2))) / 32768.0
 
 
+def speech_floor(noise):
+    """How loud a chunk must be to count as speech, given the room's noise.
+
+    Speech is well above the noise floor, but a fixed multiple of it asked a
+    noisy room (a fan, the air conditioning: ~1%) for 2.75%, more than a voice
+    across the desk gives, so follow-ups heard nothing. A louder room needs a
+    smaller multiple. The absolute floor is low enough for a quiet microphone
+    (input volume turned down) to still register."""
+    return max(noise * 1.8, noise + 0.004, 0.005)
+
+
 def capture(mic, first_chunks, wait_for_speech, window=None):
     """Record until ~1 s of silence. Returns "speech" if speech was captured,
     "bare" if only the wake phrase (the pre-roll) was, else "".
@@ -170,9 +181,7 @@ def capture(mic, first_chunks, wait_for_speech, window=None):
             sys.stderr.write("follow-up capture aborted: host is speaking\n"); sys.stderr.flush()
             return ""  # the host started talking; a follow-up capture would only hear it
         level = rms(chunk)
-        # Adaptive: speech is well above the room's noise floor; the absolute floor is low
-        # enough for a quiet microphone (input volume turned down) to still register.
-        talking = level > max(noise * 2.5, 0.005)
+        talking = level > speech_floor(noise)
         if not speech_seen:
             waited += CHUNK / RATE
             frames.append(chunk)

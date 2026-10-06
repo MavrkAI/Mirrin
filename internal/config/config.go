@@ -410,6 +410,11 @@ type Voice struct {
 	// WakeModel is an openWakeWord model name or .onnx path (default: the persona's, such as hey_mirrin.onnx, when it is in KokoroDir).
 	WakeModel     string  `yaml:"wake_model"`
 	WakeThreshold float64 `yaml:"wake_threshold"`
+	// WakeThresholdSpeaking is the detector's threshold while the twin is
+	// talking (default: the lower of wake_threshold and 0.1, so saying its
+	// name interrupts). Raise it when the twin's own voice sets off its
+	// wake word, as a persona whose model was trained on its own voice can.
+	WakeThresholdSpeaking float64 `yaml:"wake_threshold_speaking,omitempty"`
 	// Engine picks the speech-out backend: auto, kokoro, elevenlabs, system or command.
 	Engine string `yaml:"engine"`
 	// KokoroDir is where `mirrin voice setup` installs the offline neural voice.
