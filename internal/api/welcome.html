@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Welcome to Mirrin</title>
+<style>
+:root{color-scheme:dark;font:18px system-ui;background:#141a20;color:#f1f4f5}body{max-width:620px;margin:7vh auto;padding:24px}h1{font-size:2.5rem;letter-spacing:-.05em}p{line-height:1.5;color:#c9d3da}section{background:#202b34;border:1px solid #43515c;border-radius:20px;padding:24px;margin:20px 0}label{display:block;margin:18px 0 8px}input,select,button{box-sizing:border-box;font:inherit;border-radius:9px;padding:12px;border:1px solid #73818b}input,select{width:100%;background:#141a20;color:inherit}button{cursor:pointer;background:#bce4d4;color:#14231d;margin:12px 8px 0 0}button:disabled{opacity:.5;cursor:wait}a{color:#bce4d4}#notice{white-space:pre-wrap;color:#ffe0b2}#reply{white-space:pre-wrap;line-height:1.6}#fine{font-size:.8rem;color:#c9d3da}input[type=checkbox]{width:auto}small{color:#c9d3da}[hidden]{display:none!important}
+.cast{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:12px;margin:16px 0 4px}
+.who{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;background:#141a20;border:1px solid #43515c;border-radius:16px;padding:12px 10px}
+.who:has(input:checked){border-color:#bce4d4;box-shadow:inset 0 0 0 1px #bce4d4}
+.who:has(input:focus-visible){outline:3px solid #bce4d4;outline-offset:3px}
+.who label{display:flex;flex-direction:column;align-items:center;margin:0;cursor:pointer}
+.who input{position:absolute;opacity:0;width:1px;height:1px;margin:0}
+.who b{margin-top:6px}.who small{display:block;font-size:.8rem;line-height:1.35;margin-top:4px}
+.who q{font-size:.85rem;line-height:1.35;margin-top:8px;color:#f1f4f5}
+.who .hear{font-size:.8rem;padding:6px 10px;margin:8px 0 0;white-space:nowrap}
+.who .slow{color:#c9d3da;font-size:.75rem}
+.later{font-size:.9rem;margin:16px 0 0}
+/* step 3: where to reach you, one choice pressed at a time */
+.ways{display:grid;gap:10px;margin:16px 0 4px}
+.way{display:flex;flex-direction:column;align-items:flex-start;width:100%;margin:0;text-align:left;background:#141a20;color:inherit;border:1px solid #43515c;border-radius:16px;padding:14px 16px}
+.way[aria-pressed=true]{border-color:#bce4d4;box-shadow:inset 0 0 0 1px #bce4d4}
+.way:focus-visible{outline:3px solid #bce4d4;outline-offset:3px}
+.way small{display:block;font-size:.85rem;line-height:1.4;margin-top:4px}
+/* each character as the screen draws it (characters.js), standing still:
+   focus or the pointer plays its hello once, a wave or a tilt of the head */
+.pic{--pb1:#7f8ad9;--pb2:#3b4590;--pb3:#262d66;--rim:rgba(165,180,255,.22);--ice1:#34406c;--ice2:rgba(20,26,48,0);--c1:#6d7cff;--thought:#e6e8f0;width:112px;height:123px}
+.pic svg{display:block;width:100%;height:100%;overflow:visible}
+.pic .bd{stroke:var(--rim);stroke-width:1.5}
+.pic .eye .lid,.pic .dots{opacity:0}
+.pic .lower{transform-box:fill-box;transform-origin:50% 0;transform:scaleY(.25)}
+.pic:is(.nyra,.maverick) .lower{transform:scaleY(0)}
+.pic .fl{transform-box:fill-box}.pic .fl.r{transform-origin:30% 8%}
+.pic .head{transform-box:view-box}
+.pic.hi .fl.r{animation:hi 1.6s ease-in-out}
+.pic:is(.nyra,.maverick).hi .head{transform-origin:100px 132px;animation:tilt 1.6s ease-in-out}
+@keyframes hi{0%{transform:rotate(0)}18%{transform:rotate(-112deg)}32%{transform:rotate(-88deg)}46%{transform:rotate(-115deg)}60%{transform:rotate(-88deg)}76%{transform:rotate(-110deg)}100%{transform:rotate(0)}}
+@keyframes tilt{25%{rotate:-4deg}50%{rotate:1.5deg;translate:0 1px}75%{rotate:-2deg}}
+@media (prefers-reduced-motion:reduce){.pic *{animation:none!important}}
+/* after a restore: the twin, its welcome beside it */
+.back{display:flex;align-items:center;gap:16px}.back .pic{flex:none}#backline{color:#f1f4f5}
+#todo{padding-left:1.2em;line-height:1.6}#report,#notes{white-space:pre-wrap}summary{cursor:pointer;color:#c9d3da}
+</style>
+<h1>A twin of your own.</h1><p>Give your twin a way to think, choose your names, and say hello. No Mirrin account needed.</p>
+<div id="notice" role="status" aria-live="polite"></div>
+<section id="brain"><h2>1. A way to think</h2><div id="detected">Looking for a connection…</div>
+<form id="keyform"><label for="provider">Or connect a model service</label><select id="provider"><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="gemini">Google Gemini</option></select>
+<p><a id="keylink" href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer">Get an API key</a> from your provider. Their usage charges may apply.</p>
+<label for="key">API key</label><input id="key" type="password" autocomplete="off" required><small>Your key stays on this computer. Checking it sends a short hello to your provider.</small><button>Check and save key</button></form></section>
+<section id="names" hidden><h2 id="castq">2. Who would you like?</h2><form id="nameform"><div class="cast" id="cast" role="radiogroup" aria-labelledby="castq"></div><label for="you">Your name</label><input id="you" maxlength="100" autocomplete="given-name" required><label for="twin">Your twin's name</label><input id="twin" value="Mirrin" maxlength="100" required><label for="address" id="addressq">How should Mirrin address you?</label><select id="address"><option value="name">By my name</option><option value="sir" selected>Sir</option><option value="ma'am">Ma'am</option></select><label><input id="speak" type="checkbox" checked> <span id="speaklabel">Say it out loud (your Mac's standard voice until voice is set up)</span></label><button>Meet my twin</button></form><p class="later">You can change any of this later from the menu bar.</p></section>
+<section id="hello" hidden><h2>Hello.</h2><div id="reply" role="status" aria-live="polite"></div><p id="fine" hidden></p><button id="retry" hidden>Try hello again</button><p><a href="/ui?hello=1">Keep talking →</a></p></section>
+<section id="reach" hidden><h2 id="reachq">3. When you're away from this Mac, where should I reach you?</h2><div class="ways" role="group" aria-labelledby="reachq">
+<button type="button" class="way" data-way="telegram" aria-pressed="false" hidden><b>Telegram</b><small>Messages arrive like any chat and buzz your phone.</small></button>
+<button type="button" class="way" data-way="whatsapp" aria-pressed="false" hidden><b>WhatsApp</b><small>Links as one of your WhatsApp devices through an unofficial client. Some people prefer Telegram.</small></button>
+<button type="button" class="way" data-way="mac" aria-pressed="true"><b>Just this Mac for now</b><small>I'll leave things on the screen and send a Mac notification.</small></button></div>
+<p id="reachnext" hidden>Pair <span id="reachname"></span> on the <a href="/channels" target="mirrin-channels">Channels page</a> (it opens in its own window). Nothing here waits for it.</p><button type="button" id="reachdone">Done</button></section>
+<button id="moving">I already have a twin</button>
+<section id="restore" hidden><h2>Moving in?</h2><p>Your encrypted backup opens with the 12 words from your Recovery Kit.</p><form id="restoreform"><label for="source">Backup location</label><select id="source"></select><label for="folder">Backup folder path</label><input id="folder" placeholder="/Volumes/My disk/Mirrin Backups"><label for="words">Your 12 recovery words</label><input id="words" type="password" autocomplete="off" required spellcheck="false"><label><input id="confirm" type="checkbox" required> Replace the twin here and keep the current one aside.</label><button>Restore my twin</button></form></section>
+<section id="restored" hidden><h2>Your restore</h2><div id="back" hidden><div class="back"><span class="pic" id="backpic" aria-hidden="true"></span><p id="backline"></p></div><p>Still to do here:</p><ul id="todo"></ul><p id="standby" hidden></p><details><summary>What the restore said</summary><p id="notes"></p></details></div><p id="report"></p><p id="reviewlink"><a href="/restore/review">Review devices</a></p><button id="dismiss">Done</button></section>
+<script src="/characters.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+function notice(e){const sentence=e.Sentence||e.message;$('notice').textContent=sentence?[sentence,e.Fix||e.fix].filter(Boolean).join(' '):'I couldn’t connect. Try again.'}
+async function call(path,data){const r=await fetch('/welcome/'+path,{method:data===undefined?'GET':'POST',headers:data===undefined?{}:{'Content-Type':'application/json'},body:data===undefined?undefined:JSON.stringify(data)});const v=await r.json();if(!r.ok)throw v;return v}
+async function busy(button,fn){button.disabled=true;$('notice').textContent='';try{await fn()}catch(e){notice(e)}finally{button.disabled=false}}
+async function use(provider,key,model){await call('brain',{Provider:provider,Key:key,Model:model});$('key').value='';$('brain').hidden=true;$('names').hidden=false;(document.querySelector('[name=persona]:checked')||$('you')).focus()}
+$('provider').onchange=()=>{$('keylink').href={openai:'https://platform.openai.com/api-keys',anthropic:'https://console.anthropic.com/settings/keys',gemini:'https://aistudio.google.com/apikey'}[$('provider').value]};
+$('keyform').onsubmit=e=>{e.preventDefault();busy(e.submitter,()=>use($('provider').value,$('key').value,''))};
+// The first hello: what the twin is looking at, then its words as they
+// come, and any small print. Said out loud in the twin's own voice once
+// voice is set up ("spoke"), otherwise in the Mac's standard voice.
+async function hello(){
+ $('hello').hidden=false;$('reply').textContent='';$('fine').hidden=true;$('retry').hidden=true;
+ const speak=$('speak').checked;let words=false;
+ try{const r=await fetch('/welcome/hello',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({Speak:speak})});if(!r.ok)throw await r.json();const reader=r.body.getReader(),decoder=new TextDecoder();let pending='',done=null,spoke=false;
+ while(true){const part=await reader.read();if(part.done)break;pending+=decoder.decode(part.value,{stream:true});let end;
+ while((end=pending.indexOf('\n\n'))>=0){const frame=pending.slice(0,end);pending=pending.slice(end+2);const lines=frame.split('\n'),event=lines.find(x=>x.startsWith('event: '))?.slice(7),data=JSON.parse(lines.find(x=>x.startsWith('data: ')).slice(6));
+ if(event==='status'&&!words)$('reply').textContent=data;
+ if(event==='delta'){if(!words){words=true;$('reply').textContent=''}$('reply').textContent+=data}
+ if(event==='note'){$('fine').textContent=data;$('fine').hidden=false}
+ if(event==='error')throw data;
+ if(event==='done'){done=data;$('reply').textContent=data}
+ if(event==='spoke')spoke=true;
+ }}if(done===null)throw {};
+ if(speak&&!spoke&&'speechSynthesis'in window)speechSynthesis.speak(new SpeechSynthesisUtterance(done)) }catch(e){if(!words)$('reply').textContent='';notice(e);$('retry').hidden=false}
+ reach();
+}
+// Step 3, after the hello and always skippable: where to reach you away
+// from this Mac. Telegram and WhatsApp (in builds that have it) open the
+// Channels page, which pairs them, in a window of its own; Done never waits
+// for that. Hidden when this twin has no Channels page.
+let ways=null,reached=false;
+async function reach(){
+ ways=ways||call('channels').catch(()=>[]);const have=await ways;
+ for(const way of have){const b=document.querySelector('.way[data-way="'+way+'"]');if(b)b.hidden=false}
+ if(have.length&&!reached)$('reach').hidden=false
+}
+for(const b of document.querySelectorAll('.way'))b.onclick=()=>{
+ for(const x of document.querySelectorAll('.way'))x.setAttribute('aria-pressed',x===b?'true':'false');
+ const way=b.dataset.way;$('reachnext').hidden=way==='mac';
+ if(way!=='mac'){$('reachname').textContent=b.querySelector('b').textContent;window.open('/channels','mirrin-channels')}
+};
+$('reachdone').onclick=()=>{reached=true;$('reach').hidden=true;document.querySelector('#hello a').focus()};
+// Step 2: the bundled personas as cards, drawn as the screen draws them. The
+// twin's name and how it addresses you follow the one chosen until you
+// change them yourself.
+let cast=[],named=false,addressed=false,canSpeak=false;
+const chosen=()=>cast.find(p=>p.id===(document.querySelector('[name=persona]:checked')||{}).value);
+function ask(){const p=chosen();$('addressq').textContent='How should '+($('twin').value.trim()||(p?p.name:'your twin'))+' address you?'}
+function follow(){const p=chosen();if(!p)return;if(!named)$('twin').value=p.name;if(!addressed)$('address').value=p.address==='sir'||p.address==="ma'am"?p.address:'name';ask()}
+function hi(pic){if(pic.classList.contains('hi'))return;pic.classList.add('hi');setTimeout(()=>pic.classList.remove('hi'),1700)}
+function quote(card,p){const q=document.createElement('q');q.textContent=p.greeting;card.querySelector('.hear').replaceWith(q)}
+function drawCast(){
+ $('cast').replaceChildren();
+ cast.forEach((p,i)=>{
+  const card=document.createElement('div');card.className='who';
+  const label=document.createElement('label'),input=document.createElement('input'),pic=document.createElement('span'),name=document.createElement('b'),tag=document.createElement('small');
+  input.type='radio';input.name='persona';input.value=p.id;input.checked=i===0;
+  pic.className='pic '+p.character;pic.innerHTML=window.Characters?Characters.draw(p.character,'c'+i):'';
+  name.textContent=p.name;tag.textContent=p.tagline;
+  label.append(input,pic,name,tag);card.append(label);
+  if(canSpeak){const b=document.createElement('button');b.type='button';b.className='hear';b.textContent='Hear '+p.name;card.append(b);
+   b.onclick=()=>busy(b,async()=>{for(const x of document.querySelectorAll('.hear'))x.disabled=true;try{const r=await call('preview',{Persona:p.id});if(!r.spoken)quote(card,p)}finally{for(const x of document.querySelectorAll('.hear'))x.disabled=false}})}
+  else{const q=document.createElement('q');q.textContent=p.greeting;card.append(q)}
+  if(!p.instant_wake&&cast.some(c=>c.instant_wake)){const s=document.createElement('small');s.className='slow';s.textContent='Answers to “'+p.wake_phrase+'”, a beat slower than '+cast.find(c=>c.instant_wake).name+' for now.';card.append(s)}
+  input.addEventListener('focus',()=>hi(pic));card.addEventListener('mouseenter',()=>hi(pic));input.addEventListener('change',follow);
+  $('cast').append(card);
+ });
+ follow();
+}
+$('twin').addEventListener('input',()=>{named=$('twin').value.trim()!=='';ask()});
+$('address').addEventListener('change',()=>{addressed=true});
+(async()=>{try{const v=await fetch('/voice/setup/status',{headers:{Accept:'application/json'}});canSpeak=v.ok&&!!(await v.json()).ready}catch(e){}if(canSpeak)$('speaklabel').textContent='Say it out loud';try{cast=await call('personas');drawCast()}catch(e){notice(e)}})();
+$('nameform').onsubmit=e=>{e.preventDefault();busy(e.submitter,async()=>{const p=chosen();await call('names',{You:$('you').value,Twin:$('twin').value,Persona:p?p.id:'',Address:$('address').value});$('names').hidden=true;await hello()})};
+$('retry').onclick=hello;
+$('moving').onclick=()=>busy($('moving'),async()=>{$('restore').hidden=false;const sources=await call('restore/sources');$('source').replaceChildren();for(const source of sources){const option=document.createElement('option');option.value=source.Kind;option.textContent=source.Label;option.dataset.path=source.Path||'';$('source').append(option)}$('source').onchange=()=>{$('folder').value=$('source').selectedOptions[0].dataset.path;$('folder').disabled=$('source').value==='icloud'};$('source').onchange()});
+$('restoreform').onsubmit=e=>{e.preventDefault();busy(e.submitter,async()=>{const words=$('words').value;$('words').value='';const result=await call('restore',{Kind:$('source').value,Path:$('folder').value,Phrase:words,Confirm:$('confirm').checked});$('notice').textContent=result.message;$('restoreform').hidden=true})};
+$('dismiss').onclick=()=>busy($('dismiss'),async()=>{await call('restore/dismiss',{});location.href='/ui'});
+// After a restore the twin waves once and says what came along, read from
+// the restored twin, then what is still to do here. Without that, the
+// restore's own report alone.
+(async()=>{try{const r=await call('restore/report');if(!r.detail)return;
+ $('restored').hidden=false;$('brain').hidden=true;$('moving').textContent='Restore another backup';
+ if(!r.line){$('report').textContent=r.detail;return}
+ $('back').hidden=false;$('report').hidden=true;$('reviewlink').hidden=true;
+ const pic=$('backpic'),kind=r.character||'penguin';pic.classList.add(kind);pic.innerHTML=window.Characters?Characters.draw(kind,'r0'):'';hi(pic);
+ $('backline').textContent=r.line;
+ for(const t of r.todo||[]){const li=document.createElement('li');if(t.url){const a=document.createElement('a');a.href=t.url;a.textContent=t.text;li.append(a)}else li.textContent=t.text;$('todo').append(li)}
+ if(r.stand_by){$('standby').textContent=r.stand_by;$('standby').hidden=false}
+ $('notes').textContent=r.detail}catch(e){}})();
+(async()=>{try{const brains=await call('brains');$('detected').textContent=brains.length?'Found on this computer:':'Paste a key below to get started.';for(const b of brains){const button=document.createElement('button');button.textContent=(b.Ready?'Use ':'Check ')+b.Label+(b.Model?' · '+b.Model:'');button.onclick=()=>busy(button,()=>use(b.Provider,'',b.Model));$('detected').append(button)}}catch(e){$('detected').textContent='Paste a key below to get started.';notice(e)}})();
+</script></html>

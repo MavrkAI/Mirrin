@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security issue, or a harmful pack
+    url: https://github.com/MavrkAI/Mirrin/security/advisories/new
+    about: Please report anything exploitable privately, including a pack that sends people's data somewhere or acts without asking.
+  - name: Share a protocol you wrote
+    url: https://github.com/MavrkAI/Mirrin/blob/main/docs/protocols/contributing.md
+    about: No issue needed. Put it in a pack and list the pack in the registry with a pull request.

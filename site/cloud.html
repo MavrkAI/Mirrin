@@ -1,0 +1,699 @@
+<!doctype html>
+<!--
+  cloud.html: "Part two: Cloud, planned". Shares site.css with index.html.
+
+  THE SPLIT. Free is the whole twin, open source, with no account, for good.
+  Cloud is planned availability: reach and encrypted backup storage. It is
+  not running and not for sale. Its code is in the repository (the relay, the
+  control plane, the daemon's side), but this build trusts no Cloud signing
+  key, so nothing can be bought. Everything about the service is labelled
+  planned, not on sale, and is written in the future tense. The free features
+  it depends on use the home page's chips: "Available now" (in the first
+  release), or "Being tested" for the phone parts until
+  docs/pwa-testing.md's matrix is run. TestStatusChips holds this page to them.
+  There is no Buy button, no waiting list and no countdown. The only call to
+  action is "Follow along: watch releases on GitHub" (the /releases page, and
+  its Atom feed, which needs no account).
+  Source for every Cloud claim: docs/cloud-design.md (accepted 2026-09-27).
+
+  ONE COPY, KEPT THE SAME. The offer strip's two lines and the FAQ answers
+  this page shares with index.html are copies; site_test.go fails if they
+  drift (see pricing.html's header). The tier cards and the Free list inside
+  them are on pricing.html only: section 3 here gives the prices in brief and
+  links there. Leaving and the pledge are told in full here (sections 7 and
+  8); pricing.html sums them up and links here.
+
+  PRODUCT NAME TOKEN
+  The name renders as "Mirrin"; the paid layer is "Mirrin Cloud". To rename,
+  change it in these places in this file:
+    1. <title>, meta description, og:site_name, og:title, og:description,
+       twitter:title, twitter:description, og:image:alt, twitter:image:alt
+       (in <head>).
+    2. aria-label="Mirrin home" on the masthead brand link.
+    3. Every <span class="pn" translate="no">Mirrin</span> in the page.
+       Count: grep -o 'class="pn"' cloud.html | wc -l
+              prints 10 today: 8 in the page and 2 in this comment.
+  One-shot swap that leaves URLs alone (URLs always have "/Mirrin"):
+       sed -E -i '' 's#(^|[^/])Mirrin#\1NewName#g' index.html cloud.html
+  THE NAME OUTSIDE THE TOKEN (its own decision): GitHub URLs; the CLI name
+  `mirrin` in commands (verify, leaving, FAQ).
+  Written for customers: no file names, function names or design-doc
+  section numbers in what a reader sees; site_test.go checks the facts.
+  The Cloud placeholder names (cloud.mirrin.app, mirrin.link) are deliberately not used.
+  Only one public date appears: "early 2027" for founding checkout.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mirrin Cloud (planned): reach and backup, never custody</title>
+<link rel="canonical" href="https://mirrin.app/cloud.html">
+<meta name="description" content="Planned: an address that reaches your Mirrin twin from anywhere, and encrypted backup we couldn't read. $6 a month, not on sale. The free twin stays whole.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0c0f1c">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://mirrin.app/cloud.html">
+<meta property="og:locale" content="en_GB">
+<meta property="og:site_name" content="Mirrin">
+<meta property="og:title" content="Mirrin Cloud (planned): reach and backup, never custody">
+<meta property="og:description" content="Planned: an address that reaches your Mirrin twin from anywhere, and space for encrypted backups. Your twin stays whole on your machine. Nothing is on sale yet.">
+<meta property="og:image" content="https://mirrin.app/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Mirrin, a gentleman in a dinner jacket, beside the line: An AI of your own, living on your own machine.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mirrin Cloud (planned): reach and backup, never custody">
+<meta name="twitter:description" content="Planned: an address that reaches your Mirrin twin from anywhere, and space for encrypted backups. Your twin stays whole on your machine. Nothing is on sale yet.">
+<meta name="twitter:image" content="https://mirrin.app/assets/og.png">
+<meta name="twitter:image:alt" content="Mirrin, a gentleman in a dinner jacket, beside the line: An AI of your own, living on your own machine.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preload" href="assets/fonts/newsreader.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/colophon-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="site.css">
+<script>document.documentElement.classList.add('js');try{if(localStorage.getItem('theme')==='light'){document.documentElement.setAttribute('data-theme','light');document.querySelector('meta[name="theme-color"]').content='#f7f8fc'}}catch(e){}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<svg class="defs" aria-hidden="true" focusable="false">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0 L10 5 L0 10 Z"/></marker>
+    <marker id="ah-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="ah-acc" d="M0 0 L10 5 L0 10 Z"/></marker>
+    <marker id="ah-m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-m" d="M0 0 L10 5 L0 10 Z"/></marker>
+    <linearGradient id="g-brand" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3ddc84"/><stop offset="1" stop-color="#7aa2ff"/></linearGradient>
+    <radialGradient id="g-listen" cx="38%" cy="34%" r="72%"><stop offset="0" stop-color="#8ff5bb"/><stop offset=".4" stop-color="#3ddc84"/><stop offset=".8" stop-color="#1f8f5e"/><stop offset="1" stop-color="#0f4a33"/></radialGradient>
+  </defs>
+  <symbol id="i-mark" viewBox="0 0 32 32"><rect width="32" height="32" rx="7.5" fill="#161a45"/><g transform="translate(3 3) scale(0.26)"><g fill="none" stroke-width="11" stroke-linecap="round"><path d="M18.5 80V58a14.75 14.75 0 0 1 29.5 0V80" stroke="#ffffff"/><path d="M52 80V58a14.75 14.75 0 0 1 29.5 0V80" stroke="#9ea4ff"/></g><circle cx="33.25" cy="25" r="8" fill="#ffffff"/><circle cx="66.75" cy="25" r="8" fill="#9ea4ff"/></g></symbol>
+  <symbol id="i-ext" viewBox="0 0 16 16"><path d="M5 3h8v8M13 3 3.5 12.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+</svg>
+
+<header class="mast">
+  <div class="wrap mast-in">
+    <a class="brand" href="index.html" aria-label="Mirrin home"><svg aria-hidden="true"><use href="#i-mark"/></svg><span class="pn" translate="no">Mirrin</span></a>
+    <span class="runhead">Part two: Cloud, planned</span>
+    <nav class="nav" aria-label="Primary">
+      <ul>
+        <li><a href="index.html">The twin</a></li>
+        <li><a href="index.html#install">Install</a></li>
+        <li><a href="protocols.html">Protocols</a></li>
+        <li><a href="cloud.html" aria-current="page">Cloud<span class="sr-only">,</span><span class="tag">planned</span></a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin">GitHub</a></li>
+      </ul>
+    </nav>
+    <button class="theme" type="button" aria-pressed="true">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg>
+      <span>Dark theme</span>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- cloud-hero -->
+<section class="wrap hero cloud-hero" aria-labelledby="hero-h">
+  <p class="kicker"><span>Part two: Cloud</span><span class="st plan">Planned · not on sale</span></p>
+  <h1 id="hero-h" class="h1-cloud">Cloud, planned: an address and backup space, never your twin.</h1>
+  <div class="hero-grid cloud-grid">
+    <div class="status" role="group" aria-labelledby="status-h">
+      <p id="status-h"><strong>Status: planned.</strong> The design is accepted. Nothing is for sale, and there is no waiting list.</p>
+      <ol>
+        <li class="done"><span><b>Design accepted.</b> Published in full <a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/cloud-design.md">on GitHub</a>.</span></li>
+        <li class="done"><span><b>The free route is built.</b> Secure access from anywhere and encrypted backup, for everyone, in the first release. The Home Screen web app, lock-screen approvals and passkeys are in it too, and still being tested on real phones.</span></li>
+        <li class="now"><span><b>Cloud's code is written, and open.</b> Nothing runs yet, and nothing can be bought.</span></li>
+        <li><span><b>Opening.</b> Targeted for early 2027, announced in the changelog at least 14 days before.</span></li>
+      </ol>
+    </div>
+    <div class="cloud-lead">
+      <p class="lead"><span class="pn" translate="no">Mirrin</span> Cloud will rent you an address and some backup space. It will never hold your twin: its brain, memory, passwords and signed-in browser stay whole on your machine. It will rent only what genuinely needs a server:</p>
+      <ol class="rent">
+        <li><strong>Reach.</strong> An address that finds your machine from any network, with the encryption ending on your machine rather than ours.</li>
+        <li><strong>Off-site backup.</strong> Space for copies that are locked before they leave, with a key made from 12 words we never see.</li>
+        <li><strong>Later: training a custom wake word</strong> for your twin, once we have training data licensed for it.</li>
+      </ol>
+      <div class="ctas">
+        <a class="btn primary" href="https://github.com/MavrkAI/Mirrin/releases">Follow along: watch releases on GitHub</a>
+        <a class="btn quiet" href="index.html#install">Or install the free twin</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- the offer: Free and Cloud in two lines -->
+<section class="wrap offer-strip" aria-labelledby="strip-h">
+  <h2 id="strip-h" class="sr-only">Free, and Cloud (planned)</h2>
+  <ul class="strip">
+    <!-- offer-strip:start -->
+    <li><span class="st small">Available now</span><p><b>Free: the whole twin.</b> Everything it does, on your machine, open source, for good. $0 and no account.</p></li>
+    <li><span class="st small plan">Planned · not on sale</span><p><b><span class="pn" translate="no">Mirrin</span> Cloud: availability.</b> It would add an address that reaches your machine from any network, and off-site space for encrypted backups. Planned at $6 a month.</p></li>
+    <!-- offer-strip:end -->
+    <li class="strip-go"><a href="pricing.html">Pricing, and what we'd see <span aria-hidden="true">→</span></a></li>
+  </ul>
+</section>
+
+<nav class="wrap toc" aria-labelledby="toc-h" style="--rows:5">
+  <div class="toc-head"><h2 id="toc-h" class="label">Contents</h2><span class="label">Part two: Cloud, planned</span></div>
+  <ol>
+    <li><a href="#promises"><span class="n">1</span><span class="t">What we promise first</span><span class="k">Promises</span></a></li>
+    <li><a href="#next"><span class="n">2</span><span class="t">Free first: already built</span><span class="k">Free</span></a></li>
+    <li><a href="#pricing"><span class="n">3</span><span class="t">Planned pricing</span><span class="k">Tiers</span></a></li>
+    <li><a href="#reach"><span class="n">4</span><span class="t">How reach will work</span><span class="k">Reach</span></a></li>
+    <li><a href="#see"><span class="n">5</span><span class="t">What we would see</span><span class="k">Visibility</span></a></li>
+    <li><a href="#verify"><span class="n">6</span><span class="t">Check it yourself</span><span class="k">Verify</span></a></li>
+    <li><a href="#leaving"><span class="n">7</span><span class="t">Leaving</span><span class="k">Exit</span></a></li>
+    <li><a href="#shutdown"><span class="n">8</span><span class="t">If we ever shut Cloud down</span><span class="k">Pledge</span></a></li>
+    <li><a href="#questions"><span class="n">9</span><span class="t">Questions</span><span class="k">FAQ</span></a></li>
+    <li><a href="#follow"><span class="n">10</span><span class="t">Follow along</span><span class="k">GitHub</span></a></li>
+  </ol>
+</nav>
+
+<!-- cloud-promises -->
+<section class="wrap" id="promises" aria-labelledby="prom-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">1</span>Promises</span><span class="st plan">Planned</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>1</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="prom-h">What we promise before we charge anything</h2>
+        <div class="prose">
+          <ul class="facts">
+            <li><strong>Free comes first.</strong> Every paid convenience has a free, documented route, and the free route ships first.</li>
+            <li><strong>Nothing moves behind the paywall.</strong> Nothing the open-source version does today will ever need a subscription.</li>
+            <li><strong>No account, ever, to use <span class="pn" translate="no">Mirrin</span>.</strong> Cloud won't have a sign-up, login, password or email account with us either: you'd be an account number, tied to a key your computer makes for itself.</li>
+            <li><strong>We don't host twins.</strong> Not yours, not anyone's.</li>
+            <li><strong>The twin never pitches Cloud.</strong> No persona will mention it. Cloud will appear only where you ask for the capability, such as choosing how your twin is reached or where backups go, and it will be listed last. If a subscription lapses you'd get one calm line, never a push notification.</li>
+            <li><strong>No trial, no countdowns.</strong> A 30-day refund instead.</li>
+            <li><strong>The code stays open.</strong> The twin and everything Cloud would run are open source, with the licences explained <a href="pricing.html#licence">in plain words</a>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- cloud-free-next -->
+<section class="wrap" id="next" aria-labelledby="next-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">2</span>Free</span><span class="st-pair"><span class="st">Available now</span><span class="st next">Being tested</span></span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>2</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="next-h">Free first: already built</h2>
+        <div class="prose">
+          <p>Every paid convenience has a free route, and the free route came first. All of these are part of the free, open-source version, in the first release. The parts that run on a phone are still being tested on real phones, and say so.</p>
+          <ul class="facts">
+            <li><span class="st small next">Being tested</span> <strong>A web app you add to your Home Screen</strong> (no app store). Scan one QR code on your computer and watch each step light up as your phone joins. Every device gets its own key, and you can revoke any of them. Each new device is announced on your channels, with a way to revoke it if it wasn't you.</li>
+            <li><span class="st small next">Being tested</span> <strong>Lock-screen approvals.</strong> Your machine sends the notification itself, encrypted, straight to Apple's, Google's, Mozilla's or Microsoft's push service. No server of ours in between. Tap it to see the picture and decide.</li>
+            <li><span class="st small next">Being tested</span> <strong>A passkey for the dangerous ones:</strong> Face ID, a fingerprint or your device PIN. Approving a payment, a command or a call from the phone needs it, and the web app refuses dangerous approvals until you've set one up. Replying <code>yes 12</code> in your own chat keeps working as it does today.</li>
+            <li><span class="st small">Available now</span> <strong>Reach from anywhere, your way.</strong> Secure access through Tailscale, your own certificate, or your own relay on your own domain. The relay is open source.</li>
+            <li><span class="st small">Available now</span> <strong>Encrypted backup.</strong> To a folder, iCloud Drive or any S3-compatible bucket, locked with 12 words only you hold.</li>
+          </ul>
+          <div class="today-box">
+            <span class="st">Today</span>
+            <ul>
+              <li>Text your twin on eleven messaging channels from anywhere, and approve with a picture of the page on seven of them.</li>
+              <li>Open the presence screen and chat from your other devices over Tailscale's private network, with a key.</li>
+              <li>A copy of your memory file every day, on your own disk, with the last seven kept. It isn't encrypted and doesn't leave your machine.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- cloud-pricing: the prices in brief; the tier cards and the table are on pricing.html -->
+<section class="wrap" id="pricing" aria-labelledby="price-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">3</span>Tiers</span><span class="st-pair"><span class="st">Free, for good</span><span class="st plan">Planned · not on sale</span></span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>3</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="price-h">Planned pricing</h2>
+        <div class="prose">
+          <p>Cloud would be $6 a month or $60 a year, and the first 500 subscribers would pay $48 a year for as long as they stay. Supporter would be $20 a month: everything in Cloud, plus next-business-day support, for people who want to fund the free version. Free stays the whole twin.</p>
+          <p>Fair use would be about 100&nbsp;GB relayed a month, and up to 20&nbsp;Mbit/s for your address, shared by all its connections. No trial, a 30-day refund, and no lifetime deals.</p>
+          <div class="candid"><p>This is planned pricing. It may change before Cloud opens, and we'll post a notice in the changelog at least 14 days before it does. <strong>There is nothing to buy today.</strong></p></div>
+          <p class="after">The tiers side by side, with Free as the longest column, the licences in plain words, and what we would and couldn't see with a command to check each line, are on <a href="pricing.html">the pricing page</a>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- cloud-reach -->
+<section class="wrap" id="reach" aria-labelledby="reach-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">4</span>Reach</span><span class="st-pair"><span class="st">Available now</span><span class="st plan">Planned · not on sale</span></span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>4</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="reach-h">How reach will work, in plain English</h2>
+        <div class="prose">
+          <p>Your computer will connect out to two relays we'd run, with two different hosting providers. When your phone opens your address, a relay will read only the name on the envelope and pass the still-sealed connection through to your computer. The encryption will end on your computer, with a certificate only your computer holds. The relays will never hold a key that could open it.</p>
+          <p>The relay is the same program you can run yourself, free, today: <code>mirrin reach use relay</code> points your twin at it, with no MavrkAI server involved.</p>
+        </div>
+      </div>
+      <div class="sec-wide">
+        <figure class="graph dg960" aria-labelledby="fig1-cap">
+          <svg class="dg dg-wide" viewBox="0 0 960 376" role="img" aria-labelledby="fig1-t">
+            <title id="fig1-t">Reach, as designed for Cloud. Your machine dials out to two relays. Your phone opens your address; the relay reads only the name on the envelope and passes the sealed TLS connection through. TLS ends on your machine, which holds the only key. A relay sees ciphertext, plus the name on the envelope, the time, the size and the rough network it came from.</title>
+            <rect class="soft" x="340" y="14" width="280" height="52" rx="6"/>
+            <text class="xs" x="356" y="36">Relay 2 · provider B</text>
+            <text class="s" x="356" y="55">same rules, a second route</text>
+            <rect class="box-2" x="340" y="84" width="280" height="200" rx="6"/>
+            <text class="xs" x="356" y="106">Relay 1 · provider A</text>
+            <rect class="box" x="356" y="120" width="58" height="38" rx="2"/>
+            <path class="ln" d="M356 120 L385 142 L414 120"/>
+            <text class="s" x="428" y="135">Reads only the name on</text>
+            <text class="s" x="428" y="152">the envelope (the SNI)</text>
+            <path class="band" d="M126 196H806"/>
+            <path class="band-core" d="M126 196H806"/>
+            <text class="s" x="480" y="236" text-anchor="middle">Passes the sealed connection through.</text>
+            <text class="s" x="480" y="254" text-anchor="middle">Holds no key that could open it.</text>
+            <text class="s acc" x="232" y="180" text-anchor="middle">sealed on your phone (TLS)</text>
+            <text class="s acc" x="714" y="180" text-anchor="middle">still sealed</text>
+            <rect class="box" x="50" y="138" width="68" height="118" rx="11"/>
+            <line class="ln" x1="74" y1="149" x2="94" y2="149"/>
+            <rect class="fill-soft" x="60" y="162" width="48" height="10" rx="5"/>
+            <rect class="box" x="74" y="190" width="20" height="16" rx="2"/>
+            <path class="ln" d="M78 190v-5a6 6 0 0 1 12 0v5"/>
+            <text class="h" x="84" y="286" text-anchor="middle">Your phone</text>
+            <text class="s" x="84" y="305" text-anchor="middle">opens your address</text>
+            <rect class="box" x="812" y="154" width="120" height="84" rx="6"/>
+            <rect class="plate" x="820" y="162" width="104" height="68" rx="3"/>
+            <circle cx="872" cy="196" r="15" fill="url(#g-listen)"/>
+            <path class="box" d="M860 238h24l4 18h-32z"/>
+            <line class="ln" x1="842" y1="256.5" x2="902" y2="256.5"/>
+            <text class="h" x="872" y="286" text-anchor="middle">Your machine</text>
+            <text class="s acc" x="872" y="305" text-anchor="middle">TLS ends here</text>
+            <text class="s" x="872" y="322" text-anchor="middle">it holds the only key</text>
+            <path class="ln-m dash" d="M896 148 C896 40, 720 40, 628 40" marker-end="url(#ah-m)"/>
+            <path class="ln-m dash" d="M862 148 C858 106, 720 104, 628 104" marker-end="url(#ah-m)"/>
+            <text class="s" x="790" y="24" text-anchor="middle">your machine dials out to both</text>
+            <line class="ln-m dash" x1="40" y1="340" x2="930" y2="340"/>
+            <text class="xs" x="50" y="364">What a relay sees</text>
+            <text class="s" x="200" y="364">ciphertext, plus the name on the envelope, the time, the size and the rough network it came from</text>
+          </svg>
+          <svg class="dg dg-tall" viewBox="0 0 340 840" role="img" aria-labelledby="fig1-tt">
+            <title id="fig1-tt">Reach, as designed for Cloud. Your machine dials out to two relays. Your phone opens your address; the relay reads only the name on the envelope and passes the sealed TLS connection through. TLS ends on your machine, which holds the only key. A relay sees ciphertext, plus the name on the envelope, the time, the size and the rough network it came from.</title>
+            <rect class="box-2" x="20" y="214" width="296" height="232" rx="6"/>
+            <text class="xs" x="140" y="240">Relay 1 · provider A</text>
+            <rect class="box" x="140" y="256" width="58" height="38" rx="2"/>
+            <path class="ln" d="M140 256 L169 278 L198 256"/>
+            <text class="s" x="140" y="318">Reads only the name on</text>
+            <text class="s" x="140" y="335">the envelope (the SNI)</text>
+            <text class="s" x="140" y="366">Passes the sealed</text>
+            <text class="s" x="140" y="383">connection through.</text>
+            <text class="s" x="140" y="410">Holds no key that</text>
+            <text class="s" x="140" y="427">could open it.</text>
+            <rect class="soft" x="140" y="462" width="176" height="54" rx="6"/>
+            <text class="xs" x="154" y="484">Relay 2 · provider B</text>
+            <text class="s" x="154" y="503">same rules</text>
+            <path class="band" d="M100 146V604"/>
+            <path class="band-core" d="M100 146V604"/>
+            <text class="s acc" x="118" y="186">sealed on your phone (TLS)</text>
+            <text class="s acc" x="118" y="566">still sealed</text>
+            <rect class="box" x="66" y="20" width="68" height="118" rx="11"/>
+            <line class="ln" x1="90" y1="31" x2="110" y2="31"/>
+            <rect class="fill-soft" x="76" y="44" width="48" height="10" rx="5"/>
+            <rect class="box" x="90" y="72" width="20" height="16" rx="2"/>
+            <path class="ln" d="M94 72v-5a6 6 0 0 1 12 0v5"/>
+            <text class="h" x="152" y="70">Your phone</text>
+            <text class="s" x="152" y="89">opens your address</text>
+            <rect class="box" x="40" y="610" width="120" height="84" rx="6"/>
+            <rect class="plate" x="48" y="618" width="104" height="68" rx="3"/>
+            <circle cx="100" cy="652" r="15" fill="url(#g-listen)"/>
+            <path class="box" d="M88 694h24l4 18h-32z"/>
+            <line class="ln" x1="70" y1="712.5" x2="130" y2="712.5"/>
+            <text class="h" x="178" y="638">Your machine</text>
+            <text class="s acc" x="178" y="657">TLS ends here</text>
+            <text class="s" x="178" y="675">it holds the only key</text>
+            <path class="ln-m dash" d="M162 700H330V489H324" marker-end="url(#ah-m)"/>
+            <path class="ln-m dash" d="M330 489V330H322" marker-end="url(#ah-m)"/>
+            <text class="s" x="178" y="728">dials out to both relays</text>
+            <line class="ln-m dash" x1="20" y1="752" x2="320" y2="752"/>
+            <text class="xs" x="20" y="776">What a relay sees</text>
+            <text class="s" x="20" y="796">ciphertext, plus the name on the envelope,</text>
+            <text class="s" x="20" y="813">the time, the size and the rough network</text>
+            <text class="s" x="20" y="830">it came from</text>
+          </svg>
+          <figcaption id="fig1-cap"><span class="fig">Fig. 1</span>Reach, as designed. The band is one sealed connection from your phone to your machine; the relay sits on the path but never opens it.</figcaption>
+        </figure>
+        <div class="prose">
+          <p>Your address will be set up so that only your own computer can get a security certificate for it, so someone who broke into a relay still couldn't impersonate it. Your twin will check the public certificate logs every six hours for anything issued in your address's name.</p>
+          <p>If an unknown certificate ever appears, your twin will pause remote approvals, replace the keys of any device that connected since, and warn you on your phone, on the presence screen and in your own chat.</p>
+          <div class="candid"><p>One limit, stated plainly: on our shared domain, a certificate wrongly issued through us or our DNS provider would be <em>detected, not prevented</em>. Use your own domain and it is prevented. That is free with your own relay today, and would come to our relays in a later version.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- cloud-visibility -->
+<section class="wrap" id="see" aria-labelledby="see-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">5</span>Visibility</span><span class="st plan">Planned · not on sale</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>5</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="see-h">What we would see, and what we couldn't</h2>
+        <div class="vis">
+          <section aria-labelledby="can-h">
+            <h3 id="can-h"><svg class="eye" viewBox="0 0 20 20" aria-hidden="true"><path d="M1.5 10S5 4 10 4s8.5 6 8.5 6-3.5 6-8.5 6S1.5 10 1.5 10z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="2.6" fill="currentColor"/></svg>We would see</h3>
+            <ul>
+              <li>Your account number, plan and billing status, and the payment provider's customer number</li>
+              <li>Your address</li>
+              <li>Your machine's public keys</li>
+              <li>When your machine connects, and your home IP</li>
+              <li>For each connection: the rough network it came from, bytes and duration</li>
+              <li>How many backups you keep, with their sizes and times</li>
+              <li>When your machine last checked in, and refreshed its pass</li>
+            </ul>
+          </section>
+          <section class="cant" aria-labelledby="cant-h">
+            <h3 id="cant-h"><svg class="eye" viewBox="0 0 20 20" aria-hidden="true"><path d="M1.5 10S5 4 10 4s8.5 6 8.5 6-3.5 6-8.5 6S1.5 10 1.5 10z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3 17 17 3" stroke="var(--accent)" stroke-width="1.8"/></svg>We couldn't see</h3>
+            <ul>
+              <li>Anything inside the connection: messages, screens, approvals, cookies, memory, voice</li>
+              <li>What's in your backups, or even their file names</li>
+              <li>Your 12 words</li>
+              <li>Your passwords, API keys and signed-in browser</li>
+              <li>Your email address, which would stay with the payment provider</li>
+              <li>Your notifications, which would never pass through us</li>
+              <li>What your twin does, or which model you use</li>
+            </ul>
+          </section>
+        </div>
+        <div class="prose">
+          <p class="dont"><strong>We wouldn't store your email address.</strong> It would stay with the payment provider that handles checkout.</p>
+          <p>Raw connection records would be kept in memory for 72 hours, then only as hourly totals for 30 days. We'd never log what's inside a connection. <code>mirrin cloud me</code> would show every field we store about you. Each line, with why we couldn't see it and a command to check, is on <a href="pricing.html#see">the pricing page</a>.</p>
+        </div>
+      </div>
+      <div class="sec-wide">
+        <figure class="graph dg960" aria-labelledby="fig2-cap">
+          <svg class="dg dg-wide" viewBox="0 0 960 250" role="img" aria-labelledby="fig2-t">
+            <title id="fig2-t">Backup, as designed. A copy of your twin is encrypted on your machine with age, under a key made from 12 words that never leave you. Only ciphertext goes to a folder, iCloud Drive or an S3 bucket (free, available now) or to 20 GB of Cloud storage (planned).</title>
+            <rect class="box" x="40" y="48" width="120" height="84" rx="6"/>
+            <rect class="plate" x="48" y="56" width="104" height="68" rx="3"/>
+            <circle cx="100" cy="90" r="15" fill="url(#g-listen)"/>
+            <path class="box" d="M88 132h24l4 18h-32z"/>
+            <line class="ln" x1="70" y1="150.5" x2="130" y2="150.5"/>
+            <text class="h" x="100" y="182" text-anchor="middle">Your machine</text>
+            <text class="s" x="100" y="200" text-anchor="middle">a copy of your twin</text>
+            <path class="ln" d="M170 90H250" marker-end="url(#ah)"/>
+            <rect class="box" x="258" y="40" width="248" height="100" rx="6"/>
+            <rect class="fill-ink" x="276" y="72" width="22" height="18" rx="2"/>
+            <path class="ln" d="M281 72v-6a6 6 0 0 1 12 0v6"/>
+            <text class="h" x="314" y="72">Encrypted here, with age</text>
+            <text class="s" x="314" y="92">key made from 12 words</text>
+            <text class="s" x="314" y="110">the words never leave you</text>
+            <rect class="soft" x="258" y="156" width="248" height="44" rx="4"/>
+            <text class="m s" x="272" y="183">1 ····  2 ····  3 ····  …  12 ····</text>
+            <text class="xs" x="258" y="224">Your 12 words, kept by you</text>
+            <path class="ln-acc" d="M514 90H600"/>
+            <text class="s acc" x="557" y="78" text-anchor="middle">ciphertext only</text>
+            <path class="ln-acc" d="M600 90C626 90 626 58 648 58" marker-end="url(#ah-acc)"/>
+            <path class="ln-acc" d="M600 90C626 90 626 150 648 150" marker-end="url(#ah-acc)"/>
+            <rect class="next-box" x="656" y="26" width="284" height="62" rx="6"/>
+            <text class="h" x="672" y="52">A folder, iCloud Drive or S3</text>
+            <text class="s ok-t" x="672" y="73">free · available now</text>
+            <rect class="plan-box" x="656" y="118" width="284" height="62" rx="6"/>
+            <text class="h" x="672" y="144">Cloud: 20 GB off-site</text>
+            <text class="s plan-t" x="672" y="165">planned · not on sale</text>
+          </svg>
+          <svg class="dg dg-tall" viewBox="0 0 340 620" role="img" aria-labelledby="fig2-tt">
+            <title id="fig2-tt">Backup, as designed. A copy of your twin is encrypted on your machine with age, under a key made from 12 words that never leave you. Only ciphertext goes to a folder, iCloud Drive or an S3 bucket (free, available now) or to 20 GB of Cloud storage (planned).</title>
+            <rect class="box" x="40" y="16" width="120" height="84" rx="6"/>
+            <rect class="plate" x="48" y="24" width="104" height="68" rx="3"/>
+            <circle cx="100" cy="58" r="15" fill="url(#g-listen)"/>
+            <path class="box" d="M88 100h24l4 18h-32z"/>
+            <line class="ln" x1="70" y1="118.5" x2="130" y2="118.5"/>
+            <text class="h" x="178" y="54">Your machine</text>
+            <text class="s" x="178" y="73">a copy of your twin</text>
+            <path class="ln" d="M100 130V178" marker-end="url(#ah)"/>
+            <rect class="box" x="20" y="186" width="300" height="100" rx="6"/>
+            <rect class="fill-ink" x="38" y="218" width="22" height="18" rx="2"/>
+            <path class="ln" d="M43 218v-6a6 6 0 0 1 12 0v6"/>
+            <text class="h" x="76" y="218">Encrypted here, with age</text>
+            <text class="s" x="76" y="238">key made from 12 words</text>
+            <text class="s" x="76" y="256">the words never leave you</text>
+            <rect class="soft" x="20" y="300" width="300" height="44" rx="4"/>
+            <text class="m s" x="34" y="327">1 ····  2 ····  3 ····  …  12 ····</text>
+            <text class="xs" x="20" y="366">Your 12 words, kept by you</text>
+            <path class="ln-acc" d="M100 384V452" marker-end="url(#ah-acc)"/>
+            <text class="s acc" x="116" y="424">ciphertext only</text>
+            <rect class="next-box" x="20" y="460" width="300" height="62" rx="6"/>
+            <text class="h" x="36" y="486">A folder, iCloud Drive or S3</text>
+            <text class="s ok-t" x="36" y="507">free · available now</text>
+            <rect class="plan-box" x="20" y="538" width="300" height="62" rx="6"/>
+            <text class="h" x="36" y="564">Cloud: 20 GB off-site</text>
+            <text class="s plan-t" x="36" y="585">planned · not on sale</text>
+          </svg>
+          <figcaption id="fig2-cap"><span class="fig">Fig. 2</span>Backup, as designed. It is encrypted before it leaves, so wherever it goes, it arrives locked and unreadable.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- cloud-verify -->
+<section class="wrap" id="verify" aria-labelledby="verify-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">6</span>Verify</span><span class="st-pair"><span class="st">Available now</span><span class="st plan">Planned · not on sale</span></span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>6</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="verify-h">Check it yourself</h2>
+        <div class="prose">
+          <p>Promises should come with a way to check them. You can check a download, your address and your backups today, for free. The Cloud checks would answer once Cloud opens.</p>
+          <ul class="cmds">
+            <li><span class="st small">Available now</span> Every release after 0.2.0 lists its files' checksums in <code>SHA256SUMS</code>, signed with Sigstore by the release workflow, and the installers check them. To check a download yourself, open a terminal in the folder you downloaded it to. On a Mac or Linux, this checks the signature (with <code>cosign</code> installed) and then the checksums:
+              <div class="code">
+                <div class="code-bar"><span>macOS and Linux</span><button class="copy" type="button" data-copy="cmd-verify" aria-label="Copy the check for macOS and Linux">Copy</button></div>
+                <pre id="cmd-verify" tabindex="0"><code>wf='^https://github\.com/MavrkAI/Mirrin/\.github/workflows/release\.yml'
+cosign verify-blob SHA256SUMS --bundle SHA256SUMS.sigstore.json \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp "$wf@refs/tags/v"
+shasum -a 256 -c SHA256SUMS --ignore-missing</code></pre>
+              </div>
+              On Windows, put the name of the file you downloaded on the first line. The last line prints <code>True</code> when the file matches its checksum:
+              <div class="code">
+                <div class="code-bar"><span>Windows PowerShell</span><button class="copy" type="button" data-copy="cmd-verify-win" aria-label="Copy the check for Windows">Copy</button></div>
+                <pre id="cmd-verify-win" tabindex="0"><code>$f = 'mirrin-windows-amd64.exe'
+$want = (-split (Select-String -SimpleMatch $f SHA256SUMS).Line)[0]
+(Get-FileHash $f).Hash -eq $want</code></pre>
+              </div>
+              <p class="sr-only" aria-live="polite" id="copy-status"></p></li>
+            <li><span class="st small">Available now</span> <code>mirrin reach verify</code> and <code>mirrin reach fingerprint</code> show the key your address presents. Compare it with what the rest of the world sees:<pre tabindex="0"><code>openssl s_client -servername &lt;your address&gt; -connect &lt;your address&gt;:443</code></pre></li>
+            <li><span class="st small">Today</span> Search for your address on crt.sh, a public log anyone can read, to see every certificate ever issued for it.</li>
+            <li><span class="st small">Available now</span> <code class="nw">mirrin backup key --age</code> prints your backup key, so you can decrypt a copy with the standard <code>age</code> tool, without us.</li>
+            <li><span class="st small">Available now</span> The relay is open for you to read, <a href="https://github.com/MavrkAI/Mirrin">on GitHub</a>: about 4,200 lines of code.</li>
+            <li><span class="st small plan">Planned · not on sale</span> <code>mirrin cloud me</code> will show every field we store about you. The command is already built; it has nothing to ask until Cloud opens.</li>
+            <li><span class="st small plan">Planned · not on sale</span> <code>mirrin cloud egress</code> will list every request your machine has sent us: method, path and size, never the contents.</li>
+          </ul>
+          <p>An automated test already checks that a default install sends nothing to Cloud.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- cloud-leaving -->
+<section class="wrap" id="leaving" aria-labelledby="leave-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">7</span>Exit</span><span class="st-pair"><span class="st">Available now</span><span class="st plan">Planned · not on sale</span></span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>7</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="leave-h">Leaving</h2>
+        <div class="prose">
+          <p>You should be able to leave in an afternoon, without asking us. The way out is ready today:</p>
+          <ol class="steps">
+            <li><code>mirrin backup migrate --from cloud --to &lt;place&gt;</code> copies every backup, byte for byte, to a folder, iCloud Drive or a bucket of yours.</li>
+            <li>Run your own relay. It is one container.</li>
+            <li><code>mirrin reach use relay</code> points your twin at it.</li>
+            <li>Pair your phone again. A new address means adding the web app again, and setting up notifications and your passkey again.</li>
+            <li>Cancel with <code>mirrin cloud billing</code>, and <code>mirrin cloud delete-account</code> if you want the record gone.</li>
+          </ol>
+          <p>Your twin carries on after you cancel. Your address would keep working for up to seven days past the end of your paid period, then your free route takes over. New backups wouldn't be stored after the paid period ends, but for 90 days after it you could still list and download every backup. Your address would never be passed to anyone else. Delete your Cloud record and you'd have seven days to change your mind; after that the records, DNS entries and stored backups would be removed.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- cloud-shutdown -->
+<section class="wrap" id="shutdown" aria-labelledby="shut-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">8</span>Pledge</span><span class="st plan">Planned</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>8</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="shut-h">If we ever shut Cloud down</h2>
+        <div class="prose">
+          <div class="pledge">
+            <span class="label">Our pledge</span>
+            <p>90 days' notice, and your backups stay downloadable.</p>
+          </div>
+          <p>Cloud will only ever sell availability, so a shutdown would take nothing from your twin. It keeps running on your computer. Your backups will be in a standard encrypted format (<code>age</code>) that your 12 words unlock without us. Everything Cloud runs is open source, so anyone could run the same thing. Your computer's Cloud pass will be a signed token it checks itself, valid for up to 35 days: if the servers that manage subscriptions went quiet, you wouldn't notice for weeks.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Full FAQ -->
+<section class="wrap" id="questions" aria-labelledby="faq-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">9</span>FAQ</span><span class="label">Fifteen questions</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>9</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="faq-h">Questions</h2>
+        <ol class="faq">
+          <li><details open><summary>When can I buy Cloud?</summary><div class="a">
+            <p>Not yet. The design is accepted, and Cloud is targeted to open in early 2027, with a notice in the changelog at least 14 days before. Early on, new activations will be paced at about 40 a week because of certificate limits. To follow along, <a href="https://github.com/MavrkAI/Mirrin/releases">watch releases on GitHub</a> or add <a href="https://github.com/MavrkAI/Mirrin/releases.atom">their feed</a> to a feed reader; neither needs an account.</p></div></details></li>
+          <li><details><summary>Why is it free?</summary><div class="a">
+            <p>Your twin runs on your machine, so it costs us nothing when you use it. We run no server for it, so there's nothing to charge for. Its source is MIT licensed (the default downloads, which include WhatsApp, are GPL-3.0, and an MIT build comes without it), it needs no account, and nothing it does today will move behind a paywall. The planned Cloud will charge only for what genuinely needs a server of ours: an address and off-site storage. If you'd like to fund the free version, we intend the planned Supporter plan for exactly that.</p></div></details></li>
+          <li><details><summary>What happens if MavrkAI disappears?</summary><div class="a">
+            <p>Your twin keeps working, because it never needed us. There's no account and no server of ours in the loop, and the source is MIT on GitHub for anyone to fork. The only MavrkAI addresses your twin ever contacts are on GitHub: a pack from the community list that you choose to install or update, and our releases when you run <code>mirrin update</code>. Search already uses the copy of the list built into your twin, so it would carry on; packs from that list couldn't be installed or updated until you point your twin at another list in its settings. The routines you already have would keep running.</p>
+            <p>We've designed Cloud to fail gently too. The pledge is 90 days' notice and backups that stay downloadable. Backups would be in a standard encrypted format (<code>age</code>) that your 12 words unlock without us, and the relay is open source so you can run your own. A Cloud pass will be checked on your computer and last up to 35 days, so even a sudden outage on our side would give you weeks.</p></div></details></li>
+          <li><details><summary>Do you see my data?</summary><div class="a">
+            <p>On the free version there is nothing for us to see. We run no server, and there's no tracking of any kind. Your AI provider sees what you send it. Choose Ollama and the model runs on your machine too, so your conversations never leave it, beyond the chat app you have them in. The screen's weather still asks Open-Meteo, with your time zone's city, unless you set <code>ui.weather: false</code>.</p>
+            <p>With the planned Cloud we would see connection details: your address, when your machine connects, your home IP, the rough network your phone connects from, bytes and duration, and backup sizes and times. We could not see inside the connection: messages, screens, approvals, memory, voice. The full list, with a command to check each line, is <a href="pricing.html#see">on the pricing page</a>.</p></div></details></li>
+          <li><details><summary>Can I self-host the relay?</summary><div class="a">
+            <p>Yes. The relay is in the first release, as its own program and container. Run it on a small server, point your twin at it with <code>mirrin reach use relay</code>, use your own domain, and MavrkAI isn't involved at all. If you use Tailscale, the presence screen and chat already work over it, and a secure address over Tailscale (<code>mirrin reach use tailscale</code>) is in the same release.</p></div></details></li>
+          <li><details><summary>Do I need Cloud to use it from my phone?</summary><div class="a">
+            <p>No. Today you can text your twin on WhatsApp, Telegram, Signal and eight other messaging apps from anywhere, and approve with a reply like “yes 12”. Secure access through Tailscale, your own certificate or your own relay is free and available now. The Home Screen web app, lock-screen approvals and passkeys are free too: built, in the first release, and still being tested on real phones. Cloud would only save you the setup.</p></div></details></li>
+          <li><details><summary>Is there a free trial?</summary><div class="a">
+            <p>No trial and no countdowns. There will be a 30-day refund instead. The free version is the whole twin, so you can live with everything that matters before paying for anything.</p></div></details></li>
+          <li><details><summary>Will free features ever move behind the paywall?</summary><div class="a">
+            <p>No. Nothing the open-source version does today will move behind a paywall, and every paid convenience has a free, documented route that ships first. The Cloud code is kept separate, and an automated test checks that a default install sends nothing to Cloud.</p></div></details></li>
+          <li><details><summary>Will my twin try to sell me Cloud?</summary><div class="a">
+            <p>Never. Your twin doesn't do sales. An automated test keeps the words “<span class="pn" translate="no">Mirrin</span> Cloud” out of the twin's screen, personas, prompts and channels. Cloud will appear only where you ask for the capability, such as choosing how your twin is reached or where backups go, and it will be listed last. If a subscription lapses you'd get one calm line, never a push notification.</p></div></details></li>
+          <li><details><summary>What happens if I stop paying for Cloud?</summary><div class="a">
+            <p>Your twin carries on as before. Your Cloud address would keep working for up to seven days past the end of your paid period, then stop routing, and your free route takes over. New backups wouldn't be stored after the paid period ends, but for 90 days after it you could still list and download every backup. Your address would never be given to anyone else.</p></div></details></li>
+          <li><details><summary>Do I need an account?</summary><div class="a">
+            <p>Not for <span class="pn" translate="no">Mirrin</span>, ever. Cloud won't have a sign-up, login, password or email account with us either. You'd be an account number, tied to a key your computer makes for itself. Your email and card would stay with the payment provider that handles checkout.</p></div></details></li>
+          <li><details><summary>What does Cloud cost to run?</summary><div class="a">
+            <p>Not much would run: two relays with different providers, one small control server, DNS, and storage for backups. There's no admin website. The rest is people and care: answering support email, a weekly review of abuse, costs and dependencies, a restore drill every quarter, and new keys every year.</p></div></details></li>
+          <li><details><summary>Which models does it use?</summary><div class="a">
+            <p>You choose, and you can switch from the menu bar: Claude (the default), OpenAI, Google Gemini, any OpenAI-compatible service, or a local model through Ollama. You bring your own key and pay the provider directly. We don't resell tokens, and Cloud would never touch your model calls. A fair warning: small local models are private, but they make more mistakes with tools than the big hosted ones.</p></div></details></li>
+          <li><details><summary>Does it work without the internet?</summary><div class="a">
+            <p>The core does. With Ollama, the AI model, memory, listening and voice all run on your computer. You'll need a connection once to download the voice models (about 850&nbsp;MB) and your Ollama model. Anything that is the internet by nature needs a connection: the chat apps, web browsing, email, Google and the weather.</p></div></details></li>
+          <li><details><summary>Does it run on Windows and Linux?</summary><div class="a">
+            <p>Yes, the same program runs on all three: as a background service with a menu bar icon on a Mac, as a background service on Linux (<code>mirrin tray</code> adds an app indicator), and in the system tray on Windows, started when you sign in, with no administrator needed. macOS is the most polished: it has the floating character, and iMessage is Mac-only. On Windows, for voice you'll install whisper.cpp and sox yourself for now. There are ready-made builds for Macs with Apple silicon or Intel, and for Linux and Windows on <span class="nw">x86-64</span> and ARM64.</p></div></details></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- cloud-follow -->
+<section class="wrap" id="follow" aria-labelledby="follow-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">10</span>GitHub</span><span class="st plan">Planned · not on sale</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>10</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="follow-h">Follow along</h2>
+        <div class="follow">
+          <p>Cloud isn't for sale. There's no waiting list and no email sign-up. To follow along, watch the releases on GitHub, or add their feed to any feed reader; neither needs an account. Cloud is targeted to open in early 2027, and the changelog will carry a notice at least 14 days before. The terms, acceptable use policy, privacy policy and data processing agreement will be final before then; <a href="legal.html">the drafts</a> are here for anyone to read.</p>
+          <div class="ctas">
+            <a class="btn primary" href="https://github.com/MavrkAI/Mirrin/releases">Follow along: watch releases on GitHub<svg aria-hidden="true"><use href="#i-ext"/></svg></a>
+            <a class="btn quiet" href="https://github.com/MavrkAI/Mirrin/releases.atom">Releases feed (Atom)</a>
+            <a class="btn quiet" href="index.html#install">Install the free twin</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-grid">
+    <div class="colophon">
+      <a class="brand" href="index.html"><svg aria-hidden="true"><use href="#i-mark"/></svg><span class="pn" translate="no">Mirrin</span></a>
+      <p>A personal AI twin that lives on your own machine. Source MIT; default downloads GPL-3.0, with an MIT build too. Made by MavrkAI. Cloud is planned and not on sale.</p>
+      <p class="oss">Check it yourself: <span class="pn" translate="no">Mirrin</span> is <a href="https://github.com/MavrkAI/Mirrin">open source</a>.</p>
+      <p>Colophon: set in Newsreader, and in Colophon Sans and Mono (cut from IBM Plex), served from this site under the SIL Open Font License. This site sets no cookies, runs no analytics and asks no other server for anything. Your theme choice stays in this browser.</p>
+    </div>
+    <nav aria-label="Footer: this site">
+      <h2>This site</h2>
+      <ul>
+        <li><a href="index.html">Part one: the twin</a></li>
+        <li><a href="cloud.html">Part two: Cloud, planned</a></li>
+        <li><a href="protocols.html">Protocols</a></li>
+        <li><a href="pricing.html">Pricing (planned)</a></li>
+        <li><a href="#see">What we would see</a></li>
+        <li><a href="#questions">Questions</a></li>
+        <li><a href="legal.html">Terms and privacy (drafts)</a></li>
+      </ul>
+    </nav>
+    <nav aria-label="Footer: source">
+      <h2>Source</h2>
+      <ul>
+        <li><a href="https://github.com/MavrkAI/Mirrin">Code on GitHub</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/cloud-design.md">The Cloud design</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/threat-model.md">Threat model</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/LICENSE">Licence (MIT source)</a></li>
+        <li><a href="pricing.html#licence">The licences, in plain words</a></li>
+      </ul>
+    </nav>
+    <!-- build-on-it:start -->
+    <nav aria-label="Footer: build on it">
+      <h2>Build on it</h2>
+      <ul>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/protocols/README.md">Protocols docs</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/personas.md">Personas</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/skills.md">Skills</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/CONTRIBUTING.md">Contributing</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/CHANGELOG.md">Changelog</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/SECURITY.md">Security</a></li>
+      </ul>
+    </nav>
+    <!-- build-on-it:end -->
+  </div>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.querySelector('.theme');
+  var tc = document.querySelector('meta[name="theme-color"]');
+  function dark() { return root.getAttribute('data-theme') !== 'light'; }
+  function sync() {
+    if (btn) btn.setAttribute('aria-pressed', String(dark()));
+    if (tc) tc.setAttribute('content', dark() ? '#0c0f1c' : '#f7f8fc');
+  }
+  sync();
+  if (btn) btn.addEventListener('click', function () {
+    var next = dark() ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    sync();
+  });
+
+  /* Copy buttons, as on the home page. */
+  var live = document.getElementById('copy-status');
+  document.querySelectorAll('[data-copy]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var el = document.getElementById(b.getAttribute('data-copy'));
+      var text = el.getAttribute('data-copy-text') || el.innerText;
+      function done(ok) {
+        b.textContent = ok ? 'Copied' : 'Select and copy';
+        b.classList.toggle('ok', ok);
+        if (live) live.textContent = ok ? 'Copied to the clipboard.' : 'Copy failed. Select the text and copy it.';
+        setTimeout(function () { b.textContent = 'Copy'; b.classList.remove('ok'); }, 1800);
+      }
+      if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+      else done(false);
+    });
+  });
+})();
+</script>
+</body>
+</html>

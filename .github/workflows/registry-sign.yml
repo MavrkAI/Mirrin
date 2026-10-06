@@ -1,0 +1,59 @@
+name: registry-sign
+# Signs registry/index.json with minisign whenever it changes on main, and
+# commits registry/index.json.minisig beside it. Mirrin only uses the
+# published index when that signature checks out against the key built into
+# it (registry/minisign.pub); otherwise it answers from its built-in copy.
+#
+# Maintainer step, once: delete the placeholder registry/minisign.pub (minisign
+# won't overwrite it without -f), make a key pair without a password,
+#   minisign -G -W -p registry/minisign.pub -s mirrin-registry.key
+# commit the two-line registry/minisign.pub it writes, and store the contents of
+# mirrin-registry.key as the REGISTRY_MINISIGN_KEY repository secret.
+on:
+  push:
+    branches: [main]
+    paths: [registry/index.json]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: registry-sign
+  cancel-in-progress: false
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install minisign
+        run: sudo apt-get update -q && sudo apt-get install -y -q minisign
+      - name: Sign the index
+        env:
+          REGISTRY_MINISIGN_KEY: ${{ secrets.REGISTRY_MINISIGN_KEY }}
+        run: |
+          if [ -z "$REGISTRY_MINISIGN_KEY" ]; then
+            echo "::error::REGISTRY_MINISIGN_KEY is not set; see the comment at the top of this workflow"
+            exit 1
+          fi
+          key="$RUNNER_TEMP/registry.key"
+          umask 077
+          printf '%s\n' "$REGISTRY_MINISIGN_KEY" > "$key"
+          minisign -S -s "$key" -m registry/index.json -x registry/index.json.minisig \
+            -t "mirrin pack index $(git rev-parse --short HEAD)"
+          rm -f "$key"
+          minisign -V -p registry/minisign.pub -m registry/index.json -x registry/index.json.minisig
+      - name: Commit the signature
+        run: |
+          if git diff --quiet -- registry/index.json.minisig && git ls-files --error-unmatch registry/index.json.minisig >/dev/null 2>&1; then
+            echo "signature unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add registry/index.json.minisig
+          git commit -m "registry: sign index.json"
+          # Another commit may have landed on main since checkout. main must
+          # let this workflow push (a branch protection exemption for
+          # github-actions), or no signature is published and every client
+          # answers from its built-in index.
+          git pull --rebase -q origin main
+          git push

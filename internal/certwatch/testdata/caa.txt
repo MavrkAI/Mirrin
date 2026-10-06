@@ -1,0 +1,11 @@
+# owner flags tag value — what the fake DoH resolver answers.
+# The apex forbids everything; the handle pins one ACME account to
+# tls-alpn-01 and forbids wildcards.
+mirrin.test. 0 issue ";"
+mirrin.test. 0 issuewild ";"
+ember-otter-42.mirrin.test. 0 issue "letsencrypt.org; accounturi=https://acme-v02.api.letsencrypt.org/acme/acct/123456789; validationmethods=tls-alpn-01"
+ember-otter-42.mirrin.test. 0 issuewild ";"
+ember-otter-42.mirrin.test. 0 iodef "mailto:security@mirrin.test"
+# Rewritten by someone with the DNS account: another account may issue.
+hijacked.mirrin.test. 0 issue "letsencrypt.org; accounturi=https://acme-v02.api.letsencrypt.org/acme/acct/666"
+hijacked.mirrin.test. 128 issuewild "letsencrypt.org"

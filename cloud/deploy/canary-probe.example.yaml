@@ -1,0 +1,16 @@
+# mirrin-canary on a probe VM (regions b and c): the probe alone. It
+# checks the canary through each relay every minute and serves its rounds
+# to the watcher, through Caddy, at https://@@PROBE_HOST@@/v1/results with
+# a bearer token. It never pages or emails. Rendered by render.sh;
+# installed as /etc/mirrin-canary/canary.yaml.
+
+probe:
+  region: @@PROBE_REGION@@
+  host: @@CANARY_HANDLE@@.@@TENANT_ZONE@@
+  relays:
+    - {id: r1, addrs: ["@@R1_IPV4@@:443", "[@@R1_IPV6@@]:443"]}
+    - {id: r2, addrs: ["@@R2_IPV4@@:443", "[@@R2_IPV6@@]:443"]}
+  every: 60s
+  timeout: 10s
+  listen: 127.0.0.1:9102
+  token_env: CANARY_PROBE_TOKEN

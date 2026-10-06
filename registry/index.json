@@ -1,0 +1,12 @@
+{
+  "packs": [
+    {
+      "name": "starter",
+      "description": "The protocols that ship with Mirrin: morning briefing, evening wrap, inbox triage, reply like me, rebook, chase refund.",
+      "author": "Mirrin",
+      "repo": "https://github.com/MavrkAI/mirrin-pack-starter",
+      "tags": ["briefing", "email", "calendar", "chores"],
+      "version": "1.0.0"
+    }
+  ]
+}

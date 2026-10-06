@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="referrer" content="no-referrer"><title>Backup</title>
+<style>
+/* ---- shared by every settings page (keep the copies identical; pagetest checks) ---- */
+:root{color-scheme:light dark;--bg:#0f1115;--fg:#e8e8ea;--muted:#8b8f98;--card:#171a21;--line:#262a33;--edge:#646a7a;--accent:#7aa2ff;--on-accent:#000;--ok:#3ddc84;--warn:#f5c542;--fail:#ff6b6b;--off:#5c6270}
+@media (prefers-color-scheme: light){:root{--bg:#f6f7f9;--fg:#14161a;--muted:#5f6470;--card:#fff;--line:#e3e6eb;--edge:#80868f;--accent:#2f5bd3;--on-accent:#fff;--ok:#137a43;--warn:#8a5a00;--fail:#c62828;--off:#9aa0aa}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,system-ui,sans-serif;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+[hidden]{display:none!important}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,textarea,select{font-size:16px}::placeholder{color:var(--muted);opacity:1}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+button{background:transparent;border:1px solid var(--edge);color:var(--fg);border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit;min-height:36px}
+button.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}button:disabled{opacity:.55;cursor:default}
+.gate{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 20px;margin:8px 0 20px}
+.gate h1{margin:0 0 6px}.gate p{color:var(--muted);margin:0 0 14px}
+main.gated>:not(#gate){display:none!important}#gateNote:empty{display:none}
+.state{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;color:var(--muted);margin-bottom:8px}
+.state.err{color:var(--fg);border-color:var(--fail);margin-bottom:16px}.state.err strong{display:block;color:var(--fail)}.state.err button{margin-top:10px}
+.msg{font-size:13px}.msg.err{color:var(--fail)}.msg.ok{color:var(--ok)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.pagenav{display:flex;gap:1.1rem;align-items:center;overflow-x:auto;scrollbar-width:none;white-space:nowrap;border-bottom:1px solid var(--line);margin:0 0 1.2rem;padding:.2rem 0 .6rem;-webkit-mask-image:linear-gradient(to right,#000 88%,transparent);mask-image:linear-gradient(to right,#000 88%,transparent)}
+.pagenav::-webkit-scrollbar{display:none}.pagenav a{text-decoration:none;color:var(--muted);font-size:.9rem;padding:.35rem 0;flex:0 0 auto}.pagenav a:hover{color:var(--fg)}
+@media (min-width:760px){.pagenav{flex-wrap:wrap;row-gap:.2rem;overflow:visible;-webkit-mask-image:none;mask-image:none}}
+.pagenav a[aria-current="page"]{color:var(--fg);font-weight:600;box-shadow:inset 0 -2px 0 var(--accent)}.pagenav .home{color:var(--accent);font-weight:600}
+/* ---- end of shared ---- */
+/* the device and safety pages */
+main{max-width:860px;margin:0 auto;padding:20px 16px 64px}h1{font-size:22px;margin:0 0 4px}.sub{color:var(--muted);margin:0 0 20px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:28px 0 10px}
+.tabs{display:flex;flex-wrap:wrap;gap:2px 18px;margin:0 0 18px;font-size:14px;border-bottom:1px solid var(--line)}.tabs a{text-decoration:none;padding:8px 0;border-bottom:2px solid transparent;margin-bottom:-1px}.tabs a[aria-current=page]{color:var(--fg);border-bottom-color:var(--accent);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.actions{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+button.danger{color:var(--fail)}
+a.btn{display:inline-flex;align-items:center;min-height:36px;border:1px solid var(--edge);border-radius:8px;padding:6px 12px;text-decoration:none}a.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+code{background:var(--bg);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere;font-size:.92em}
+.muted{color:var(--muted)}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 3px}
+input[type=text],input[type=password]{width:100%;background:var(--bg);border:1px solid var(--edge);color:var(--fg);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:16px}
+.help{font-size:13px;color:var(--muted);margin:4px 0 0}
+dl.facts{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:10px 0 0;font-size:14px}dl.facts dt{color:var(--muted)}dl.facts dd{margin:0;min-width:0;overflow-wrap:anywhere}
+@media(max-width:480px){dl.facts{grid-template-columns:1fr;gap:0}dl.facts dd{margin-bottom:8px}}
+.badge{display:inline-block;font-size:12px;border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--muted);white-space:nowrap}.badge.on{color:var(--ok);border-color:var(--ok)}.badge.warn{color:var(--warn);border-color:var(--warn)}.badge.err{color:var(--fail);border-color:var(--fail)}
+/* this page */
+[tabindex="-1"]:focus{outline:none}
+.status{display:flex;gap:12px;align-items:flex-start}.status .dot{flex:none;width:12px;height:12px;border-radius:50%;margin-top:6px;background:var(--off)}.dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}.dot.fail{background:var(--fail)}
+.status .big{font-weight:600;font-size:17px;margin:0}.status p{margin:2px 0 0}
+fieldset{border:0;margin:0;padding:0;min-width:0}legend{padding:0;font-weight:600;margin-bottom:6px}
+.choice{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line);color:var(--fg);font-size:15px;margin:0}.choice:first-of-type{border-top:0}
+.choice input{margin:4px 0 0;width:18px;height:18px;flex:none;accent-color:var(--accent)}.choice .c{min-width:0;flex:1}.choice .c span{display:block;color:var(--muted);font-size:13px}
+.more{margin:4px 0 6px 28px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}@media(max-width:600px){.grid{grid-template-columns:1fr}}
+.words{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;margin:14px 0;padding:0;list-style:none;counter-reset:w}
+.words li{counter-increment:w;font:600 17px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.words li::before{content:counter(w) ".";display:inline-block;min-width:2.2em;color:var(--muted);font-weight:400}
+@media(max-width:400px){.words{gap:6px 10px}.words li{font-size:15px;padding:6px 8px}}
+#kitOn p{margin-top:0}.kithead p{margin:0 0 2px}.warnbox{border-left:3px solid var(--warn);padding:6px 0 6px 12px;margin:12px 0}
+ol.plain{margin:0;padding-left:20px}ol.plain li{margin:6px 0}
+@media print{
+  body{background:#fff;color:#000}main{padding:0;max-width:none}
+  main>*:not(#kitBox){display:none!important}#kitBox>*:not(#sheet){display:none!important}
+  #sheet{border:1px solid #000;background:#fff;color:#000}#sheet .muted,#sheet .help{color:#000}#sheet .words li{background:#fff;border-color:#000;color:#000}#sheet .words li::before{color:#000}
+  #sheet .actions{display:none!important}
+}
+</style></head><body><main>
+<section id="gate" class="gate" role="alert" hidden><h1>This device isn't paired</h1><p id="gateHint"></p><p id="gatePair" hidden><a href="/devices/add">Pair this device</a></p><p class="msg" id="gateNote"></p><button type="button" class="primary" id="gateRetry">Try again</button></section>
+<h1>Backup</h1><p class="sub">An encrypted copy of <span data-name></span>: memory, settings, paired devices and keys. Only your 12 words can open it.</p>
+<div id="problem" class="state err" role="alert" hidden><strong>Couldn’t load everything</strong><span id="problemText"></span><div><button type="button" id="problemRetry">Try again</button></div></div>
+<p id="live" class="sr" aria-live="polite"></p>
+<section aria-labelledby="statusH"><h2 id="statusH">Status</h2>
+<div class="card"><div class="state loading" id="statusLoading">Checking your backups…</div>
+<div id="status" class="status" hidden><span class="dot" id="dot" aria-hidden="true"></span><div><p class="big" id="headline"></p><p class="muted" id="detail"></p><p id="fixLine" class="help"></p>
+<dl class="facts" id="facts"></dl>
+<div class="actions" id="nowBox" hidden><button type="button" id="now">Back up now</button></div><p class="msg" id="nowMsg" role="status"></p></div></div>
+</div></section>
+<section aria-labelledby="destH" id="destBox"><h2 id="destH">Where backups go</h2>
+<form class="card" id="dest" novalidate>
+<fieldset><legend class="sr">Destination</legend>
+<label class="choice"><input type="radio" name="target" value="icloud" id="tIcloud"><span class="c">iCloud Drive<span id="icloudNote">In a folder called Mirrin Backups. iCloud keeps it on your other Apple devices too.</span></span></label>
+<label class="choice"><input type="radio" name="target" value="folder" id="tFolder"><span class="c">A folder<span>A USB disk, a network drive or a folder another app syncs.</span></span></label>
+<div class="more" id="folderMore" hidden><label for="path">Folder</label><input type="text" id="path" name="path" placeholder="/Volumes/Backup" autocomplete="off" spellcheck="false" autocapitalize="off"><p class="help">Anywhere outside Mirrin's own folder.</p></div>
+<label class="choice"><input type="radio" name="target" value="s3" id="tS3"><span class="c">An S3-compatible bucket<span>AWS S3, Cloudflare R2, Backblaze B2, MinIO or Wasabi, with your own account.</span></span></label>
+<div class="more" id="s3More" hidden>
+<label for="s3url">Bucket and folder</label><input type="text" id="s3url" placeholder="s3://my-bucket/mirrin" autocomplete="off" spellcheck="false" autocapitalize="off">
+<div class="grid"><div><label for="endpoint">Endpoint <span>(not needed for AWS)</span></label><input type="text" id="endpoint" placeholder="https://…r2.cloudflarestorage.com" autocomplete="off" spellcheck="false" autocapitalize="off"></div>
+<div><label for="region">Region <span>(optional)</span></label><input type="text" id="region" placeholder="auto" autocomplete="off" spellcheck="false" autocapitalize="off"></div>
+<div><label for="akey">Access key ID</label><input type="text" id="akey" autocomplete="off" spellcheck="false" autocapitalize="off"></div>
+<div><label for="skey">Secret access key</label><input type="password" id="skey" autocomplete="new-password"></div></div>
+<p class="help" id="keyNote">The key is kept on this computer in a file only you can read, apart from the rest of the settings. Leave it empty if it's already set.</p>
+</div>
+</fieldset>
+<div class="actions"><button type="submit" class="primary" id="destGo">Continue</button></div>
+<p class="msg" id="destMsg" role="status"></p>
+</form>
+</section>
+<section aria-labelledby="kitH" id="kitBox"><h2 id="kitH">Recovery Kit</h2>
+<div class="card" id="kitOn" hidden><p id="kitOnText"></p><div class="actions"><button type="button" id="newWords">Get new words</button></div>
+<div id="newConfirm" hidden><p class="warnbox">New words make new keys. Backups made from now on open only with the new words; older ones still need the old words, so keep the old kit until you no longer need them.</p><div class="actions"><button type="button" class="primary" id="newYes">Get new words</button><button type="button" id="newNo">Cancel</button></div></div></div>
+<div class="card" id="kitOff">Choose where backups go, then press Continue. You'll get 12 words to write on paper.</div>
+<div class="card" id="sheet" hidden>
+<div class="kithead"><p><strong><span id="kTwin"></span> Recovery Kit</strong></p><p class="muted">Made <span id="kMade"></span> · Backups go to <span id="kWhere"></span> · Kit ID <span id="kId"></span></p></div>
+<ol class="words" id="words" aria-label="Your 12 words"></ol>
+<p>These words are the only key to your backups. Mirrin doesn't keep them, so nobody can give them back if they're lost. Anyone who has them can read your backups.</p>
+<p class="help">Write them on paper and keep it somewhere safe and offline. Not in a photo or a note on your phone. They're shown once: this page can't show them again.</p>
+<div class="actions"><button type="button" id="print">Print</button><button type="button" class="primary" id="wrote">I've written them down</button><button type="button" id="cancelKit">Cancel</button></div>
+</div>
+<form class="card" id="check" hidden><label for="word" id="wordLabel">To check, type word 7</label><input type="text" id="word" autocomplete="off" spellcheck="false" autocapitalize="off">
+<div class="actions"><button type="submit" class="primary" id="finish">Turn on backups</button><button type="button" id="showAgain">Show the words again</button></div><p class="msg" id="checkMsg" role="status"></p></form>
+</section>
+<section aria-labelledby="restoreH"><h2 id="restoreH">Bringing <span data-name></span> back</h2>
+<div class="card"><ol class="plain">
+<li>On the new computer (or this one after a reinstall), install Mirrin and open it.</li>
+<li>In the Welcome window, choose <strong>I already have a twin</strong>, pick where your backups are, and type your 12 words. Or type <code>mirrin restore</code> in Terminal, which does the same.</li>
+<li>Then check the devices that can reach it: a backup from before you removed a device would bring it back.</li>
+</ol></div></section>
+<script>
+/* ---- shared by every settings page (keep the copies identical; pagetest checks) ---- */
+// Every request goes through api(), which puts each way a request can fail
+// into plain words, and shows "This device isn't paired" when that is why.
+const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function twinName(){try{const n=localStorage.getItem('antbot.name');if(n)return n}catch{}const m=document.querySelector('meta[name="mirrin-name"]');return (m&&m.content)||'Mirrin'}
+for(const el of document.querySelectorAll('[data-name]'))el.textContent=twinName();
+const PAGE_TITLE=document.title=twinName()+' · '+document.title;
+const FRIENDLY={not_paired:"This device isn't paired.",passkey_required:'This needs Face ID or Touch ID, which this device has not set up.',forbidden:"This device isn't allowed to do that."};
+async function problem(res){let raw='';try{raw=(await res.text()).trim()}catch{}let code='',hint='',msg='',pair='';
+  try{const j=JSON.parse(raw);if(j&&typeof j==='object'){code=String(j.error||'');hint=String(j.hint||j.fix||'').replace(/`/g,'');msg=String(j.message||'');pair=String(j.pair_url||'')}}catch{}
+  const plain=!code&&raw&&raw.length<300&&!raw.startsWith('<')?raw:'';
+  if(!/^\/[^/\\]/.test(pair))pair='';
+  return{status:res.status,code,hint,pair,text:(msg&&hint?msg+' '+hint:msg)||hint||FRIENDLY[code]||(res.status===401?FRIENDLY.not_paired:plain)||(code?code.replace(/_/g,' '):'')||'Something went wrong (error '+res.status+').'}}
+async function api(url,opts){
+  const o=Object.assign({},opts);o.headers=Object.assign({Accept:'application/json'},opts&&opts.headers);let res;
+  try{res=await fetch(url,o)}catch{throw Object.assign(new Error("Can't reach "+twinName()+". Check that it is running on this computer, then try again."),{offline:true})}
+  if(res.ok){if(document.querySelector('main').classList.contains('gated'))ungate();return res}
+  const p=await problem(res);
+  if(res.status===401){
+    // A page can be paired while one of its buttons isn't allowed yet; only a refused page load means the device is signed out.
+    if(p.code!=='not_paired'&&o.method&&o.method!=='GET'){const pr=await fetch(PROBE,{headers:{Accept:'application/json'}}).catch(()=>null);if(pr&&pr.ok)throw Object.assign(new Error(FRIENDLY.forbidden),{forbidden:true})}
+    gate(p);throw Object.assign(new Error(p.text),{unpaired:true})}
+  throw Object.assign(new Error(p.text),{status:res.status,code:p.code})}
+const getJSON=async u=>(await api(u)).json();
+const post=(u,b)=>api(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})});
+let retrying=false;
+function gate(p){$('#gateHint').textContent=(p&&p.hint)||'Open this page again from the menu bar icon on the computer '+twinName()+' runs on.';
+  // On this computer the twin sends where to pair (pair_url); elsewhere the hint names `mirrin pair --screen`.
+  $('#gatePair').hidden=!(p&&p.pair);if(p&&p.pair)$('#gatePair a').href=p.pair;
+  say($('#gateNote'),retrying?'Still not paired. Pair this device, then try again.':'','err');$('#gate').hidden=false;document.querySelector('main').classList.add('gated');document.title=twinName()+' · Not paired'}
+function ungate(){$('#gate').hidden=true;say($('#gateNote'),'');document.querySelector('main').classList.remove('gated');document.title=PAGE_TITLE}
+// failed says why the page (or part of it) didn't load, with a Try again; recovered clears it.
+function failed(e){if(e&&e.unpaired)return;$('#problemText').textContent=e.message;$('#problem').hidden=false;for(const l of document.querySelectorAll('.loading'))l.hidden=true}
+function recovered(){$('#problem').hidden=true;for(const l of document.querySelectorAll('.loading'))l.hidden=false}
+function say(el,text,kind){el.className='msg'+(kind?' '+kind:'');el.textContent=text||''}
+// A button that is busy (disabled) drops keyboard focus to the page; it gets it back when it is ready again.
+let lastFocus=null;document.addEventListener('focusin',e=>{lastFocus=e.target});
+new MutationObserver(ms=>{for(const m of ms){const b=m.target;if(b===lastFocus&&!b.disabled&&b.isConnected&&(!document.activeElement||document.activeElement===document.body))b.focus({preventScroll:true})}}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['disabled']});
+// Try again checks in place: a reload would show the API's bare refusal instead of this card.
+$('#gateRetry').onclick=async()=>{if(retrying)return;retrying=true;say($('#gateNote'),'Checking…');try{await loadAll()}finally{retrying=false}};$('#problemRetry').onclick=()=>loadAll();
+// One way round every page: back to the screen, then each settings page.
+(()=>{const m=document.querySelector('main');if(!m||document.body.dataset.nav==='off')return;
+  const P=[['/ui','← Screen'],['/memory','Memory'],['/channels','Channels'],['/accounts','Accounts'],['/devices/add','Add your phone'],['/devices/page','Devices'],['/reach','Reach'],['/backup','Backup'],['/trust','Trust'],['/spending','Spending'],['/protocols','Routines'],['/voice/setup','Voice'],['/health','Health']];
+  const n=document.createElement('nav');n.className='pagenav';n.setAttribute('aria-label','Pages');
+  n.innerHTML=P.map(([h,t],i)=>`<a href="${h}"${i===0?' class="home"':''}${location.pathname===h?' aria-current="page"':''}>${t}</a>`).join('');
+  m.prepend(n);const c=n.querySelector('[aria-current]');if(c&&n.scrollWidth>n.clientWidth)c.scrollIntoView({block:'nearest',inline:'nearest'});})();
+/* ---- end of shared ---- */
+const PROBE='/backup/status';
+let st=null,kit=null,dirty=false;
+function size(n){if(!n)return '';const u=['bytes','KB','MB','GB'];let i=0;while(n>=1000&&i<3){n/=1000;i++}return (i?n.toFixed(1):n)+' '+u[i]}
+function when(t){const d=new Date(t);if(!t||isNaN(d))return '';return d.toLocaleString([],{weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})}
+function target(){const r=document.querySelector('input[name=target]:checked');return r?r.value:''}
+function showMore(){$('#folderMore').hidden=target()!=='folder';$('#s3More').hidden=target()!=='s3'}
+for(const r of document.querySelectorAll('input[name=target]'))r.onchange=()=>{dirty=true;showMore()};
+for(const i of document.querySelectorAll('#dest input[type=text],#dest input[type=password]'))i.oninput=()=>{dirty=true};
+function where(){return{target:target(),path:$('#path').value.trim(),s3_url:$('#s3url').value.trim(),endpoint:$('#endpoint').value.trim(),region:$('#region').value.trim(),access_key:$('#akey').value.trim(),secret_key:$('#skey').value}}
+function render(s){st=s;$('#status').hidden=false;const sl=$('#statusLoading');if(sl)sl.remove();
+  const dot=$('#dot');dot.className='dot '+(s.health==='ok'?'ok':s.health==='warn'?'warn':s.health==='fail'?'fail':'');
+  $('#headline').textContent=s.standby?'Standing by':s.on?(s.running?'Backing up now…':'Backups are on'):'Backups are off';
+  $('#detail').textContent=s.standby?s.detail:s.on?(s.detail||''):'Nothing is backed up yet. Choose where backups go below.';
+  $('#fixLine').textContent=s.fix&&s.health!=='ok'&&s.health!=='off'?s.fix.replace(/`/g,''):'';
+  const f=[];if(s.on){f.push(['Goes to',esc(s.where)]);f.push(['Last backup',s.last_good?esc(when(s.last_good))+(s.seq?' (#'+s.seq+(s.size?', '+esc(size(s.size)):'')+')':''):'None yet']);
+    if(s.last_error&&(!s.last_good||new Date(s.last_attempt)>new Date(s.last_good)))f.push(['Problem','<span class="msg err">'+esc(s.last_error)+'</span>']);
+    f.push(['Next','Tonight at 03:30, and 10 minutes after a device or passkey changes']);f.push(['Kit ID',esc(s.kit_id||'')])}
+  $('#facts').innerHTML=f.map(([k,v])=>'<dt>'+k+'</dt><dd>'+v+'</dd>').join('');
+  $('#nowBox').hidden=!s.on||!!s.standby;$('#now').disabled=!!s.running;
+  const ic=$('#tIcloud');ic.disabled=!s.icloud;$('#icloudNote').textContent=s.icloud?'In a folder called Mirrin Backups. iCloud keeps it on your other Apple devices too.':(s.icloud_note||'iCloud Drive isn’t available on this computer.');
+  if(!dirty){const t=s.on?(s.target||'icloud'):(s.icloud?'icloud':'folder');const r=document.querySelector('input[name=target][value="'+t+'"]');if(r)r.checked=true;
+    $('#path').value=s.path||'';$('#s3url').value=s.s3_url||'';$('#endpoint').value=s.endpoint||'';$('#region').value=s.region||'';showMore()}
+  $('#keyNote').textContent=s.key_saved?'A key for this bucket is already saved on this computer. Type a new one only to replace it.':'The key is kept on this computer in a file only you can read, apart from the rest of the settings.';
+  $('#destGo').textContent=s.on?'Move backups here':'Continue';
+  $('#kitOn').hidden=!s.on||!!kit;$('#kitOff').hidden=s.on||!!kit;
+  $('#kitOnText').textContent='Your words were shown once, when backups were turned on (Kit ID '+(s.kit_id||'unknown')+'). Keep that paper safe: it is the only way to open your backups.'}
+async function loadAll(){try{render(await getJSON('/backup/status'));recovered()}catch(e){failed(e)}}
+function showKit(k){kit=k;$('#sheet').hidden=false;$('#check').hidden=true;$('#kitOn').hidden=true;$('#kitOff').hidden=true;$('#destBox').hidden=true;
+  $('#kTwin').textContent=k.twin;$('#kMade').textContent=k.made;$('#kWhere').textContent=k.where;$('#kId').textContent=k.kit_id;
+  $('#words').innerHTML=k.words.map(w=>'<li>'+esc(w)+'</li>').join('');$('#wordLabel').textContent='To check, type word '+k.check;
+  $('#kitH').tabIndex=-1;$('#kitH').focus();$('#live').textContent='Your 12 words are showing. Write them down.'}
+function endKit(){kit=null;$('#sheet').hidden=true;$('#check').hidden=true;$('#words').innerHTML='';$('#word').value='';$('#destBox').hidden=false;dirty=false;loadAll()}
+async function startKit(btn,msg){btn.disabled=true;say(msg,'Checking where backups will go…');
+  try{const k=await(await post('/backup/kit',where())).json();say(msg,'');showKit(k)}catch(e){say(msg,e.message,'err')}finally{btn.disabled=false}}
+$('#dest').onsubmit=async e=>{e.preventDefault();const b=$('#destGo'),m=$('#destMsg');
+  if(!target()){say(m,'Choose where backups go.','err');return}
+  if(!st||!st.on){startKit(b,m);return}
+  b.disabled=true;say(m,'Checking the new place…');
+  try{render(await(await post('/backup/target',where())).json());dirty=false;$('#skey').value='';say(m,'Backups go to '+st.where+' from now on.','ok')}catch(err){say(m,err.message,'err')}finally{b.disabled=false}};
+$('#newWords').onclick=()=>{$('#newConfirm').hidden=false;$('#newYes').focus()};
+$('#newNo').onclick=()=>{$('#newConfirm').hidden=true;$('#newWords').focus()};
+$('#newYes').onclick=()=>{$('#newConfirm').hidden=true;const w=where();w.target=st.target||'icloud';w.path=st.path||'';w.s3_url=st.s3_url||'';w.endpoint=st.endpoint||'';w.region=st.region||'';w.access_key='';w.secret_key='';
+  post('/backup/kit',w).then(r=>r.json()).then(showKit).catch(e=>say($('#destMsg'),e.message,'err'))};
+$('#print').onclick=()=>window.print();
+$('#wrote').onclick=()=>{$('#sheet').hidden=true;$('#check').hidden=false;$('#word').focus()};
+$('#showAgain').onclick=()=>{$('#check').hidden=true;$('#sheet').hidden=false;$('#wrote').focus()};
+$('#cancelKit').onclick=async()=>{if(kit)await post('/backup/kit/cancel',{kit:kit.kit}).catch(()=>{});endKit()};
+$('#check').onsubmit=async e=>{e.preventDefault();const b=$('#finish'),m=$('#checkMsg');b.disabled=true;say(m,'Checking…');
+  try{const s=await(await post('/backup/kit/finish',{kit:kit.kit,word:$('#word').value})).json();kit=null;$('#sheet').hidden=true;$('#check').hidden=true;$('#words').innerHTML='';$('#destBox').hidden=false;dirty=false;
+    render(s);say($('#nowMsg'),'Backups are on. The first one is running now.','ok');$('#live').textContent='Backups are on.';$('#statusH').tabIndex=-1;$('#statusH').focus()}
+  catch(err){say(m,err.message,'err');if(err.code==='kit_gone'){kit=null;$('#sheet').hidden=true;$('#words').innerHTML='';$('#check').querySelector('#finish').hidden=true;$('#showAgain').hidden=true;
+    const again=document.createElement('button');again.type='button';again.textContent='Start again';again.onclick=()=>{again.remove();$('#finish').hidden=false;$('#showAgain').hidden=false;endKit()};$('#check .actions').appendChild(again)}}
+  finally{b.disabled=false}};
+$('#now').onclick=async()=>{const b=$('#now');b.disabled=true;say($('#nowMsg'),'Starting…');
+  try{render(await(await post('/backup/now')).json());say($('#nowMsg'),'Backing up now. This page updates when it is done.','ok')}catch(e){say($('#nowMsg'),e.message,'err')}finally{b.disabled=!!(st&&st.running)}};
+setInterval(()=>{if(!kit&&!document.querySelector('main').classList.contains('gated')&&st&&st.running)loadAll()},5000);
+loadAll();
+</script></main></body></html>

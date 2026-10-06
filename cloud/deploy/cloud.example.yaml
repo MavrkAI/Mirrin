@@ -1,0 +1,61 @@
+# mirrin-cloud in production: the control-plane VM. Rendered by render.sh
+# from hosts/common.env and hosts/cp.env; installed as
+# /etc/mirrin-cloud/cloud.yaml. cloud/cloud.example.yaml documents every
+# field. Secrets are not here: each *_env is filled from a systemd
+# encrypted credential by with-credentials (mirrin-cloud.service).
+
+listen: 127.0.0.1:8787                 # Caddy terminates TLS in front
+trusted_proxies: ["127.0.0.1", "::1"]  # client addresses come from Caddy's X-Forwarded-For
+public_url: https://@@CLOUD_HOST@@
+data_dir: /var/lib/mirrin-cloud        # cloud.db, replicated by Litestream
+tenant_zone: @@TENANT_ZONE@@
+iodef: mailto:@@SECURITY_EMAIL@@
+
+# Every entitlement names both relays; their addresses are every handle's
+# A and AAAA records. Changing them is the relay IP migration runbook.
+relays:
+  - id: r1
+    url: wss://r1.relay.@@OPERATOR_ZONE@@/v1/tunnel
+    ips: [@@R1_IPV4@@, @@R1_IPV6@@]
+  - id: r2
+    url: wss://r2.relay.@@OPERATOR_ZONE@@/v1/tunnel
+    ips: [@@R2_IPV4@@, @@R2_IPV6@@]
+
+plan: cloud
+features: [reach, backup]
+backup_quota: 21474836480
+activations_per_week: 40
+link_starts_per_minute: 10
+link_starts_total_per_minute: 60
+device_requests_per_minute: 30
+acme_account_hosts: [acme-v02.api.letsencrypt.org]
+
+keys:
+  dir: $CREDENTIALS_DIRECTORY
+  entitlement: @@ENT_KID@@
+  denylist: @@DL_KID@@
+
+billing:
+  provider: paddle
+  paddle:
+    api_base: https://api.paddle.com
+    api_key_env: PADDLE_API_KEY
+    webhook_secret_env: PADDLE_WEBHOOK_SECRET
+    prices:
+      cloud: @@PADDLE_PRICE_ID@@
+
+dns:
+  provider: route53
+  route53:
+    hosted_zone_id: @@ROUTE53_HOSTED_ZONE_ID@@
+    access_key_env: ROUTE53_ACCESS_KEY_ID
+    secret_key_env: ROUTE53_SECRET_ACCESS_KEY
+
+storage:
+  provider: r2
+  r2:
+    endpoint: https://@@R2_ACCOUNT_ID@@.r2.cloudflarestorage.com
+    bucket: @@R2_BACKUP_BUCKET@@
+    region: auto
+    access_key_env: R2_ACCESS_KEY_ID
+    secret_key_env: R2_SECRET_ACCESS_KEY

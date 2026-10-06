@@ -1,0 +1,70 @@
+# mirrin-relay configuration. Check it with:
+#   mirrin-relay check-config --config /etc/mirrin-relay/relay.yaml
+# docs/relay-selfhost.md walks through a self-hosted relay end to end.
+
+# This relay's id: 1-32 of a-z 0-9 . _ -. Daemons sign their hello for it.
+id: r1
+
+# TLS on :443 is routed by SNI. Plain HTTP on :80 only ever answers with a
+# 308 to https. Set http_listen to "" to turn it off.
+listen: ":443"
+http_listen: ":80"
+
+# The one name this relay terminates TLS for: the tunnel endpoint
+# (wss://<control_hostname>/v1/tunnel), /v1/status, /healthz and
+# /v1/version. Point its A/AAAA records at this machine. Every other name
+# is spliced, still encrypted, to the daemon that holds it.
+control_hostname: relay.example.org
+
+# The control name's certificate comes from Let's Encrypt by TLS-ALPN-01 on
+# :443, for this name only, cached in state_dir. acme_email is optional.
+state_dir: /var/lib/mirrin-relay
+# acme_email: you@example.org
+# acme_directory: https://acme-v02.api.letsencrypt.org/directory
+#
+# Or bring your own certificate for the control name (restart after
+# renewing it):
+# cert_file: /etc/mirrin-relay/control.crt
+# key_file: /etc/mirrin-relay/control.key
+
+# Self-host mode: which device key may carry which hostname. On the twin's
+# machine, `mirrin reach use relay wss://relay.example.org/v1/tunnel
+# --hostname twin.example.org` prints this line with its key. A hostname
+# may be listed with several keys (an old and a new machine); the tunnel
+# that connected last holds it, and the other machine stands by.
+allow:
+  - hostname: twin.example.org
+    key: REPLACE-WITH-THE-KEY-FROM-mirrin-reach-use-relay
+
+# Hosted mode (Mirrin Cloud) replaces allow with these:
+# zones: [mirrin.link]
+# issuer_keys:
+#   - {kid: ent-2026a, key: <b64url Ed25519 public key>}
+#   - {kid: dl-2026a, key: <b64url Ed25519 public key>}
+# denylist_url: https://cloud.mirrin.app/v1/denylist
+# mirror_url: https://denylist.mirrin.app/denylist.paseto
+
+limits:
+  streams_per_tunnel: 64    # client connections one tunnel carries at once
+  bps: 20000000             # bits per second per tunnel, both directions; 0 is unlimited
+  hello_per_ip_per_min: 10  # tunnel attempts per address (IPv6 /64); 0 is unlimited
+  idle: 10m                 # a client connection with no bytes either way is cut
+
+abuse:
+  # A handle reached from more client networks (/24 or /48) than this in
+  # one UTC day is suspended for review. 0 turns the heuristic off.
+  # Suspensions are kept in state_dir/suspensions.json across restarts.
+  distinct_nets_per_day: 200
+  suspend_for: 168h
+  # Run on each suspension as `<command> <handle> <networks>`, with no
+  # shell and for at most 30 s, to tell you (a mail, a chat message).
+  # notify_command: /usr/local/bin/mirrin-relay-notify
+
+# Prometheus metrics (no per-handle labels) and /healthz. On loopback it
+# also serves /debug/connlog: the last 72 h of connections (client /24 or
+# /48, bytes, duration) and 30 days of hourly totals, for reading over SSH.
+metrics_listen: 127.0.0.1:9100
+
+conn_log:
+  entries: 1048576
+  hourly_entries: 1048576

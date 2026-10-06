@@ -1,0 +1,131 @@
+name: packaging
+# Builds the Mac app and disk image, the Windows setup program and the Docker
+# image the way the release does, and tries each one, whenever they change.
+# Nothing is signed with real credentials and nothing is published.
+on:
+  pull_request:
+    paths:
+      - Makefile
+      - install.sh
+      - install.ps1
+      - scripts/**
+      - packaging/**
+      - .github/workflows/release.yml
+      - .github/workflows/packaging.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: packaging-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  VERSION: v0.0.0-ci
+jobs:
+  macos:
+    name: Mac app and disk image
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with: { go-version-file: go.mod }
+      - run: scripts/release-macos.sh
+      - run: go run ./scripts/releasecheck -require darwin/amd64,darwin/arm64 dist
+      - name: The CLI and the universal app run
+        run: |
+          dist/mirrin-darwin-arm64 version
+          dist/Mirrin.app/Contents/MacOS/mirrin version
+          test "$(lipo -archs dist/Mirrin.app/Contents/MacOS/mirrin)" = "x86_64 arm64"
+          test -f "dist/Mirrin-$VERSION-macos.dmg"
+
+  windows:
+    name: Windows setup program
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with: { go-version-file: go.mod }
+      - name: Build mirrin-windows-amd64.exe as make dist-portable does
+        shell: bash
+        run: CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=$VERSION" -o dist/mirrin-windows-amd64.exe ./cmd/mirrin
+      - run: choco install innosetup -y --no-progress
+      - run: iscc packaging\windows\mirrin.iss
+      - name: It installs silently and runs
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'Mirrin'
+          Start-Process -Wait -FilePath "dist\Mirrin-$env:VERSION-windows-setup.exe" -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=$dir"
+          & (Join-Path $dir 'mirrin.exe') version
+          if ($LASTEXITCODE -ne 0) { throw "mirrin.exe version failed" }
+
+  docker:
+    name: Hosted-twin image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with: { go-version-file: go.mod }
+      - run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -o dist/mirrin-linux-amd64 ./cmd/mirrin
+      - run: docker build --platform linux/amd64 -f packaging/docker/Dockerfile -t mirrin-twin:ci .
+      # A bio with a colon and a '#' once crashed first boot; the health check
+      # once failed forever for want of the API token.
+      - name: It starts and turns healthy
+        run: |
+          docker run -d --name twin --health-interval 3s \
+            -e OPENAI_API_KEY=sk-ci-not-a-real-key -e "OWNER_ABOUT=Engineer: loves tea #1" mirrin-twin:ci
+          for _ in $(seq 1 40); do
+            [ "$(docker inspect -f '{{.State.Health.Status}}' twin)" = healthy ] && break
+            sleep 2
+          done
+          docker logs twin
+          docker exec twin grep -F 'about: "Engineer: loves tea #1"' /data/config.yaml
+          test "$(docker inspect -f '{{.State.Health.Status}}' twin)" = healthy
+      # What the release pushes to GHCR (release.yml, image): both platforms
+      # built with buildx, here with push off.
+      - run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o dist/mirrin-linux-arm64 ./cmd/mirrin
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+        with: { platforms: arm64 }
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Both platforms, as the release builds them (not pushed)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: packaging/docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: false
+          tags: ghcr.io/example/mirrin-twin:ci
+
+  voice:
+    name: Voice bundle (whisper-server and sox)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with: { go-version-file: go.mod }
+      - run: sudo apt-get update -q && sudo apt-get install -y -q cmake libasound2-dev
+      - run: make voice-bundle
+      - run: go run ./scripts/releasecheck -require voice/linux/amd64 dist
+      - name: The programs run from the unpacked bundle
+        run: |
+          mkdir "$RUNNER_TEMP/voice"
+          tar -xzf dist/mirrin-voice-linux-amd64.tar.gz -C "$RUNNER_TEMP/voice"
+          "$RUNNER_TEMP/voice/mirrin-voice/sox" --version
+          "$RUNNER_TEMP/voice/mirrin-voice/whisper-server" --help >/dev/null
+          ldd "$RUNNER_TEMP/voice/mirrin-voice/whisper-server" "$RUNNER_TEMP/voice/mirrin-voice/sox"
+
+  source:
+    name: Licence notices and source archive
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with: { go-version-file: go.mod }
+      - run: go run ./scripts/licenses -versions -o "$RUNNER_TEMP/THIRD_PARTY_NOTICES.txt"
+      # The release's source archive, with every dependency, must build with
+      # nothing else: no network, no module cache.
+      - name: The source archive builds on its own
+        run: |
+          scripts/source-archive.sh "$VERSION" "$RUNNER_TEMP/Mirrin-$VERSION-source.tar.gz"
+          mkdir "$RUNNER_TEMP/unpacked"
+          tar -xzf "$RUNNER_TEMP/Mirrin-$VERSION-source.tar.gz" -C "$RUNNER_TEMP/unpacked"
+          cd "$RUNNER_TEMP/unpacked/Mirrin-$VERSION-source"
+          GOFLAGS=-mod=vendor GOPROXY=off GOMODCACHE="$RUNNER_TEMP/empty" CGO_ENABLED=0 go build -o /dev/null ./cmd/mirrin

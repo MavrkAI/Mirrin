@@ -1,0 +1,11 @@
+name: Feature request
+description: Something the twin should be able to do
+labels: [enhancement]
+body:
+  - type: textarea
+    id: story
+    attributes: { label: The moment, description: "Describe the moment you wanted it, as a story: where you were, what you said, what should have happened." }
+    validations: { required: true }
+  - type: dropdown
+    id: kind
+    attributes: { label: Probably a…, options: [protocol (YAML, no code), custom tool (a script), skill (Go), channel, persona, something else] }

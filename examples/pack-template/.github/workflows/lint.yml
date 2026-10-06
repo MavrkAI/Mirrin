@@ -1,0 +1,24 @@
+name: lint protocols
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The released mirrin, checked against its release's SHA256SUMS. Add
+      # MIRRIN_VERSION: v0.3.0 (say) under env to keep lint on one release.
+      - name: Install Mirrin
+        shell: bash # -o pipefail: if the download fails, so does this step
+        run: curl -fsSL https://raw.githubusercontent.com/MavrkAI/Mirrin/main/install.sh | sh
+        env:
+          MIRRIN_BIN_DIR: ${{ runner.temp }}/bin
+          MIRRIN_NO_MODIFY_PATH: "1"
+      - name: Lint every protocol in this pack
+        run: |
+          # A throwaway twin: no keys, no channels, nothing from anyone's machine.
+          export MIRRIN_HOME="$RUNNER_TEMP/mirrin-home" PATH="$RUNNER_TEMP/bin:$PATH"
+          mkdir -p "$MIRRIN_HOME"
+          printf 'channels:\n  whatsapp: { enabled: false }\n' >"$MIRRIN_HOME/config.yaml"
+          mirrin protocols lint .

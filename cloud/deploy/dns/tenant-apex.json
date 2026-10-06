@@ -1,0 +1,18 @@
+{
+  "Comment": "The tenant zone's apex: no CA may issue for the zone itself or any wildcard in it. Per-handle CAA records, written by mirrin-cloud, allow only the handle's own ACME account.",
+  "Changes": [
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "@@TENANT_ZONE@@.",
+        "Type": "CAA",
+        "TTL": 3600,
+        "ResourceRecords": [
+          {"Value": "0 issue \";\""},
+          {"Value": "0 issuewild \";\""},
+          {"Value": "0 iodef \"mailto:@@SECURITY_EMAIL@@\""}
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Set up voice</title>
+<style>
+/* ---- shared by every settings page (keep the copies identical; pagetest checks) ---- */
+:root{color-scheme:light dark;--bg:#0f1115;--fg:#e8e8ea;--muted:#8b8f98;--card:#171a21;--line:#262a33;--edge:#646a7a;--accent:#7aa2ff;--on-accent:#000;--ok:#3ddc84;--warn:#f5c542;--fail:#ff6b6b;--off:#5c6270}
+@media (prefers-color-scheme: light){:root{--bg:#f6f7f9;--fg:#14161a;--muted:#5f6470;--card:#fff;--line:#e3e6eb;--edge:#80868f;--accent:#2f5bd3;--on-accent:#fff;--ok:#137a43;--warn:#8a5a00;--fail:#c62828;--off:#9aa0aa}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,system-ui,sans-serif;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+[hidden]{display:none!important}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,textarea,select{font-size:16px}::placeholder{color:var(--muted);opacity:1}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+button{background:transparent;border:1px solid var(--edge);color:var(--fg);border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit;min-height:36px}
+button.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}button:disabled{opacity:.55;cursor:default}
+.gate{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 20px;margin:8px 0 20px}
+.gate h1{margin:0 0 6px}.gate p{color:var(--muted);margin:0 0 14px}
+main.gated>:not(#gate){display:none!important}#gateNote:empty{display:none}
+.state{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;color:var(--muted);margin-bottom:8px}
+.state.err{color:var(--fg);border-color:var(--fail);margin-bottom:16px}.state.err strong{display:block;color:var(--fail)}.state.err button{margin-top:10px}
+.msg{font-size:13px}.msg.err{color:var(--fail)}.msg.ok{color:var(--ok)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.pagenav{display:flex;gap:1.1rem;align-items:center;overflow-x:auto;scrollbar-width:none;white-space:nowrap;border-bottom:1px solid var(--line);margin:0 0 1.2rem;padding:.2rem 0 .6rem;-webkit-mask-image:linear-gradient(to right,#000 88%,transparent);mask-image:linear-gradient(to right,#000 88%,transparent)}
+.pagenav::-webkit-scrollbar{display:none}.pagenav a{text-decoration:none;color:var(--muted);font-size:.9rem;padding:.35rem 0;flex:0 0 auto}.pagenav a:hover{color:var(--fg)}
+@media (min-width:760px){.pagenav{flex-wrap:wrap;row-gap:.2rem;overflow:visible;-webkit-mask-image:none;mask-image:none}}
+.pagenav a[aria-current="page"]{color:var(--fg);font-weight:600;box-shadow:inset 0 -2px 0 var(--accent)}.pagenav .home{color:var(--accent);font-weight:600}
+/* ---- end of shared ---- */
+/* this page */
+main{max-width:720px;margin:0 auto;padding:24px 16px 64px}h1{font-size:22px;margin:0 0 4px}.sub{color:var(--muted);margin:0 0 20px}
+.steps{list-style:none;margin:0 0 16px;padding:0}
+.steps li{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px}
+.steps li>div{min-width:0;overflow-wrap:anywhere}
+.dot{width:12px;height:12px;border-radius:50%;margin-top:6px;flex:0 0 12px;background:var(--off)}.dot.run{background:var(--accent)}.dot.ok{background:var(--ok)}.dot.fail{background:var(--fail)}
+@media (prefers-reduced-motion:no-preference){.dot.run{animation:pulse 1.2s ease-in-out infinite}@keyframes pulse{50%{opacity:.35}}}
+.label{font-weight:600}.notes{color:var(--muted)}
+.actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px}
+</style></head><body><main>
+<section id="gate" class="gate" role="alert" hidden><h1>This device isn't paired</h1><p id="gateHint"></p><p id="gatePair" hidden><a href="/devices/add">Pair this device</a></p><p class="msg" id="gateNote"></p><button type="button" class="primary" id="gateRetry">Try again</button></section>
+<h1>Set up <span data-name>Mirrin</span>'s voice</h1><p class="sub">Hearing, a natural voice and the wake word, all working offline on this computer. The first time, this downloads about 850 MB; if it stops, press the button again and it picks up where it left off.</p>
+<div id="problem" class="state err" role="alert" hidden><strong>Couldn’t load everything</strong><span id="problemText"></span><div><button type="button" id="problemRetry">Try again</button></div></div>
+<p class="state" id="status" role="status">Checking…</p>
+<ol class="steps" id="steps" aria-label="Setup steps"></ol>
+<div class="actions"><button type="button" class="primary" id="start">Set up voice</button><span class="msg" id="startMsg" role="status"></span></div>
+<script>
+/* ---- shared by every settings page (keep the copies identical; pagetest checks) ---- */
+// Every request goes through api(), which puts each way a request can fail
+// into plain words, and shows "This device isn't paired" when that is why.
+const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function twinName(){try{const n=localStorage.getItem('antbot.name');if(n)return n}catch{}const m=document.querySelector('meta[name="mirrin-name"]');return (m&&m.content)||'Mirrin'}
+for(const el of document.querySelectorAll('[data-name]'))el.textContent=twinName();
+const PAGE_TITLE=document.title=twinName()+' · '+document.title;
+const FRIENDLY={not_paired:"This device isn't paired.",passkey_required:'This needs Face ID or Touch ID, which this device has not set up.',forbidden:"This device isn't allowed to do that."};
+async function problem(res){let raw='';try{raw=(await res.text()).trim()}catch{}let code='',hint='',msg='',pair='';
+  try{const j=JSON.parse(raw);if(j&&typeof j==='object'){code=String(j.error||'');hint=String(j.hint||j.fix||'').replace(/`/g,'');msg=String(j.message||'');pair=String(j.pair_url||'')}}catch{}
+  const plain=!code&&raw&&raw.length<300&&!raw.startsWith('<')?raw:'';
+  if(!/^\/[^/\\]/.test(pair))pair='';
+  return{status:res.status,code,hint,pair,text:(msg&&hint?msg+' '+hint:msg)||hint||FRIENDLY[code]||(res.status===401?FRIENDLY.not_paired:plain)||(code?code.replace(/_/g,' '):'')||'Something went wrong (error '+res.status+').'}}
+async function api(url,opts){
+  const o=Object.assign({},opts);o.headers=Object.assign({Accept:'application/json'},opts&&opts.headers);let res;
+  try{res=await fetch(url,o)}catch{throw Object.assign(new Error("Can't reach "+twinName()+". Check that it is running on this computer, then try again."),{offline:true})}
+  if(res.ok){if(document.querySelector('main').classList.contains('gated'))ungate();return res}
+  const p=await problem(res);
+  if(res.status===401){
+    // A page can be paired while one of its buttons isn't allowed yet; only a refused page load means the device is signed out.
+    if(p.code!=='not_paired'&&o.method&&o.method!=='GET'){const pr=await fetch(PROBE,{headers:{Accept:'application/json'}}).catch(()=>null);if(pr&&pr.ok)throw Object.assign(new Error(FRIENDLY.forbidden),{forbidden:true})}
+    gate(p);throw Object.assign(new Error(p.text),{unpaired:true})}
+  throw Object.assign(new Error(p.text),{status:res.status,code:p.code})}
+const getJSON=async u=>(await api(u)).json();
+const post=(u,b)=>api(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})});
+let retrying=false;
+function gate(p){$('#gateHint').textContent=(p&&p.hint)||'Open this page again from the menu bar icon on the computer '+twinName()+' runs on.';
+  // On this computer the twin sends where to pair (pair_url); elsewhere the hint names `mirrin pair --screen`.
+  $('#gatePair').hidden=!(p&&p.pair);if(p&&p.pair)$('#gatePair a').href=p.pair;
+  say($('#gateNote'),retrying?'Still not paired. Pair this device, then try again.':'','err');$('#gate').hidden=false;document.querySelector('main').classList.add('gated');document.title=twinName()+' · Not paired'}
+function ungate(){$('#gate').hidden=true;say($('#gateNote'),'');document.querySelector('main').classList.remove('gated');document.title=PAGE_TITLE}
+// failed says why the page (or part of it) didn't load, with a Try again; recovered clears it.
+function failed(e){if(e&&e.unpaired)return;$('#problemText').textContent=e.message;$('#problem').hidden=false;for(const l of document.querySelectorAll('.loading'))l.hidden=true}
+function recovered(){$('#problem').hidden=true;for(const l of document.querySelectorAll('.loading'))l.hidden=false}
+function say(el,text,kind){el.className='msg'+(kind?' '+kind:'');el.textContent=text||''}
+// A button that is busy (disabled) drops keyboard focus to the page; it gets it back when it is ready again.
+let lastFocus=null;document.addEventListener('focusin',e=>{lastFocus=e.target});
+new MutationObserver(ms=>{for(const m of ms){const b=m.target;if(b===lastFocus&&!b.disabled&&b.isConnected&&(!document.activeElement||document.activeElement===document.body))b.focus({preventScroll:true})}}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['disabled']});
+// Try again checks in place: a reload would show the API's bare refusal instead of this card.
+$('#gateRetry').onclick=async()=>{if(retrying)return;retrying=true;say($('#gateNote'),'Checking…');try{await loadAll()}finally{retrying=false}};$('#problemRetry').onclick=()=>loadAll();
+// One way round every page: back to the screen, then each settings page.
+(()=>{const m=document.querySelector('main');if(!m||document.body.dataset.nav==='off')return;
+  const P=[['/ui','← Screen'],['/memory','Memory'],['/channels','Channels'],['/accounts','Accounts'],['/devices/add','Add your phone'],['/devices/page','Devices'],['/reach','Reach'],['/backup','Backup'],['/trust','Trust'],['/spending','Spending'],['/protocols','Routines'],['/voice/setup','Voice'],['/health','Health']];
+  const n=document.createElement('nav');n.className='pagenav';n.setAttribute('aria-label','Pages');
+  n.innerHTML=P.map(([h,t],i)=>`<a href="${h}"${i===0?' class="home"':''}${location.pathname===h?' aria-current="page"':''}>${t}</a>`).join('');
+  m.prepend(n);const c=n.querySelector('[aria-current]');if(c&&n.scrollWidth>n.clientWidth)c.scrollIntoView({block:'nearest',inline:'nearest'});})();
+/* ---- end of shared ---- */
+const PROBE='/voice/setup/status';
+const LABELS=['Hearing','Voice','Wake word'];
+const WAIT={Hearing:'So it understands you (Whisper).',Voice:'So it answers out loud (Kokoro).','Wake word':'So you can just say its name.'};
+let running=false;
+function show(steps){
+  const byLabel={};for(const s of steps||[])byLabel[s.label]=s;
+  const labels=LABELS.concat(Object.keys(byLabel).filter(l=>!LABELS.includes(l)));
+  $('#steps').innerHTML=labels.map(l=>{const s=byLabel[l];const cls=!s?'':s.running?'run':s.ok?'ok':'fail';const word=!s?'waiting':s.running?'working on it':s.ok?'done':'didn’t finish';
+    return `<li><span class="dot ${cls}" aria-hidden="true"></span><div><div class="label">${esc(l)} <span class="sr">(${word})</span></div><div class="notes">${esc(s&&s.notes||(s&&s.running?'Working on it…':WAIT[l]||''))}</div></div></li>`}).join('');
+}
+let seen={};
+function step(s){seen[s.label]=s;show(Object.values(seen))}
+async function loadAll(){
+  try{const st=await getJSON('/voice/setup/status');recovered();
+    $('#status').textContent=st.running?'Setup is running. This page shows it when it finishes.':st.ready?'Voice is set up. Run it again to repair or update it.':'Voice isn’t set up yet.';
+    if(!running&&!Object.keys(seen).length)show([]);
+  }catch(e){failed(e)}
+}
+// read streams the setup's events: a step as each starts and ends, then done (or error).
+async function read(res,on){
+  const rd=res.body.getReader(),dec=new TextDecoder();let buf='';
+  for(;;){const {value,done}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});
+    let i;while((i=buf.indexOf('\n\n'))>=0){const block=buf.slice(0,i);buf=buf.slice(i+2);let ev='message',data='';
+      for(const line of block.split('\n')){if(line.startsWith('event: '))ev=line.slice(7);else if(line.startsWith('data: '))data+=line.slice(6)}
+      try{on(ev,JSON.parse(data))}catch{}}}
+}
+$('#start').onclick=async()=>{
+  if(running)return;running=true;seen={};show([]);const b=$('#start');b.disabled=true;say($('#startMsg'),'Setting up… keep this page open to watch; closing it doesn’t stop it.');
+  let finished=false;
+  try{const res=await api('/voice/setup',{method:'POST'});
+    await read(res,(ev,d)=>{
+      if(ev==='step')step(d);
+      else if(ev==='done'){finished=true;show(d.steps);say($('#startMsg'),d.ok?'All set. Say “Hey '+twinName()+'”, or press the orb and speak.':'Something above didn’t finish. Fix what it says, then press Set up voice again; it keeps what’s already done.',d.ok?'ok':'err')}
+      else if(ev==='error'){finished=true;say($('#startMsg'),d.error||'Voice setup stopped.','err')}
+    });
+    if(!finished)say($('#startMsg'),'The connection dropped before setup finished. It carries on; reload this page in a minute.','err');
+  }catch(e){if(!e.unpaired)say($('#startMsg'),e.message,'err')}
+  finally{running=false;b.disabled=false;loadAll()}
+};
+loadAll();
+</script></main></body></html>

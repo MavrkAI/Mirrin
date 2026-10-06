@@ -1,0 +1,4 @@
+# The "Hey Maverick" wake-word model stays out of source archives
+# (scripts/source-archive.sh), as it stays out of release builds: its
+# training data isn't cleared for commercial use (docs/wake-word.md).
+internal/channels/voice/assets/hey_maverick.onnx export-ignore

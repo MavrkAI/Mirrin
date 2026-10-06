@@ -1,0 +1,4 @@
+# The minisign public key the published index.json is checked against.
+# A maintainer makes the key pair once (see README.md) and replaces this
+# comment with the two lines of the .pub file. Until then, Mirrin trusts only
+# the index built into it.

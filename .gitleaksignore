@@ -1,0 +1,89 @@
+# What gitleaks flags here that is no secret: published test vectors, keys
+# derived from published test phrases and seeds, fakes the tests plant to
+# prove they never leak, and names of settings. Each was checked by hand.
+#
+# A line is file:rule:line, so an edit that moves a vector makes the scan
+# fail again. Check the finding is the same vector before updating its line,
+# and never list a real key: rotate it instead.
+
+# PASETO's published test vectors (paseto-standard/test-vectors).
+internal/entitle/testdata/paseto-v3.json:generic-api-key:98
+internal/entitle/testdata/paseto-v3.json:private-key:99
+internal/entitle/testdata/paseto-v3.json:generic-api-key:110
+internal/entitle/testdata/paseto-v3.json:private-key:111
+internal/entitle/testdata/paseto-v3.json:generic-api-key:122
+internal/entitle/testdata/paseto-v3.json:private-key:123
+internal/entitle/testdata/paseto-v3.json:generic-api-key:134
+internal/entitle/testdata/paseto-v3.json:private-key:135
+internal/entitle/testdata/paseto-v4-public.json:generic-api-key:98
+internal/entitle/testdata/paseto-v4-public.json:generic-api-key:99
+internal/entitle/testdata/paseto-v4-public.json:private-key:100
+internal/entitle/testdata/paseto-v4-public.json:generic-api-key:111
+internal/entitle/testdata/paseto-v4-public.json:generic-api-key:112
+internal/entitle/testdata/paseto-v4-public.json:private-key:113
+internal/entitle/testdata/paseto-v4-public.json:generic-api-key:124
+internal/entitle/testdata/paseto-v4-public.json:generic-api-key:125
+internal/entitle/testdata/paseto-v4-public.json:private-key:126
+internal/entitle/testdata/paseto-v4-public.json:generic-api-key:137
+internal/entitle/testdata/paseto-v4-public.json:generic-api-key:138
+internal/entitle/testdata/paseto-v4-public.json:private-key:139
+
+# The backup golden vectors: age identities derived from BIP-39's own test
+# phrases ("legal winner thank year ..." and "abandon ... about").
+docs/backup-format.md:age-secret-key:92
+docs/backup-format.md:age-secret-key:107
+
+# The relay hello known-answer test, from the public seed 32 x 0x01 and
+# status key 32 x 0x33 (docs/relay-protocol.md section 8).
+docs/relay-protocol.md:generic-api-key:340
+internal/relay/wire/wire_test.go:generic-api-key:58
+internal/relay/wire/wire_test.go:generic-api-key:60
+
+# RFC 9421's example Ed25519 key (appendix B.1.4).
+internal/httpsig/testdata/rfc9421-b26.txt:private-key:16
+
+# RFC 8291's example push subscription (section 5), used by the push tests.
+internal/push/testdata/rfc8291.json:generic-api-key:7
+internal/push/testdata/rfc8291.json:generic-api-key:10
+internal/api/push_test.go:generic-api-key:42
+internal/api/push_test.go:generic-api-key:43
+internal/daemon/browserlive_test.go:generic-api-key:83
+internal/daemon/browserlive_test.go:generic-api-key:84
+internal/api/pages_test.go:generic-api-key:334
+internal/api/pages_test.go:generic-api-key:335
+internal/daemon/browserlive_test.go:generic-api-key:51
+internal/daemon/browserlive_test.go:generic-api-key:52
+internal/daemon/push_test.go:generic-api-key:19
+internal/daemon/push_test.go:generic-api-key:20
+internal/daemon/push_test.go:generic-api-key:76
+internal/daemon/push_test.go:generic-api-key:77
+internal/daemon/stepup_test.go:generic-api-key:97
+internal/daemon/stepup_test.go:generic-api-key:98
+
+# AWS's SigV4 test suite, with its documented example credentials.
+internal/sigv4/testdata/aws-signing-test-suite/v4/get-vanilla-with-session-token/context.json:generic-api-key:5
+internal/sigv4/testdata/aws4_testsuite/get-vanilla-with-session-token/get-vanilla-with-session-token.authz:generic-api-key:1
+internal/sigv4/testdata/aws4_testsuite/get-vanilla-with-session-token/get-vanilla-with-session-token.creq:generic-api-key:6
+internal/sigv4/testdata/aws4_testsuite/get-vanilla-with-session-token/get-vanilla-with-session-token.sreq:generic-api-key:4
+internal/sigv4/testdata/aws4_testsuite/get-vanilla-with-session-token/get-vanilla-with-session-token.sreq:generic-api-key:5
+internal/sigv4/testdata/aws4_testsuite/post-sts-token/post-sts-header-before/post-sts-header-before.authz:generic-api-key:1
+internal/sigv4/testdata/aws4_testsuite/post-sts-token/post-sts-header-before/post-sts-header-before.sreq:generic-api-key:5
+
+# Fakes the tests plant to prove a report, log, snapshot or page never
+# shows them, and a local MinIO's throwaway login.
+cmd/mirrin/report_test.go:generic-api-key:198
+internal/logs/report_test.go:generic-api-key:27
+internal/backup/helpers_test.go:generic-api-key:22
+internal/backup/helpers_test.go:generic-api-key:53
+internal/backup/s3_integration_test.go:curl-auth-user:7
+internal/agent/brain_test.go:private-key:126
+internal/api/pagetest/accounts_model_test.go:generic-api-key:61
+internal/protocols/lint_test.go:aws-access-token:56
+cloud/internal/server/server_test.go:generic-api-key:379
+
+# Not keys: names of settings and an example id in a hint.
+internal/backup/target_s3.go:generic-api-key:111
+internal/config/backup.go:generic-api-key:66
+internal/daemon/pages.go:generic-api-key:257
+internal/heartbeat/schedule.go:generic-api-key:91
+internal/config/connectors.go:discord-client-id:148

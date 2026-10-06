@@ -1,0 +1,37 @@
+# Litestream: continuous replication of cloud.db to R2
+# (docs/cloud-design.md §10, §15). Rendered by render.sh; installed as
+# /etc/litestream.yml. The credentials are environment variables filled
+# from systemd encrypted credentials (litestream.service), which Litestream
+# expands here itself: $VAR below is Litestream's, not render.sh's.
+#
+# What the replica holds is exactly what cloud.db holds: public keys,
+# handles, billing status and backup sizes. No email, no IP address.
+#
+# Restore: restore-drill.sh (a drill, into a scratch path) or
+# restore-drill.sh --production (a fresh VM). cloud/ops/RUNBOOK.md,
+# "Litestream restore drill".
+
+# Prometheus metrics on loopback; the watcher checks that it answers.
+addr: 127.0.0.1:9090
+
+dbs:
+  - path: /var/lib/mirrin-cloud/cloud.db
+    monitor-interval: 1s
+    replicas:
+      - name: r2
+        type: s3
+        endpoint: https://@@R2_ACCOUNT_ID@@.r2.cloudflarestorage.com
+        region: auto
+        bucket: @@R2_LITESTREAM_BUCKET@@
+        path: cloud.db
+        force-path-style: true
+        access-key-id: $LITESTREAM_ACCESS_KEY_ID
+        secret-access-key: $LITESTREAM_SECRET_ACCESS_KEY
+        # At most a second of writes can be lost with the VM.
+        sync-interval: 1s
+        # A daily snapshot, and a week of history to restore to any point in.
+        snapshot-interval: 24h
+        retention: 168h
+        # Litestream restores a copy and compares it with the live
+        # database twice a day, and logs any mismatch.
+        validation-interval: 12h

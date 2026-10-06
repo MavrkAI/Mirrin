@@ -1,0 +1,480 @@
+<!doctype html>
+<!--
+  protocols.html: the Protocols page. What a protocol is, the six starters,
+  writing one, packs and the registry, what keeps it safe, and how to
+  contribute. Shares site.css with the other pages.
+
+  TRUTH. Every claim is true of the code (internal/protocols, internal/heartbeat,
+  internal/skills/protocols, cmd/mirrin) or of docs/protocols/*. The page is
+  for people writing routines, so it shows commands and YAML, but it doesn't
+  cite source files or functions. site_test.go checks that:
+    - the example between the example markers is examples/protocols/
+      morning-briefing.yaml, word for word;
+    - the gallery has one card per file in examples/protocols, with that
+      file's description, schedule and requires;
+    - the rain check between the rain-check markers is the one in
+      docs/protocols/quickstart.md;
+    - every `mirrin` command here is one cmd/mirrin has (`mirrin protocols
+      <sub>` must be a case in protocolsCmd), and every flag;
+    - every link into the repository (docs/protocols/*.md and the rest)
+      points at a file, and a heading, that exists.
+  The registry's signing key isn't in the repository yet (registry/
+  minisign.pub holds only comments), so the signed index is "Planned" and
+  each release answers from its built-in copy. Limiting what a pack may
+  reach is planned too (docs/protocols/security.md). A pack in its own
+  repository is under its author's licence: never call packs MIT.
+
+  STATUS CHIPS use the home page's vocabulary (site/README.md, "How the truth
+  is kept"); TestStatusChips holds this page to it.
+
+  PRODUCT NAME TOKEN
+  The name renders as "Mirrin". Change it in the <title>, the meta tags,
+  aria-label="Mirrin home", and every <span class="pn" translate="no">Mirrin</span>.
+       Count: grep -o 'class="pn"' protocols.html | wc -l
+              prints 8 today: 6 in the page and 2 in this comment.
+  The swap command in README.md, "The product name token", covers this page.
+  `mirrin`, `~/.mirrin` and mirrin-pack-<name> are the CLI, its folder and
+  the pack naming convention, outside the token.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mirrin protocols: routines anyone can write</title>
+<link rel="canonical" href="https://mirrin.app/protocols.html">
+<meta name="description" content="A protocol is one YAML file: a routine your Mirrin twin runs on a schedule or when you ask. The six starters, writing one, packs and keeping it safe.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0c0f1c">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://mirrin.app/protocols.html">
+<meta property="og:locale" content="en_GB">
+<meta property="og:site_name" content="Mirrin">
+<meta property="og:title" content="Mirrin protocols: routines anyone can write">
+<meta property="og:description" content="One YAML file, a routine your twin runs on a schedule or when you ask. Write one in ten minutes, share it in a pack, and install other people's.">
+<meta property="og:image" content="https://mirrin.app/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Mirrin, a gentleman in a dinner jacket, beside the line: An AI of your own, living on your own machine.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mirrin protocols: routines anyone can write">
+<meta name="twitter:description" content="One YAML file, a routine your twin runs on a schedule or when you ask. Write one in ten minutes, share it in a pack, and install other people's.">
+<meta name="twitter:image" content="https://mirrin.app/assets/og.png">
+<meta name="twitter:image:alt" content="Mirrin, a gentleman in a dinner jacket, beside the line: An AI of your own, living on your own machine.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preload" href="assets/fonts/newsreader.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/colophon-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="site.css">
+<script>document.documentElement.classList.add('js');try{if(localStorage.getItem('theme')==='light'){document.documentElement.setAttribute('data-theme','light');document.querySelector('meta[name="theme-color"]').content='#f7f8fc'}}catch(e){}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<svg class="defs" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="g-brand" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3ddc84"/><stop offset="1" stop-color="#7aa2ff"/></linearGradient>
+  </defs>
+  <symbol id="i-mark" viewBox="0 0 32 32"><rect width="32" height="32" rx="7.5" fill="#161a45"/><g transform="translate(3 3) scale(0.26)"><g fill="none" stroke-width="11" stroke-linecap="round"><path d="M18.5 80V58a14.75 14.75 0 0 1 29.5 0V80" stroke="#ffffff"/><path d="M52 80V58a14.75 14.75 0 0 1 29.5 0V80" stroke="#9ea4ff"/></g><circle cx="33.25" cy="25" r="8" fill="#ffffff"/><circle cx="66.75" cy="25" r="8" fill="#9ea4ff"/></g></symbol>
+  <symbol id="i-ext" viewBox="0 0 16 16"><path d="M5 3h8v8M13 3 3.5 12.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+</svg>
+
+<header class="mast">
+  <div class="wrap mast-in">
+    <a class="brand" href="index.html" aria-label="Mirrin home"><svg aria-hidden="true"><use href="#i-mark"/></svg><span class="pn" translate="no">Mirrin</span></a>
+    <span class="runhead">Protocols</span>
+    <nav class="nav" aria-label="Primary">
+      <ul>
+        <li><a href="index.html">The twin</a></li>
+        <li><a href="index.html#install">Install</a></li>
+        <li><a href="protocols.html" aria-current="page">Protocols</a></li>
+        <li><a href="cloud.html">Cloud<span class="sr-only">,</span><span class="tag">planned</span></a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin">GitHub</a></li>
+      </ul>
+    </nav>
+    <button class="theme" type="button" aria-pressed="true">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg>
+      <span>Dark theme</span>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="wrap hero cloud-hero" aria-labelledby="hero-h">
+  <p class="kicker"><span>Protocols</span><span class="st">Available now</span></p>
+  <h1 id="hero-h" class="h1-cloud">Routines your twin runs, one file each.</h1>
+  <div class="prose">
+    <p class="lead">A protocol is a routine for your twin: a short text file that says when to run and, in plain words, what to check, what matters and what to say. Your twin runs it on a schedule or when you ask. There's no code to write, so anyone can make one, share it, and install someone else's.</p>
+  </div>
+  <dl class="spec">
+    <div><dt>Format</dt><dd>One YAML file</dd></div>
+    <div><dt>Runs</dt><dd>On a schedule, or when you ask</dd></div>
+    <div><dt>Comes with</dt><dd>Six starters</dd></div>
+    <div><dt>Shared as</dt><dd>Packs, in git</dd></div>
+  </dl>
+  <div class="ctas">
+    <a class="btn primary" href="#first">Write your first one</a>
+    <a class="btn quiet" href="https://github.com/MavrkAI/Mirrin/blob/main/docs/protocols/README.md">The protocol docs<svg aria-hidden="true"><use href="#i-ext"/></svg></a>
+  </div>
+</section>
+
+<nav class="wrap toc" aria-labelledby="toc-h" style="--rows:3">
+  <div class="toc-head"><h2 id="toc-h" class="label">Contents</h2><span class="label">Protocols</span></div>
+  <ol>
+    <li><a href="#file"><span class="n">1</span><span class="t">One file, one routine</span><span class="k">Format</span></a></li>
+    <li><a href="#starters"><span class="n">2</span><span class="t">Six to start with</span><span class="k">Starters</span></a></li>
+    <li><a href="#first"><span class="n">3</span><span class="t">Write your first one</span><span class="k">Quickstart</span></a></li>
+    <li><a href="#packs"><span class="n">4</span><span class="t">Packs and the registry</span><span class="k">Sharing</span></a></li>
+    <li><a href="#safety"><span class="n">5</span><span class="t">Your approvals still apply</span><span class="k">Safety</span></a></li>
+    <li><a href="#contribute"><span class="n">6</span><span class="t">Three ways in</span><span class="k">Contributing</span></a></li>
+  </ol>
+</nav>
+
+<section class="wrap" id="file" aria-labelledby="file-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">1</span>Format</span><span class="st">Available now</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>1</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="file-h">One file, one routine.</h2>
+        <div class="prose">
+          <p>This is a whole protocol: the morning briefing every new install starts with, exactly as it ships.</p>
+        </div>
+        <div class="code pcode">
+          <div class="code-bar"><span>morning-briefing.yaml</span><span>the whole file · ships with it</span></div>
+          <!-- example:start -->
+          <pre tabindex="0"><code><span class="k">name:</span> morning briefing
+<span class="k">description:</span> The day at a glance, delivered before the user asks.
+<span class="k">version:</span> 1.0.0
+<span class="k">author:</span> <span class="pn" translate="no">Mirrin</span>
+<span class="k">tags:</span> [briefing, daily]
+<span class="k">requires:</span> [reminders]
+<span class="k">schedule:</span> <span class="s">"0 7 * * *"</span>
+<span class="k">prompt:</span> |
+  Prepare the morning briefing. Check today's calendar and any reminders due today.
+  If email is available, note anything from the last 12 hours that needs a reply or a decision.
+  Deliver it as a short message: greeting, the day's shape in two or three lines,
+  then anything that needs a decision. Skip sections that are empty. If there is truly nothing
+  (no events, no reminders, no mail), reply NOTHING_TO_REPORT.</code></pre>
+          <!-- example:end -->
+        </div>
+        <div class="prose">
+          <ul class="facts">
+            <li><strong><code>name</code></strong> is what you say to run it: “run morning briefing”.</li>
+            <li><strong><code>schedule</code></strong> is when it runs, as cron in your own time zone: <code>0 7 * * *</code> is every day at 7:00. Leave it empty and the protocol runs only when you ask. If the computer is asleep when one is due, it runs once when it wakes, as long as that's within 12 hours.</li>
+            <li><strong><code>requires</code></strong> names the skills or tools the prompt relies on (<code>reminders</code>, <code>email</code>, <code>calendar</code>, <code>web</code> and so on), so anyone can see what it needs before they install it.</li>
+            <li><strong><code>prompt</code></strong> is the brief, written to your twin the way you'd brief a colleague. It can use every tool you've connected, under your approvals.</li>
+            <li><strong><code>NOTHING_TO_REPORT</code></strong> is how a routine stays quiet. When a scheduled run has nothing worth saying, your twin replies with it and you hear nothing.</li>
+            <li><strong><code>vars</code></strong> (this one has none) are the parts each person fills in, used as <code>{{city}}</code> in the prompt, with values kept in <code>~/.mirrin/protocols/vars.yaml</code>.</li>
+          </ul>
+          <p>If a routine can't run, or still needs a setting, your twin tells you in plain words what to do: once a day for a scheduled run, every time for one you started.</p>
+          <p class="after">Every field, schedule rule and message: <a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/protocols/reference.md">the protocol reference</a>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="starters" aria-labelledby="starters-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">2</span>Starters</span><span class="st">Available now</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>2</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="starters-h">Six to start with.</h2>
+        <div class="prose">
+          <p>Every new install starts with these six in <code>~/.mirrin/protocols</code>. Two run on a schedule; four wait until you ask. Change them, turn them off or delete them: they're your files.</p>
+        </div>
+        <ul class="pgal">
+          <li class="pstarter" data-protocol="morning briefing">
+            <h3>morning briefing</h3>
+            <p class="pdesc">“The day at a glance, delivered before the user asks.”</p>
+            <p>Today's calendar and reminders and, if email is connected, anything from the last 12 hours that needs a reply or a decision. Quiet when there's nothing.</p>
+            <dl><div><dt>When</dt><dd>Every day at 7:00 <code>0 7 * * *</code></dd></div><div><dt>Needs</dt><dd><code>reminders</code></dd></div></dl>
+          </li>
+          <li class="pstarter" data-protocol="evening wrap">
+            <h3>evening wrap</h3>
+            <p class="pdesc">“Close out the day and set up tomorrow.”</p>
+            <p>Tomorrow's calendar and reminders in three lines, with at most one question if something needs preparing. Quiet when tomorrow is empty.</p>
+            <dl><div><dt>When</dt><dd>Every day at 21:00 <code>0 21 * * *</code></dd></div><div><dt>Needs</dt><dd><code>reminders</code></dd></div></dl>
+          </li>
+          <li class="pstarter" data-protocol="inbox triage">
+            <h3>inbox triage</h3>
+            <p class="pdesc">“Surface the emails that actually matter.”</p>
+            <p>Reads your latest 20 emails and reports only the ones that need a reply or a decision, one line each.</p>
+            <dl><div><dt>When</dt><dd>When you ask</dd></div><div><dt>Needs</dt><dd><code>email</code></dd></div></dl>
+          </li>
+          <li class="pstarter" data-protocol="reply like me">
+            <h3>reply like me</h3>
+            <p class="pdesc">“Reply to an email the way the user would write it.”</p>
+            <p>Reads two or three of your own sent emails to match your tone, sign-off and length, then shows the draft in full. Nothing is sent without your yes.</p>
+            <dl><div><dt>When</dt><dd>When you ask</dd></div><div><dt>Needs</dt><dd><code>email</code></dd></div></dl>
+          </li>
+          <li class="pstarter" data-protocol="rebook">
+            <h3>rebook</h3>
+            <p class="pdesc">“Move or cancel an appointment and tell the other side.”</p>
+            <p>Moves or cancels it on your calendar or the booking site, drafts a note to the other person, and follows up two business days later.</p>
+            <dl><div><dt>When</dt><dd>When you ask</dd></div><div><dt>Needs</dt><dd><code>calendar</code></dd></div></dl>
+          </li>
+          <li class="pstarter" data-protocol="chase refund">
+            <h3>chase refund</h3>
+            <p class="pdesc">“Get money back from a merchant, politely and persistently.”</p>
+            <p>Finds the receipt, then drafts a refund request or fills in the merchant's form, with a screenshot before it submits. It checks back in five business days.</p>
+            <dl><div><dt>When</dt><dd>When you ask</dd></div><div><dt>Needs</dt><dd><code>email</code></dd></div></dl>
+          </li>
+        </ul>
+        <div class="prose">
+          <p>Beyond these, a protocol is whatever you can brief. The quickstart below builds <em>rain check</em>, which warns on weekday mornings when rain is likely during something outdoors. The pack template's example is a commute check: before you leave, how long the drive is and whether to go now or wait.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="first" aria-labelledby="first-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">3</span>Quickstart</span><span class="st">Available now</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>3</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="first-h">Write your first one.</h2>
+        <div class="prose wide">
+          <p>About ten minutes, with your twin running (the menu bar app, or <code>mirrin run</code>). You'll build rain check.</p>
+          <ol class="steps">
+            <li>
+              <h3>Make the file</h3>
+              <p>This writes <code>~/.mirrin/protocols/rain-check.yaml</code>, already a working protocol that runs when asked.</p>
+              <div class="code">
+                <div class="code-bar"><span>Terminal</span><button class="copy" type="button" data-copy="cmd-new" aria-label="Copy the command that makes a protocol">Copy</button></div>
+                <pre id="cmd-new" tabindex="0" data-copy-text="mirrin protocols new rain check"><code><span class="pr" aria-hidden="true">$ </span>mirrin protocols new rain check</code></pre>
+              </div>
+            </li>
+            <li>
+              <h3>Say what it should do</h3>
+              <p>Open the file in any text editor and brief your twin: when to run, what it needs, which values each person fills in, and when to stay quiet.</p>
+              <div class="code pcode">
+                <div class="code-bar"><span>rain-check.yaml</span><span>from the quickstart</span></div>
+                <!-- rain-check:start -->
+                <pre tabindex="0"><code><span class="k">name:</span> rain check
+<span class="k">description:</span> Warns on weekday mornings when rain is likely during something outdoors.
+<span class="k">version:</span> 0.1.0
+<span class="k">author:</span> your-handle
+<span class="k">tags:</span> [weather, daily]
+<span class="k">schedule:</span> <span class="s">"30 6 * * 1-5"</span>
+<span class="k">requires:</span> [calendar, web]
+<span class="k">vars:</span>
+  <span class="k">city:</span>
+    <span class="k">description:</span> The city to check the forecast for
+    <span class="k">required:</span> true
+  <span class="k">forecast_site:</span>
+    <span class="k">description:</span> A forecast page fetch_url can read
+    <span class="k">default:</span> https://wttr.in
+<span class="k">prompt:</span> |
+  Look at today's calendar with list_events and pick out anything that happens
+  outdoors or means walking somewhere. Fetch the forecast for {{city}} from
+  {{forecast_site}} with fetch_url. If rain is likely during any of those, say so
+  in one or two sentences: which event, what time, and what to bring.
+  If nothing is outdoors, or no rain is expected, reply NOTHING_TO_REPORT.</code></pre>
+                <!-- rain-check:end -->
+              </div>
+            </li>
+            <li>
+              <h3>Lint it</h3>
+              <p>Lint finds what breaks a protocol or makes it hard to share: a <code>{{var}}</code> that isn't declared, a schedule cron can't read, a scheduled prompt that never says <code>NOTHING_TO_REPORT</code>, a <code>requires</code> that isn't a known skill or tool, and anything that looks like a password or key. It exits with status 1 on an error.</p>
+              <div class="code">
+                <div class="code-bar"><span>Terminal</span><button class="copy" type="button" data-copy="cmd-lint" aria-label="Copy the lint command">Copy</button></div>
+                <pre id="cmd-lint" tabindex="0" data-copy-text="mirrin protocols lint ~/.mirrin/protocols/rain-check.yaml"><code><span class="pr" aria-hidden="true">$ </span>mirrin protocols lint ~/.mirrin/protocols/rain-check.yaml</code></pre>
+              </div>
+            </li>
+            <li>
+              <h3>Check it on your machine</h3>
+              <p>Lint checks the file; <code>check</code> checks it against your own twin. Each protocol gets a line: <code>✓</code> ready, <code>✗</code> and what isn't connected, or <code>!</code> and the values still to fill in. Put your city in <code>~/.mirrin/protocols/vars.yaml</code>, under <code>rain check:</code>, and run it again.</p>
+              <div class="code">
+                <div class="code-bar"><span>Terminal</span><button class="copy" type="button" data-copy="cmd-check" aria-label="Copy the check command">Copy</button></div>
+                <pre id="cmd-check" tabindex="0" data-copy-text="mirrin protocols check"><code><span class="pr" aria-hidden="true">$ </span>mirrin protocols check</code></pre>
+              </div>
+            </li>
+            <li>
+              <h3>Run it now</h3>
+              <p>Say <code>/reload</code> to your twin so it reads your edits. Then open the Routines page (<strong>Protocols…</strong> in the menu bar or tray; with <code>mirrin run</code>, <code>mirrin devices page</code> and then Routines) and press <strong>Run now</strong>. Or say “run rain check” in chat: running a protocol asks first, and the answer comes back into the conversation even when there's nothing to report, which makes chat the better way to test. From then on the schedule takes over; change it on the same page (<strong>Set time</strong>, <strong>Skip next</strong>) or just say “move rain check to 7:15 on weekdays”.</p>
+            </li>
+          </ol>
+          <p class="after">Each step with what you'll see, and what to do when it isn't that: <a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/protocols/quickstart.md">Your first protocol in ten minutes</a>. Then <a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/protocols/writing-guide.md">the writing guide</a>, on writing protocols people keep switched on.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="packs" aria-labelledby="packs-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">4</span>Sharing</span><span class="st-pair"><span class="st">Available now</span><span class="st plan">Planned</span></span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>4</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="packs-h">Packs, and the registry.</h2>
+        <div class="prose wide">
+          <p>A pack is a git repository with a <code>pack.yaml</code>, a <code>protocols/</code> folder and, if you like, a <code>personas/</code> folder. <a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/protocols/packs.md#start-from-the-template">Start from the template</a>: it has a protocol, a persona and a lint workflow. The registry is a single list of packs, kept in the <span class="pn" translate="no">Mirrin</span> repository; the packs themselves stay in their authors' own repositories.</p>
+          <ul class="cmds">
+            <li><span class="st small">Available now</span> <strong>Find one.</strong> Search looks in each pack's name, description and tags. Every release carries a copy of the index, so it works offline too.
+              <pre tabindex="0">mirrin protocols search travel</pre></li>
+            <li><span class="st small">Available now</span> <strong>Install it by name</strong>, from the registry, at the commit its entry names.
+              <pre tabindex="0">mirrin protocols install &lt;name&gt;</pre></li>
+            <li><span class="st small">Available now</span> <strong>Or by its address</strong>, and pin it with <code>#</code> and a tag, a branch or a full commit.
+              <pre tabindex="0">mirrin protocols add https://github.com/you/mirrin-pack-weather-wise#v0.2.0</pre></li>
+            <li><span class="st small">Available now</span> <strong>Update.</strong> It shows the old and new commit and every file that changed, and applies them only when you say yes (<code>--yes</code> to skip asking).
+              <pre tabindex="0">mirrin protocols update</pre></li>
+            <li><span class="st small">Available now</span> <strong>See what you have, and remove a pack.</strong>
+              <pre tabindex="0">mirrin protocols
+mirrin protocols remove weather-wise</pre></li>
+          </ul>
+          <p>Or ask your twin: “is there a protocol for commuting?” searches the registry and can show you what a pack would add before it installs anything. The Routines page has the same under <strong>Find more</strong>.</p>
+          <ul class="facts">
+            <li><strong>A pack stays put.</strong> It stays on the commit it was installed at until you apply an update. Pinned to a commit, it stays there; pinned to a tag or branch, it follows it.</li>
+            <li><strong>Your copy wins.</strong> A protocol of your own with the same name as a pack's is the one that runs, so you can change one routine without forking the pack.</li>
+            <li><strong>Listing yours</strong> is a pull request that adds one entry to the registry, with the full commit to install. A maintainer reads the pack at that commit before it's merged.</li>
+            <li><strong>Your licence.</strong> A pack in your own repository is under the licence you give it there; listing it doesn't change that.</li>
+          </ul>
+          <div class="candid"><p><span class="st small plan">Planned</span> <strong>A signed index.</strong> Your twin is built to use the published index only when its signature checks out. The signing key isn't in the repository yet, so for now every release answers search, install and update from the copy built into it, and a newly listed pack reaches people with the release after it's merged.</p></div>
+          <p class="after"><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/protocols/packs.md">Make a pack</a>: the layout, testing it on a throwaway twin, pinning and shipping updates. <a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/protocols/registry.md">Get your pack listed</a>: the entry, the pull request and what reviewers check.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="safety" aria-labelledby="safety-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">5</span>Safety</span><span class="st-pair"><span class="st">Available now</span><span class="st plan">Planned</span></span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>5</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="safety-h">Your approvals still apply.</h2>
+        <div class="prose wide">
+          <ol class="numlist">
+            <li><h3>It's a brief, not a program.</h3><p>Nothing in a protocol is executed. Its prompt is handed to your twin, which acts with the tools you've connected, under the same approvals as anything you ask it yourself.</p></li>
+            <li><h3>What asks first.</h3><p>Sending email or messages, changing your calendar, clicks and form fills in the browser, writing files, phone calls, and running, creating or changing a protocol or installing a pack. With the default settings, reading your calendar and mail and fetching public pages run without asking.</p></li>
+            <li><h3>The hard floor.</h3><p>Payments, shell commands, payment-looking clicks in the browser and sensitive files (<code>~/.ssh</code>, keychains, <code>.env</code> files, private keys and more) always ask, whatever your settings say. A “never” you've set stays a refusal.</p></li>
+            <li><h3>No standing powers.</h3><p>“Yes, always” can't be given for creating or changing protocols, installing packs or clicks in the browser, so a protocol can't talk its way into more.</p></li>
+            <li><h3>Never secrets.</h3><p>Passwords, API keys and tokens belong in your config or a connected account, never in a protocol, which is meant to be shared and is shown in full to anyone who previews it. <code>mirrin protocols lint</code> fails on anything in a prompt or a var's default that looks like a key, a token or a written-out password. It doesn't read descriptions or READMEs, so check those yourself.</p></li>
+            <li><h3>Read it before you install it.</h3><p>A pack's protocols are trusted like your own, and its scheduled ones start at their next due time. Ask your twin to show you a pack first, or press <strong>Preview</strong> on the Routines page: you'll see each protocol's schedule, what it needs and every word of its prompt. <code>mirrin protocols add</code> and <code>install</code> install straight away, so read the pack's <code>protocols/</code> folder on its repository page first.</p></li>
+          </ol>
+          <div class="candid"><p><strong>To be plain about it:</strong> fetching a public web page counts as reading, so a protocol can do it without asking, and a harmful prompt could put your details in a web address. Registry review reads every prompt for that. To be asked before every fetch, add <code>fetch_url</code> to <code>autonomy.always_ask</code> in your config. <span class="st small plan">Planned</span> Limiting which sites and files a pack's protocols may reach.</p></div>
+          <p class="after">What a harmful pack could try and what stops it, the red flags reviewers look for, and how to report one: <a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/protocols/security.md">the safety model for protocols and packs</a>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="contribute" aria-labelledby="contribute-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">6</span>Contributing</span><span class="st">Today</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>6</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="contribute-h">Three ways in.</h2>
+        <div class="prose wide">
+          <ol class="parts">
+            <li><div><h3>Share a routine as a pack</h3><p>No programming needed. Write it, put it in a pack from the template, lint it, run it on your own twin, then open a pull request that adds one entry to the registry. It stays in your repository, under your name and your licence.</p></div></li>
+            <li><div><h3>Improve the six starters</h3><p>Every new install begins with them, so the bar is high: useful to nearly everyone, built on what most people connect, and quiet when there's nothing to say. Fixes to the six are welcome as pull requests; a new starter starts as an issue.</p></div></li>
+            <li><div><h3>Improve the engine</h3><p>The loader, scheduler, lint and pack tools are written in Go; the contributor's guide shows where each one lives. Work on a throwaway twin, <code>MIRRIN_HOME=$(mktemp -d)</code>, so nothing you try reaches your own.</p></div></li>
+          </ol>
+          <p>No time to write it? Open a <a href="https://github.com/MavrkAI/Mirrin/issues/new/choose">Protocol idea issue</a> and describe it the way you'd brief a person. What you contribute to the repository is MIT, like the rest of the source; a pack in your own repository stays under the licence you give it. By taking part you agree to the <a href="https://github.com/MavrkAI/Mirrin/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a>.</p>
+        </div>
+        <div class="follow">
+          <p>Where each path starts, the tests to run, and what happens once you've sent it.</p>
+          <div class="ctas">
+            <a class="btn primary" href="https://github.com/MavrkAI/Mirrin/blob/main/docs/protocols/contributing.md">Contribute to protocols<svg aria-hidden="true"><use href="#i-ext"/></svg></a>
+            <a class="btn quiet" href="https://github.com/MavrkAI/Mirrin/blob/main/CONTRIBUTING.md">Contributing to <span class="pn" translate="no">Mirrin</span></a>
+            <a class="btn quiet" href="https://github.com/MavrkAI/Mirrin/blob/main/docs/protocols/README.md">All the protocol docs</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<p class="sr-only" aria-live="polite" id="copy-status"></p>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-grid">
+    <div class="colophon">
+      <a class="brand" href="index.html"><svg aria-hidden="true"><use href="#i-mark"/></svg><span class="pn" translate="no">Mirrin</span></a>
+      <p>A personal AI twin that lives on your own machine. Source MIT; default downloads GPL-3.0, with an MIT build too. Made by MavrkAI. Cloud is planned and not on sale.</p>
+      <p class="oss">Check it yourself: <span class="pn" translate="no">Mirrin</span> is <a href="https://github.com/MavrkAI/Mirrin">open source</a>.</p>
+      <p>This site sets no cookies, runs no analytics and asks no other server for anything. Your theme choice stays in this browser.</p>
+    </div>
+    <nav aria-label="Footer: this site">
+      <h2>This site</h2>
+      <ul>
+        <li><a href="index.html">Part one: the twin</a></li>
+        <li><a href="cloud.html">Part two: Cloud, planned</a></li>
+        <li><a href="protocols.html">Protocols</a></li>
+        <li><a href="pricing.html">Pricing (planned)</a></li>
+        <li><a href="legal.html">Terms and privacy (drafts)</a></li>
+      </ul>
+    </nav>
+    <nav aria-label="Footer: source">
+      <h2>Source</h2>
+      <ul>
+        <li><a href="https://github.com/MavrkAI/Mirrin">Code on GitHub</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/threat-model.md">Threat model</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/LICENSE">Licence (MIT source)</a></li>
+        <li><a href="pricing.html#licence">The licences, in plain words</a></li>
+      </ul>
+    </nav>
+    <!-- build-on-it:start -->
+    <nav aria-label="Footer: build on it">
+      <h2>Build on it</h2>
+      <ul>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/protocols/README.md">Protocols docs</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/personas.md">Personas</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/skills.md">Skills</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/CONTRIBUTING.md">Contributing</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/CHANGELOG.md">Changelog</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/SECURITY.md">Security</a></li>
+      </ul>
+    </nav>
+    <!-- build-on-it:end -->
+  </div>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.querySelector('.theme');
+  var tc = document.querySelector('meta[name="theme-color"]');
+  function dark() { return root.getAttribute('data-theme') !== 'light'; }
+  function sync() {
+    if (btn) btn.setAttribute('aria-pressed', String(dark()));
+    if (tc) tc.setAttribute('content', dark() ? '#0c0f1c' : '#f7f8fc');
+  }
+  sync();
+  if (btn) btn.addEventListener('click', function () {
+    var next = dark() ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    sync();
+  });
+  var live = document.getElementById('copy-status');
+  document.querySelectorAll('[data-copy]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var el = document.getElementById(b.getAttribute('data-copy'));
+      var text = el.getAttribute('data-copy-text') || el.innerText;
+      function done(ok) {
+        b.textContent = ok ? 'Copied' : 'Select and copy';
+        b.classList.toggle('ok', ok);
+        if (live) live.textContent = ok ? 'Copied to the clipboard.' : 'Copy failed. Select the text and copy it.';
+        setTimeout(function () { b.textContent = 'Copy'; b.classList.remove('ok'); }, 1800);
+      }
+      if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+      else done(false);
+    });
+  });
+})();
+</script>
+</body>
+</html>

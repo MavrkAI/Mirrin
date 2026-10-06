@@ -1,0 +1,27 @@
+# The repository's issue labels. .github/workflows/labels.yml creates or
+# updates them on GitHub when this file changes on main, and a test checks that
+# every label the issue templates apply is listed here.
+- name: bug
+  color: d73a4a
+  description: Something didn't work
+- name: enhancement
+  color: a2eeef
+  description: Something the twin should be able to do
+- name: protocol
+  color: 0e8a16
+  description: A routine the twin could run on its own (protocols and packs)
+- name: pack report
+  color: b60205
+  description: A registry pack that is broken, misleading or noisy
+- name: documentation
+  color: 0075ca
+  description: Docs, examples and the README
+- name: good first issue
+  color: 7057ff
+  description: Small, well-described, a good way in
+- name: help wanted
+  color: 008672
+  description: The maintainers would welcome a pull request
+- name: question
+  color: d876e3
+  description: Needs an answer rather than a change

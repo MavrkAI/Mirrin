@@ -1,0 +1,11 @@
+name: inbox triage
+description: Surface the emails that actually matter.
+version: 1.0.0
+author: Mirrin
+tags: [email]
+requires: [email]
+schedule: ""
+prompt: |
+  Read the most recent 20 emails (list_emails, or gmail_search with Gmail). Group them into: needs a reply,
+  needs a decision, FYI, ignore. Report only the first two groups, one line each with sender and what they want.
+  If no email is connected (neither list_emails nor gmail_search is available), say so in one line and stop.

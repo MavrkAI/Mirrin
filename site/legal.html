@@ -1,0 +1,422 @@
+<!doctype html>
+<!--
+  legal.html: drafts of the Mirrin Cloud terms of service, acceptable use
+  policy, privacy policy and data processing agreement.
+
+  DRAFTS FOR LEGAL REVIEW. None of this is legal advice, none of it is in
+  force, and Cloud is not for sale. Every document carries its own DRAFT
+  banner. Text in [square brackets], set as <span class="ph">, is a
+  placeholder or a question for counsel (docs/cloud-design.md §19: Australian
+  legal advice is still to be taken). The final documents must be published
+  before checkout opens (docs/dev/work-packages.json, WP-21).
+
+  The facts each document states (what is stored, for how long, who
+  processes it) follow docs/cloud-trust.md and cloud/internal/store/schema.sql;
+  the limits and the lapse timing follow Cloud's code (BPS per tunnel in
+  internal/relay/server/config.go; expiry and readGrace in
+  cloud/internal/server/), and say the same as pricing.html and cloud.html.
+  If those change, change this page.
+
+  PRODUCT NAME TOKEN
+  The name renders as "Mirrin"; the paid layer is "Mirrin Cloud". Change it in
+  the <title>, the meta tags, aria-label="Mirrin home", and every
+  <span class="pn" translate="no">Mirrin</span>.
+       Count: grep -o 'class="pn"' legal.html | wc -l
+              prints 10 today: 8 in the page and 2 in this comment.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mirrin Cloud terms and privacy (drafts)</title>
+<link rel="canonical" href="https://mirrin.app/legal.html">
+<meta name="description" content="Drafts for legal review of the Mirrin Cloud terms, acceptable use policy, privacy policy and DPA. Not legal advice and not in force. Cloud is not for sale.">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0c0f1c">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://mirrin.app/legal.html">
+<meta property="og:locale" content="en_GB">
+<meta property="og:site_name" content="Mirrin">
+<meta property="og:title" content="Mirrin Cloud terms and privacy (drafts)">
+<meta property="og:description" content="Drafts for legal review of the Mirrin Cloud terms, acceptable use policy, privacy policy and DPA. Not legal advice and not in force. Cloud is not for sale.">
+<meta property="og:image" content="https://mirrin.app/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Mirrin, a gentleman in a dinner jacket, beside the line: An AI of your own, living on your own machine.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mirrin Cloud terms and privacy (drafts)">
+<meta name="twitter:description" content="Drafts for legal review of the Mirrin Cloud terms, acceptable use policy, privacy policy and DPA. Not legal advice and not in force. Cloud is not for sale.">
+<meta name="twitter:image" content="https://mirrin.app/assets/og.png">
+<meta name="twitter:image:alt" content="Mirrin, a gentleman in a dinner jacket, beside the line: An AI of your own, living on your own machine.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preload" href="assets/fonts/newsreader.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/colophon-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="site.css">
+<script>document.documentElement.classList.add('js');try{if(localStorage.getItem('theme')==='light'){document.documentElement.setAttribute('data-theme','light');document.querySelector('meta[name="theme-color"]').content='#f7f8fc'}}catch(e){}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<svg class="defs" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="g-brand" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3ddc84"/><stop offset="1" stop-color="#7aa2ff"/></linearGradient>
+  </defs>
+  <symbol id="i-mark" viewBox="0 0 32 32"><rect width="32" height="32" rx="7.5" fill="#161a45"/><g transform="translate(3 3) scale(0.26)"><g fill="none" stroke-width="11" stroke-linecap="round"><path d="M18.5 80V58a14.75 14.75 0 0 1 29.5 0V80" stroke="#ffffff"/><path d="M52 80V58a14.75 14.75 0 0 1 29.5 0V80" stroke="#9ea4ff"/></g><circle cx="33.25" cy="25" r="8" fill="#ffffff"/><circle cx="66.75" cy="25" r="8" fill="#9ea4ff"/></g></symbol>
+</svg>
+
+<header class="mast">
+  <div class="wrap mast-in">
+    <a class="brand" href="index.html" aria-label="Mirrin home"><svg aria-hidden="true"><use href="#i-mark"/></svg><span class="pn" translate="no">Mirrin</span></a>
+    <span class="runhead">Terms and privacy, drafts</span>
+    <nav class="nav" aria-label="Primary">
+      <ul>
+        <li><a href="index.html">The twin</a></li>
+        <li><a href="index.html#install">Install</a></li>
+        <li><a href="protocols.html">Protocols</a></li>
+        <li><a href="cloud.html">Cloud<span class="sr-only">,</span><span class="tag">planned</span></a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin">GitHub</a></li>
+      </ul>
+    </nav>
+    <button class="theme" type="button" aria-pressed="true">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg>
+      <span>Dark theme</span>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="wrap hero" aria-labelledby="hero-h">
+  <p class="kicker"><span>Legal</span><span class="st plan">Drafts · not in force</span></p>
+  <h1 id="hero-h"><span class="pn" translate="no">Mirrin</span> Cloud: terms and privacy, in draft</h1>
+  <div class="prose">
+    <div class="draft"><strong>Draft for legal review</strong>These are working drafts, published early so anyone can read what we intend to promise. They are not legal advice, not in force and not an offer: Cloud is planned and not for sale. Text in <span class="ph">[square brackets]</span> is a placeholder or a question for our lawyers. The final documents will be published before checkout opens.</div>
+    <p class="lead">The free, open-source twin needs none of these. It sends us nothing and needs no account, and it comes under its licence: the source is MIT, the default downloads (with WhatsApp) are GPL-3.0, and an MIT build comes without WhatsApp. <a href="pricing.html#licence">The licences, in plain words</a>.</p>
+  </div>
+</section>
+
+<nav class="wrap toc" aria-labelledby="toc-h" style="--rows:2">
+  <div class="toc-head"><h2 id="toc-h" class="label">Contents</h2><span class="label">Drafts</span></div>
+  <ol>
+    <li><a href="#terms"><span class="n">1</span><span class="t">Terms of service</span><span class="k">Terms</span></a></li>
+    <li><a href="#aup"><span class="n">2</span><span class="t">Acceptable use policy</span><span class="k">AUP</span></a></li>
+    <li><a href="#privacy"><span class="n">3</span><span class="t">Privacy policy</span><span class="k">Privacy</span></a></li>
+    <li><a href="#dpa"><span class="n">4</span><span class="t">Data processing agreement</span><span class="k">DPA</span></a></li>
+  </ol>
+</nav>
+
+<!-- Terms of service -->
+<section class="wrap" id="terms" aria-labelledby="terms-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">1</span>Terms</span><span class="st plan">Draft, version 0.1</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>1</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="terms-h">Terms of service</h2>
+        <div class="prose legal">
+          <div class="draft"><strong>Draft for legal review</strong>Not legal advice and not in force. Placeholders are in square brackets.</div>
+
+          <h3>1. Who we are, and what these terms cover</h3>
+          <p>These terms are between you and <span class="ph">[MavrkAI legal entity name, ABN, registered address]</span> (“we”, “us”). They cover <span class="pn" translate="no">Mirrin</span> Cloud (“Cloud”): an optional subscription that gives you</p>
+          <ul>
+            <li>an address (a “handle”) that routes encrypted connections from your devices to the software running on your own computer, and</li>
+            <li>storage for encrypted backups made by that software.</li>
+          </ul>
+          <p>They don't cover the free software itself, which you get under its own licence and can use fully without Cloud. We don't host, run or have access to your twin.</p>
+
+          <h3>2. No account; your keys</h3>
+          <p>There is no sign-up, login or password. You link a computer with <code>mirrin cloud link</code>, and your subscription is identified by public keys that your computer creates. You are responsible for your computer, its keys and your 12 recovery words. We never hold your words, so we can't recover your backups if you lose them, and we can't reset anything for you that depends on them.</p>
+
+          <h3>3. Buying, prices and refunds</h3>
+          <ul>
+            <li>Cloud is sold by our reseller and merchant of record, <span class="ph">[Paddle.com Market Ltd]</span>, which takes payment, handles tax and invoices, and holds your email and card details under its own terms and privacy policy.</li>
+            <li>The price is the one shown at checkout. A founding price is kept for as long as your subscription continues without a break. We'll give you at least <span class="ph">[30]</span> days' notice of any price change, which then applies from your next renewal.</li>
+            <li>There is no free trial. You can have a full refund within 30 days of your first payment, through the billing page (<code>mirrin cloud billing</code>).</li>
+            <li>Nothing in these terms limits rights you have under the Australian Consumer Law or other consumer law that can't be excluded.</li>
+          </ul>
+
+          <h3>4. What we provide</h3>
+          <ul>
+            <li><strong>Reach.</strong> A handle under our domain, the DNS records for it (including a CAA record naming your computer's own certificate account), and two relays that pass your encrypted connections through to your computer. The relays can't read them.</li>
+            <li><strong>Backup.</strong> Up to 20&nbsp;GB of storage for encrypted backup files. Retention (7 daily, 4 weekly and 6 monthly) is applied as described in the documentation.</li>
+            <li><strong>Support.</strong> By email, aiming to answer within two business days (next business day, best effort, on the Supporter plan).</li>
+          </ul>
+          <p>We provide Cloud with reasonable care and skill, but we don't promise it will always be available. Your twin keeps working on your computer whether or not Cloud is up, and your free routes keep working too. <span class="ph">[Counsel: whether to offer a service level or credits.]</span></p>
+
+          <h3>5. Your content</h3>
+          <p>Connections through the relays are encrypted end to end between your devices and your computer, and backups are encrypted on your computer before they reach us, with keys we don't hold. You keep every right in your content. We don't claim any licence to it, and we can't read it.</p>
+
+          <h3>6. Fair use and limits</h3>
+          <p>Cloud is for reaching your own twin. Fair use is about 100&nbsp;GB relayed a month, and up to 20&nbsp;Mbit/s for your address, shared by all its connections. If you go over 100&nbsp;GB, we'll warn you first; if it carries on, we may stop serving your address until the next month. The <a href="#aup">acceptable use policy</a> is part of these terms.</p>
+
+          <h3>7. Suspension</h3>
+          <p>We may suspend your handle (by adding it to the deny list the relays check) if you breach the acceptable use policy, if your address is opened from more than 200 different networks in one day (which pauses it automatically for seven days), if payment fails, or if the law requires it. Where the law lets us, we'll tell you why and how to fix it. Suspension doesn't affect your twin or your backups.</p>
+
+          <h3>8. Cancelling and ending</h3>
+          <ul>
+            <li>You can cancel at any time from the billing page. Cloud keeps working until the end of the period you paid for, and your handle keeps routing for up to 7 days after it.</li>
+            <li>From the end of the paid period no new backups are stored. For 90 days after it you can still list and download every backup already stored.</li>
+            <li>After those 7 days the relays stop routing your handle. It is never given to anyone else.</li>
+            <li><code>mirrin cloud delete-account</code> deletes your Cloud record. You have 7 days to undo it (<code>--undo</code>); then the records, DNS entries and stored backups are removed.</li>
+          </ul>
+
+          <h3>9. Changes, and if we shut Cloud down</h3>
+          <p>We'll give at least <span class="ph">[30]</span> days' notice of a material change to these terms, in the CHANGELOG and on this site. If we ever discontinue Cloud, we'll give at least 90 days' notice, and your backups stay downloadable for that time.</p>
+
+          <h3>10. Open source</h3>
+          <p>The source code of the relay and of the service that manages subscriptions is published under the MIT licence (the relay program also contains one library under MPL-2.0, yamux). Nothing in these terms limits what those licences let you do, including running them yourself.</p>
+
+          <h3>11. Liability</h3>
+          <p>To the extent the law allows, Cloud is provided as described here and without other warranties, and our total liability to you is limited to <span class="ph">[the fees you paid us in the 12 months before the claim]</span>. We aren't liable for losses caused by keys or words you lost, or by your use of the free software. <span class="ph">[Counsel: consumer-law carve-outs; indirect loss; indemnity from business customers.]</span></p>
+
+          <h3>12. Law and contact</h3>
+          <p>These terms are governed by the law of <span class="ph">[New South Wales]</span>, Australia, without taking away the protection of the consumer law where you live. Contact: <span class="ph">[support address]</span>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Acceptable use policy -->
+<section class="wrap" id="aup" aria-labelledby="aup-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">2</span>AUP</span><span class="st plan">Draft, version 0.1</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>2</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="aup-h">Acceptable use policy</h2>
+        <div class="prose legal">
+          <div class="draft"><strong>Draft for legal review</strong>Not legal advice and not in force.</div>
+
+          <h3>1. What this covers</h3>
+          <p>Handles on our domain, the relays that carry them, and backup storage. A handle is for reaching your own <span class="pn" translate="no">Mirrin</span> twin, from your own devices.</p>
+
+          <h3>2. Not allowed</h3>
+          <ul>
+            <li>Phishing, or pretending to be another person, company or government body.</li>
+            <li>Distributing malware, or running command-and-control for it.</li>
+            <li>Child sexual abuse material. We report it to the authorities.</li>
+            <li>Anything else illegal where you are or where we are, including infringing others' rights.</li>
+            <li>Spam or bulk unsolicited messages sent through the handle.</li>
+            <li>Running a public website, proxy, VPN exit or file-sharing service on the handle, or sharing one handle among many people.</li>
+            <li>Scanning, attacking or overloading other systems, or trying to get round the relays' limits, the deny list or another customer's isolation.</li>
+          </ul>
+
+          <h3>3. How we find out</h3>
+          <p>We can't see inside connections or backups. We act on reports, and on the connection details a relay does see: how many different networks open an address in a day, how much it carries, and public certificate and blocklist data.</p>
+
+          <h3>4. What we do</h3>
+          <p>Depending on how serious it is: a warning, suspending the handle, or ending the subscription. Urgent cases (phishing, malware, abuse material) are suspended at once. Where the law lets us, we'll say why and how to appeal. A refund on ending is at our discretion, except where the law requires one.</p>
+
+          <h3>5. Reporting abuse</h3>
+          <p>Write to <span class="ph">[abuse address]</span> with the address, the time and what you saw. We'll acknowledge it within <span class="ph">[two business days]</span>.</p>
+
+          <h3>6. Requests from authorities</h3>
+          <p>We need valid legal process <span class="ph">[counsel: Australian and foreign process]</span>. We hold little (the <a href="#privacy">privacy policy</a> lists it) and we can't decrypt your connections or backups. <span class="ph">[Counsel: whether to publish a transparency report.]</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Privacy policy -->
+<section class="wrap" id="privacy" aria-labelledby="priv-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">3</span>Privacy</span><span class="st plan">Draft, version 0.1</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>3</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="priv-h">Privacy policy</h2>
+        <div class="prose legal">
+          <div class="draft"><strong>Draft for legal review</strong>Not legal advice and not in force. It must be checked against the Australian Privacy Principles and, for people in the EU and UK, the GDPR.</div>
+
+          <h3>1. Who we are</h3>
+          <p><span class="ph">[MavrkAI legal entity name, ABN, address]</span> is responsible for the personal information described here. Contact: <span class="ph">[privacy address]</span>.</p>
+
+          <h3>2. This website</h3>
+          <p>This site sets no cookies, runs no analytics and loads nothing from another server. Your theme choice is kept in your own browser. The host that serves the pages keeps its own access logs <span class="ph">[GitHub Pages: confirm what it logs, and for how long]</span>.</p>
+
+          <h3>3. The free software</h3>
+          <p>The <span class="pn" translate="no">Mirrin</span> software runs on your computer and sends us nothing. With default settings it asks Open-Meteo for the weather (turn this off with <code>ui.weather: false</code>) and talks to the model provider you choose. It contacts GitHub only when you install or update a pack, or run <code>mirrin update</code>; installing or updating a pack fetches it from where it is published. Voice setup, when you run it, downloads its models from Hugging Face and GitHub, and its helper from the Python package index. The Chrome window it browses with makes Chrome's own background requests to Google. It contacts other services only when you connect them. Every kind of connection it can make is listed in the threat model; its Trust page shows the main ones, and whether each is on.</p>
+
+          <h3>4. Cloud: what we collect</h3>
+          <table class="tbl">
+            <thead><tr><th scope="col">Information</th><th scope="col">Why</th><th scope="col">How long</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">An account number, the payment provider's customer number, plan, billing status and paid-through date</th><td>To provide what you paid for</td><td>While you subscribe, then until deletion</td></tr>
+              <tr><th scope="row">Your handle</th><td>It is your address; it is also published in DNS and in public certificate logs</td><td>Never reassigned: a record of the name is kept, even after deletion, so it is never given to anyone else</td></tr>
+              <tr><th scope="row">Your computer's public keys, the certificate account its address is pinned to, and the day it last checked in</th><td>To know it's your computer, and to write your DNS records</td><td>While you subscribe, then until deletion</td></tr>
+              <tr><th scope="row">Your backup folder's name (made from a public key), and each backup file's name, size and time</th><td>To store your backups within your quota</td><td>Until the backup is pruned or deleted</td></tr>
+              <tr><th scope="row">What happened to your subscription (a kind and a time, never content)</th><td>Support and security</td><td>Until deletion</td></tr>
+              <tr><th scope="row">Relay connection records: the time, your handle, the network a connection came from (only the first three parts of an IPv4 address, or its /48 for IPv6), bytes and duration</th><td>To run the relays and spot abuse</td><td>72 hours in memory, then hourly totals for 30 days</td></tr>
+              <tr><th scope="row">IP addresses, in memory only, for rate limits and while a connection is open</th><td>Security</td><td>Not written down</td></tr>
+            </tbody>
+          </table>
+          <p>We don't store your email address, IP address, name or card. The payment provider holds your email and card as a separate controller, under its own privacy policy. When you run <code>mirrin cloud me</code>, we fetch your email from it for that answer and don't keep it.</p>
+          <p>We can't see what's inside your connections or backups: they are encrypted with keys only your computer and your 12 words hold. <a href="pricing.html#see">What we would and couldn't see</a> has the full list, with a command to check each line.</p>
+
+          <h3>5. Legal bases</h3>
+          <p>Providing the service you asked for (contract); keeping it secure and free of abuse (legitimate interests); and keeping tax and payment records, through the payment provider (legal obligation).</p>
+
+          <h3>6. Who else is involved</h3>
+          <table class="tbl">
+            <thead><tr><th scope="col">Provider</th><th scope="col">For</th><th scope="col">What they receive</th></tr></thead>
+            <tbody>
+              <tr><th scope="row"><span class="ph">[Paddle]</span></th><td>Checkout, billing, tax</td><td>Your email, card and billing details (as a separate controller)</td></tr>
+              <tr><th scope="row"><span class="ph">[Amazon Web Services, Route 53]</span></th><td>DNS for handles</td><td>Your handle and the relays' addresses</td></tr>
+              <tr><th scope="row"><span class="ph">[Cloudflare, R2]</span></th><td>Backup storage, and our own database replica</td><td>Encrypted backup files; our records above</td></tr>
+              <tr><th scope="row"><span class="ph">[Relay hosts: two providers to be chosen]</span></th><td>Running the relays</td><td>Encrypted connections passing through</td></tr>
+            </tbody>
+          </table>
+          <p>Your computer also talks to Let's Encrypt, under its own account, and to your phone's push service. Those are between your computer and them, not us. We don't sell or rent personal information, and we don't use it for advertising.</p>
+
+          <h3>7. Where it's kept</h3>
+          <p><span class="ph">[Regions for the relays, database and storage; cross-border transfer safeguards such as the EU standard contractual clauses and the UK addendum.]</span></p>
+
+          <h3>8. Your choices and rights</h3>
+          <ul>
+            <li>See everything we store about you: <code>mirrin cloud me</code>.</li>
+            <li>See every request your computer has sent us: <code>mirrin cloud egress</code>.</li>
+            <li>Delete it: <code>mirrin cloud delete-account</code> (7 days to undo).</li>
+            <li>Ask us to correct or explain anything, or object: <span class="ph">[privacy address]</span>.</li>
+            <li>Complain to the Office of the Australian Information Commissioner, or to the data protection authority where you live.</li>
+          </ul>
+
+          <h3>9. Security</h3>
+          <p>Encryption ends on your computer; the relays hold no key for your address; backups are encrypted before they leave; signing keys are kept apart by purpose and rotated yearly; and there is no administration website, only command-line access over SSH. An independent security review will be done before checkout opens.</p>
+
+          <h3>10. Children</h3>
+          <p>Cloud is not for anyone under <span class="ph">[18]</span>.</p>
+
+          <h3>11. Changes</h3>
+          <p>We'll post changes here and in the CHANGELOG, at least <span class="ph">[30]</span> days before they take effect when they matter.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Data processing agreement -->
+<section class="wrap" id="dpa" aria-labelledby="dpa-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">4</span>DPA</span><span class="st plan">Draft, version 0.1</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>4</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="dpa-h">Data processing agreement</h2>
+        <div class="prose legal">
+          <div class="draft"><strong>Draft for legal review</strong>Not legal advice and not in force. For customers who need one under the GDPR, the UK GDPR or similar law.</div>
+
+          <h3>1. Roles</h3>
+          <p>For personal information carried through the relays or held in encrypted backups, you are the controller and we are your processor. For the account information in the <a href="#privacy">privacy policy</a>, we are the controller. <span class="pn" translate="no">Mirrin</span> Cloud is designed so that we can't read the content we process: it is encrypted with keys only you hold.</p>
+
+          <h3>2. The processing</h3>
+          <ul>
+            <li><strong>Subject matter and purpose:</strong> passing encrypted connections to your computer, and storing encrypted backups.</li>
+            <li><strong>Duration:</strong> the subscription, plus 90 days after the paid period ends to download backups, plus the deletion period.</li>
+            <li><strong>Personal information:</strong> whatever you and your devices put inside encrypted connections and backups (which we can't see), and connection details: the network a connection came from, the time, bytes and duration.</li>
+            <li><strong>People it concerns:</strong> you, the people who use your devices, and anyone whose information is in your twin.</li>
+          </ul>
+
+          <h3>3. Our commitments</h3>
+          <ol>
+            <li>We process only on your instructions: these terms, and what your computer asks the service to do.</li>
+            <li>Everyone who can reach the service's systems is bound to confidentiality.</li>
+            <li>We keep the security measures in Annex A.</li>
+            <li>We use only the subprocessors in Annex B, give you <span class="ph">[30]</span> days' notice of a new one, and you may object and cancel with a refund of the unused period.</li>
+            <li>We help you answer requests from the people the information is about, as far as we can without the keys.</li>
+            <li>We tell you of a personal data breach affecting you without undue delay, and within <span class="ph">[48]</span> hours of becoming aware of it.</li>
+            <li>At the end, you can download your backups for 90 days after the paid period ends; then we delete them and our records of you, except where the law makes us keep them (and the record that keeps your handle from being reassigned).</li>
+            <li>We make available what you need to check we keep these commitments. The relay and the service are open source; audits beyond that are by agreement, at your cost <span class="ph">[counsel]</span>.</li>
+            <li>International transfers are covered by <span class="ph">[the EU standard contractual clauses, module 2 and 3, and the UK addendum]</span>.</li>
+          </ol>
+
+          <h3>Annex A: security measures</h3>
+          <ul>
+            <li>TLS ends on your computer. The relays pass connections through by name and have no code path that loads a certificate for your address.</li>
+            <li>Your address's certificate is pinned by CAA to your computer's own certificate account, and your computer watches the public certificate logs.</li>
+            <li>Backups are encrypted on your computer with age, to a key made from words we never see.</li>
+            <li>Only minimal records are kept: no email or IP address columns; relay records reduced to a network, and to hourly totals after 72 hours.</li>
+            <li>Requests from your computer are signed, with replay protection.</li>
+            <li>Signing keys are separate by purpose, held in encrypted credentials, and rotated yearly.</li>
+            <li>No administration website; access by command line over SSH, reviewed weekly.</li>
+            <li>An independent security review before launch.</li>
+          </ul>
+
+          <h3>Annex B: subprocessors</h3>
+          <p>The providers in the <a href="#privacy">privacy policy</a>, section 6, except the payment provider, which is a separate controller. <span class="ph">[Final list, with locations, before checkout.]</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-grid">
+    <div class="colophon">
+      <a class="brand" href="index.html"><svg aria-hidden="true"><use href="#i-mark"/></svg><span class="pn" translate="no">Mirrin</span></a>
+      <p>A personal AI twin that lives on your own machine. Source MIT; default downloads GPL-3.0, with an MIT build too. Made by MavrkAI. Cloud is planned and not on sale; these documents are drafts.</p>
+      <p class="oss">Check it yourself: <span class="pn" translate="no">Mirrin</span> is <a href="https://github.com/MavrkAI/Mirrin">open source</a>.</p>
+      <p>This site sets no cookies, runs no analytics and asks no other server for anything. Your theme choice stays in this browser.</p>
+    </div>
+    <nav aria-label="Footer: this site">
+      <h2>This site</h2>
+      <ul>
+        <li><a href="index.html">Part one: the twin</a></li>
+        <li><a href="cloud.html">Part two: Cloud, planned</a></li>
+        <li><a href="protocols.html">Protocols</a></li>
+        <li><a href="pricing.html">Pricing (planned)</a></li>
+        <li><a href="legal.html">Terms and privacy (drafts)</a></li>
+      </ul>
+    </nav>
+    <nav aria-label="Footer: source">
+      <h2>Source</h2>
+      <ul>
+        <li><a href="https://github.com/MavrkAI/Mirrin">Code on GitHub</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/cloud-trust.md">What Cloud can and can't see</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/LICENSE">Licence (MIT source)</a></li>
+        <li><a href="pricing.html#licence">The licences, in plain words</a></li>
+      </ul>
+    </nav>
+    <!-- build-on-it:start -->
+    <nav aria-label="Footer: build on it">
+      <h2>Build on it</h2>
+      <ul>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/protocols/README.md">Protocols docs</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/personas.md">Personas</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/skills.md">Skills</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/CONTRIBUTING.md">Contributing</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/CHANGELOG.md">Changelog</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/SECURITY.md">Security</a></li>
+      </ul>
+    </nav>
+    <!-- build-on-it:end -->
+  </div>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.querySelector('.theme');
+  var tc = document.querySelector('meta[name="theme-color"]');
+  function dark() { return root.getAttribute('data-theme') !== 'light'; }
+  function sync() {
+    if (btn) btn.setAttribute('aria-pressed', String(dark()));
+    if (tc) tc.setAttribute('content', dark() ? '#0c0f1c' : '#f7f8fc');
+  }
+  sync();
+  if (btn) btn.addEventListener('click', function () {
+    var next = dark() ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    sync();
+  });
+})();
+</script>
+</body>
+</html>

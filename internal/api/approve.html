@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Needs a yes</title>
+<style>
+:root{color-scheme:dark;--bg:#07080b;--card:#111318;--line:#293040;--text:#eceef3;--dim:#b4bac7;--ok:#4cc38a;--no:#e5484d;--accent:#7aa2ff}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font:17px/1.5 -apple-system,system-ui,sans-serif;padding:max(1rem,env(safe-area-inset-top)) 1rem max(1rem,env(safe-area-inset-bottom))}
+main{max-width:34rem;margin:0 auto;display:grid;gap:1rem}
+h1{font-size:1rem;font-weight:600;color:var(--dim);margin:0}
+.what{font-size:1.45rem;line-height:1.3;font-weight:650;margin:0;overflow-wrap:anywhere}
+.why{color:var(--dim);margin:0}
+pre{background:var(--card);border:1px solid var(--line);border-radius:.7rem;padding:.8rem;white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.45 ui-monospace,Menlo,monospace;margin:0;max-height:40vh;overflow:auto}
+.tags{display:flex;gap:.5rem;flex-wrap:wrap;color:var(--dim);font-size:.9rem}
+.tags span{border:1px solid var(--line);border-radius:99px;padding:.1rem .6rem}
+.tags .dangerous{border-color:var(--no);color:#ffb3b5}
+figure{margin:0}
+figure img{display:block;width:100%;border-radius:.7rem;border:1px solid var(--line);background:var(--card)}
+figure a{display:block}
+figcaption{color:var(--dim);font-size:.85rem;margin-top:.3rem}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+button{font:inherit;font-size:1.15rem;font-weight:650;min-height:4rem;border-radius:1rem;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer}
+button.yes{background:var(--ok);border-color:var(--ok);color:#04130b}
+button.no{border-color:var(--no);color:#ffb3b5}
+button:disabled{opacity:.5;cursor:default}
+button.setup{min-height:3rem;font-size:1rem;background:transparent;border-color:var(--accent);color:var(--accent)}
+#outcome{min-height:1.5em;font-size:1.1rem;margin:0}
+#outcome.ok{color:var(--ok)}#outcome.fail{color:#ffb3b5}
+#note{color:var(--dim);margin:0;font-size:.95rem}
+a.back{color:var(--accent)}
+[hidden]{display:none!important}
+</style>
+</head><body><main>
+<h1 id="asks">Checking what's waiting…</h1>
+<p class="what" id="what"></p>
+<p class="why" id="why" hidden></p>
+<pre id="detail" hidden></pre>
+<div class="tags" id="tags" hidden></div>
+<figure id="shot" hidden><a id="shotLink" target="_blank" rel="noopener"><img id="shotImg" alt="What will be submitted"></a><figcaption>What will be submitted. Tap to enlarge.</figcaption></figure>
+<p id="outcome" role="status" aria-live="polite"></p>
+<p id="note" hidden></p>
+<button type="button" class="setup" id="setup" hidden>Set up Face ID for approvals</button>
+<div class="btns" id="btns" hidden><button type="button" class="no" id="deny">Deny</button><button type="button" class="yes" id="approve">Approve</button></div>
+<p><a class="back" href="/ui">Open the screen</a></p>
+</main>
+<script>
+(() => {
+  'use strict';
+  const id = location.pathname.split('/').filter(Boolean).pop();
+  const $ = s => document.getElementById(s);
+  let data = null, busy = false;
+  const time = at => { const d = new Date(at); return isNaN(d) || d.getFullYear() < 2000 ? '' : d.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}); };
+  const verb = s => ({approved: 'approved', denied: 'denied', superseded: 'replaced by a newer request', expired: 'too old to answer'})[s] || s;
+  function say(text, kind) { const o = $('outcome'); o.textContent = text; o.className = kind || ''; }
+  function decidedLine(d) {
+    if (d.status === 'approved' || d.status === 'denied') {
+      const t = time(d.at);
+      return 'Already ' + verb(d.status) + ' on ' + (d.decided_on || 'another device') + (t ? ' at ' + t : '') + '.';
+    }
+    return 'This request was ' + verb(d.status) + '.';
+  }
+  async function problem(r) {
+    let j = {}; try { j = await r.json(); } catch {}
+    return {code: j.error || '', text: [j.message, j.hint || j.fix].filter(Boolean).join(' ') || 'Something went wrong (error ' + r.status + ').', body: j};
+  }
+  function render(d) {
+    data = d;
+    document.title = (d.name || 'Your twin') + ' needs a yes';
+    $('asks').textContent = d.status === 'pending' ? (d.name || 'Your twin') + ' needs a yes' : (d.name || 'Your twin') + ' asked';
+    $('what').textContent = d.what || d.summary || ('Request #' + d.id);
+    $('why').textContent = d.why || ''; $('why').hidden = !d.why;
+    $('detail').textContent = d.detail || ''; $('detail').hidden = !d.detail;
+    const tags = $('tags'); tags.replaceChildren();
+    for (const [text, cls] of [[d.tool, ''], [d.risk, d.risk === 'dangerous' ? 'dangerous' : ''], ['#' + d.id, '']]) {
+      if (!text) continue; const s = document.createElement('span'); s.textContent = text; if (cls) s.className = cls; tags.append(s);
+    }
+    tags.hidden = false;
+    if (d.screenshot && d.status === 'pending') { $('shotImg').src = d.screenshot; $('shotLink').href = d.screenshot; $('shot').hidden = false; } else { $('shot').hidden = true; }
+    const pending = d.status === 'pending';
+    $('btns').hidden = !pending || !d.can_decide;
+    if (!pending) { say(decidedLine(d), d.status === 'approved' ? 'ok' : ''); $('setup').hidden = true; }
+    else if (!d.can_decide) { $('note').textContent = 'This device can see requests but not answer them. Answer on a device that may approve.'; $('note').hidden = false; }
+    else if (d.step_up && !d.passkey) {
+      $('note').textContent = 'Approving this from here needs Face ID or a passkey.' + (d.can_enrol ? '' : ' Approve on the computer it runs on, or reply "yes ' + d.id + '" in your own chat app.');
+      $('note').hidden = false; $('setup').hidden = !d.can_enrol;
+    } else { $('note').hidden = true; $('setup').hidden = true; }
+  }
+  async function load() {
+    let r;
+    try { r = await fetch('/approvals/' + encodeURIComponent(id), {headers: {Accept: 'application/json'}, cache: 'no-store'}); }
+    catch { say("Can't reach your twin. Check your connection, then try again.", 'fail'); return; }
+    if (!r.ok) { const p = await problem(r); $('asks').textContent = p.text; $('what').textContent = ''; $('btns').hidden = true; return; }
+    const d = await r.json();
+    if (!busy) render(d);
+  }
+  async function decide(dec) {
+    if (busy) return;
+    busy = true;
+    for (const b of $('btns').querySelectorAll('button')) b.disabled = true;
+    say(dec === 'approve' ? 'Approving…' : 'Denying…');
+    try {
+      let r;
+      try { r = await fetch('/approvals/' + encodeURIComponent(id) + '/' + dec, {method: 'POST', headers: {Accept: 'application/json'}}); }
+      catch { say("Can't reach your twin. Nothing was decided; try again.", 'fail'); return; }
+      if (r.ok) {
+        const j = await r.json().catch(() => ({}));
+        say((dec === 'approve' ? 'Approved.' : 'Denied.') + (j.reply ? ' ' + j.reply : ''), dec === 'approve' ? 'ok' : '');
+        $('btns').hidden = true;
+        return;
+      }
+      const p = await problem(r);
+      if (r.status === 409 && p.code === 'already_decided') { say(decidedLine({...p.body, id}), ''); $('btns').hidden = true; return; }
+      if (r.status === 428) { say("Face ID didn't finish, so nothing was decided. Try again.", 'fail'); return; }
+      if (p.code === 'passkey_required') { say(p.text, 'fail'); refreshSetup(); return; }
+      say(p.text, 'fail');
+    } finally {
+      busy = false;
+      for (const b of $('btns').querySelectorAll('button')) b.disabled = false;
+    }
+  }
+  async function refreshSetup() {
+    try { const r = await fetch('/stepup/status', {headers: {Accept: 'application/json'}}); if (r.ok) { const s = await r.json(); $('setup').hidden = !s.can_enrol || s.passkey; } } catch {}
+  }
+  $('approve').onclick = () => decide('approve');
+  $('deny').onclick = () => decide('deny');
+  $('setup').onclick = async () => {
+    // For one load after an update, pwa.js can still be the one from before the rename.
+    const pwa = window.mirrinPWA || window.antbotPWA; /* rename:keep */
+    if (!pwa || !pwa.enrolPasskey) return;
+    $('setup').disabled = true;
+    try { if (await pwa.enrolPasskey()) { say('Face ID is set up. You can approve from here now.', 'ok'); $('setup').hidden = true; $('note').hidden = true; } }
+    finally { $('setup').disabled = false; }
+  };
+  // The outcome, live: another device, the computer or a chat may answer it first.
+  try {
+    const es = new EventSource('/events');
+    es.onmessage = e => { try { const ev = JSON.parse(e.data); if (ev.kind === 'approval' || ev.kind === 'said') load(); } catch {} };
+  } catch {}
+  setInterval(() => { if (!document.hidden && data && data.status === 'pending') load(); }, 15000);
+  load();
+})();
+</script>
+</body></html>

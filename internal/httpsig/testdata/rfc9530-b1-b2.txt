@@ -1,0 +1,57 @@
+# Source: https://www.rfc-editor.org/rfc/rfc9530.txt
+# RFC 9530, Digest Fields. Verbatim excerpt, lines 1095-1146 (Appendix B.1
+# and B.2). Lines starting with # were added here; long lines use RFC 8792
+# backslash wrapping.
+
+B.1.  Server Returns Full Representation Data
+
+   In this example, the message content conveys complete representation
+   data.  This means that in the response, Content-Digest and Repr-
+   Digest are both computed over the JSON object {"hello": "world"}
+   followed by an LF; thus, they have the same value.
+
+   GET /items/123 HTTP/1.1
+   Host: foo.example
+
+                     Figure 11: GET Request for an Item
+
+   NOTE: '\' line wrapping per RFC 8792
+
+   HTTP/1.1 200 OK
+   Content-Type: application/json
+   Content-Length: 19
+   Content-Digest: \
+     sha-256=:RK/0qy18MlBSVnWgjwz6lZEWjP/lF5HF9bvEF8FabDg=:
+   Repr-Digest: \
+     sha-256=:RK/0qy18MlBSVnWgjwz6lZEWjP/lF5HF9bvEF8FabDg=:
+
+   {"hello": "world"}
+
+     Figure 12: Response with Identical Repr-Digest and Content-Digest
+
+B.2.  Server Returns No Representation Data
+
+   In this example, a HEAD request is used to retrieve the checksum of a
+   resource.
+
+   The response Content-Digest field-value is computed on empty content.
+   Repr-Digest is calculated over the JSON object {"hello": "world"}
+   followed by an LF, which is not shown because there is no content.
+
+   HEAD /items/123 HTTP/1.1
+   Host: foo.example
+
+                    Figure 13: HEAD Request for an Item
+
+   NOTE: '\' line wrapping per RFC 8792
+
+   HTTP/1.1 200 OK
+   Content-Type: application/json
+   Content-Digest: \
+     sha-256=:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=:
+   Repr-Digest: \
+     sha-256=:RK/0qy18MlBSVnWgjwz6lZEWjP/lF5HF9bvEF8FabDg=:
+
+       Figure 14: Response with Both Content-Digest and Digest (Empty
+                                  Content)
+

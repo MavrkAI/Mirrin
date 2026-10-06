@@ -1,0 +1,1165 @@
+<!doctype html>
+<!--
+  index.html: the home page ("Part one: the twin"). Shares site.css with cloud.html.
+
+  PRODUCT NAME TOKEN
+  The name renders as "Mirrin". To rename, change it in these places in this
+  file and nowhere else:
+    1. <title>, og:site_name, og:title, twitter:title, og:image:alt,
+       twitter:image:alt and the JSON-LD block's name (in <head>).
+    2. aria-label="Mirrin home" on the masthead brand link.
+    3. Every <span class="pn" translate="no">Mirrin</span> in the page.
+       Count: grep -o 'class="pn"' index.html | wc -l
+              prints 34 today: 32 in the page and 2 in this comment.
+  A one-shot swap that leaves URLs alone (URLs always have "/Mirrin"):
+       sed -E -i '' 's#(^|[^/])Mirrin#\1NewName#g' index.html cloud.html
+  and then check:  grep -n '[^/]Mirrin' index.html cloud.html   (prints nothing)
+  The same command also rewrites these comments, which is harmless.
+
+  THE NAME OUTSIDE THE TOKEN (its own decision, not part of the swap):
+    (a) GitHub URLs https://github.com/MavrkAI/Mirrin and the raw.githubusercontent
+        install URL (hero, pricing, install, footer).
+    (b) The CLI name `mirrin` and the folder `~/.mirrin` (install, ownership, FAQ).
+    (c) The installers' file names, Mirrin-<version>-windows-setup.exe and
+        Mirrin-<version>-macos.dmg (install). The swap rewrites them; that is
+        right only once AppName and OutputBaseFilename in
+        packaging/windows/mirrin.iss and the DMG name in
+        scripts/release-macos.sh have changed too.
+  Nyra and Pickoo are persona names, and MavrkAI is the company. The
+  default persona carries the product's name, so his name is the token too
+  ("Hey Mirrin" included) and the swap renames him with the product. Alt and
+  aria-label text, which can't hold the token, calls him the default persona
+  or your twin. The persona the code still calls by her old id is Nyra here,
+  always (a parallel branch renames her in the code).
+  The Cloud placeholder names (cloud.mirrin.app, mirrin.link) are deliberately not used.
+
+  TRUTH
+  The page is written for customers: no file names, function names or
+  design-doc references in what a reader sees. Every claim is still true of
+  the code or of docs/cloud-design.md, and site_test.go checks the facts it
+  states (numbers, colours, personas, licences, commands) against the code.
+  No Mirrin release is out yet, and the site goes up with the first one
+  (README, launch precondition 2), so the chips are:
+    green "Available now"   built, and in the first release;
+    amber "Being tested"    built and in the first release, but not yet
+                            checked on real phones (the Home Screen app,
+                            lock-screen approvals and passkeys:
+                            docs/pwa-testing.md's matrix);
+    blue  "Planned"         Cloud, which is built but not running or for
+                            sale ("Planned · not on sale").
+  site_test.go holds this page to that list. The daily memory copies are in
+  the tree and are called copies.
+
+  VOICE
+  The public build ships no trained wake-word model (the old one's training
+  data can't be used in a product; a licence-clean one is WP-24,
+  docs/cloud-design.md §12). Every persona, the default included, hears its name
+  by transcribing speech on the computer and answers a beat slower. Never
+  claim an on-device detector, or that nothing is transcribed until it
+  hears its name.
+
+  THE DRAWINGS
+  Fig. 1's default persona and the persona portraits are drawn by
+  internal/api/characters.js itself: node site/assets/characters/draw.js
+  (run from the repository root) rewrites the portraits and the drawing
+  between the mirrin:start and mirrin:end markers below.
+
+  LAUNCH PRECONDITIONS (see README.md; do not publish until all are true): a
+  public repo and a post-rename release with the artefact names install.sh and
+  install.ps1 expect, plus SHA256SUMS and its Sigstore signature;
+  docs/cloud-design.md on main; docs/threat-model.md corrected; the site
+  served from https://mirrin.app (the canonical, og:url and image URLs here
+  are absolute there already); every external link clicked once.
+
+  KNOWN ISSUES DISCLOSED ON THIS PAGE (remove the lines when the code changes):
+    section 7: a web server on this computer that the browser visits receives
+    the pages' mirrin_dev cookie (not scoped by port), which a program behind
+    it could replay; browsers can't (docs/threat-model.md, "Local surface").
+    (The loopback cookie issue, once disclosed in sections 3 and 7, was closed
+    by WP-01's Host, Origin and Sec-Fetch-Site checks.)
+-->
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mirrin: an open-source personal AI that lives on your machine</title>
+<link rel="canonical" href="https://mirrin.app/">
+<meta name="description" content="A personal AI twin on your own computer. Text it from anywhere, say its name, approve what it does with a screenshot. Free, open source, no account.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0c0f1c">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://mirrin.app/">
+<meta property="og:locale" content="en_GB">
+<meta property="og:site_name" content="Mirrin">
+<meta property="og:title" content="Mirrin: an open-source personal AI that lives on your machine">
+<meta property="og:description" content="Your AI, on your own machine. It remembers you, answers to its name and asks before it acts. Free and open source.">
+<meta property="og:image" content="https://mirrin.app/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Mirrin, a gentleman in a dinner jacket, beside the line: An AI of your own, living on your own machine.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mirrin: an open-source personal AI that lives on your machine">
+<meta name="twitter:description" content="Your AI, on your own machine. It remembers you, answers to its name and asks before it acts. Free and open source.">
+<meta name="twitter:image" content="https://mirrin.app/assets/og.png">
+<meta name="twitter:image:alt" content="Mirrin, a gentleman in a dinner jacket, beside the line: An AI of your own, living on your own machine.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preload" href="assets/fonts/newsreader.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/colophon-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="site.css">
+<script>document.documentElement.classList.add('js');try{if(localStorage.getItem('theme')==='light'){document.documentElement.setAttribute('data-theme','light');document.querySelector('meta[name="theme-color"]').content='#f7f8fc'}}catch(e){}</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Mirrin",
+  "description": "A personal AI twin that lives on your own computer: text it from anywhere, say its name, and approve what it does. Free and open source, with no account.",
+  "url": "https://mirrin.app/",
+  "image": "https://mirrin.app/assets/og.png",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "macOS, Windows, Linux",
+  "isAccessibleForFree": true,
+  "license": "https://mirrin.app/pricing.html#licence",
+  "downloadUrl": "https://github.com/MavrkAI/Mirrin/releases",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "author": { "@type": "Organization", "name": "MavrkAI" },
+  "sameAs": ["https://github.com/MavrkAI/Mirrin"]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- Shared SVG: arrowheads, orb gradients, small icons. Kept in the page (not display:none) so markers render. -->
+<svg class="defs" aria-hidden="true" focusable="false">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0 L10 5 L0 10 Z"/></marker>
+    <marker id="ah-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="ah-acc" d="M0 0 L10 5 L0 10 Z"/></marker>
+    <marker id="ah-m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-m" d="M0 0 L10 5 L0 10 Z"/></marker>
+    <linearGradient id="g-brand" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3ddc84"/><stop offset="1" stop-color="#7aa2ff"/></linearGradient>
+    <radialGradient id="g-listen" cx="38%" cy="34%" r="72%"><stop offset="0" stop-color="#e6fdff"/><stop offset=".35" stop-color="#22d3ee"/><stop offset=".7" stop-color="#3b82f6"/><stop offset="1" stop-color="#4c2a8a"/></radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="8"/></filter>
+  </defs>
+  <symbol id="i-mark" viewBox="0 0 32 32"><rect width="32" height="32" rx="7.5" fill="#161a45"/><g transform="translate(3 3) scale(0.26)"><g fill="none" stroke-width="11" stroke-linecap="round"><path d="M18.5 80V58a14.75 14.75 0 0 1 29.5 0V80" stroke="#ffffff"/><path d="M52 80V58a14.75 14.75 0 0 1 29.5 0V80" stroke="#9ea4ff"/></g><circle cx="33.25" cy="25" r="8" fill="#ffffff"/><circle cx="66.75" cy="25" r="8" fill="#9ea4ff"/></g></symbol>
+  <symbol id="i-signal" viewBox="0 0 18 11"><g fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="6" rx="1"/><rect x="10" y="2.5" width="3" height="8.5" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/></g></symbol>
+  <symbol id="i-wifi" viewBox="0 0 16 11"><path fill="currentColor" d="M8 11 5.6 8.4a3.4 3.4 0 0 1 4.8 0L8 11Zm-4.2-4.4L2.3 5a8 8 0 0 1 11.4 0l-1.5 1.6a5.9 5.9 0 0 0-8.4 0ZM.8 3.4-.6 1.8a12.3 12.3 0 0 1 17.2 0l-1.4 1.6a10.2 10.2 0 0 0-14.4 0Z"/></symbol>
+  <symbol id="i-batt" viewBox="0 0 26 12"><rect x=".5" y=".5" width="22" height="11" rx="3.2" fill="none" stroke="currentColor" opacity=".45"/><rect x="2.2" y="2.2" width="16" height="7.6" rx="1.8" fill="currentColor"/><path d="M24 4v4c.8-.2 1.4-1 1.4-2s-.6-1.8-1.4-2Z" fill="currentColor" opacity=".45"/></symbol>
+  <symbol id="i-back" viewBox="0 0 10 16"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M8 1.5 2 8l6 6.5"/></symbol>
+  <symbol id="i-ext" viewBox="0 0 16 16"><path d="M5 3h8v8M13 3 3.5 12.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+</svg>
+
+<header class="mast">
+  <div class="wrap mast-in">
+    <a class="brand" href="index.html" aria-label="Mirrin home"><svg aria-hidden="true"><use href="#i-mark"/></svg><span class="pn" translate="no">Mirrin</span></a>
+    <span class="runhead">Part one: the twin</span>
+    <nav class="nav" aria-label="Primary">
+      <ul>
+        <li><a href="index.html" aria-current="page">The twin</a></li>
+        <li><a href="#install">Install</a></li>
+        <li><a href="protocols.html">Protocols</a></li>
+        <li><a href="cloud.html">Cloud<span class="sr-only">,</span><span class="tag">planned</span></a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin">GitHub</a></li>
+      </ul>
+    </nav>
+    <button class="theme" type="button" aria-pressed="true">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg>
+      <span>Dark theme</span>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- home-hero -->
+<section class="wrap hero hero-home" aria-labelledby="hero-h">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <p class="kicker"><span>Free and open source</span><span>No account</span></p>
+      <h1 id="hero-h"><span class="w" style="--w:0">Your</span> <span class="w" style="--w:1">own</span> <span class="w" style="--w:2">AI.</span> <span class="h1-2"><span class="w" style="--w:3">On</span> <span class="w" style="--w:4">your</span> <span class="w" style="--w:5">own</span> <span class="w" style="--w:6">machine.</span></span></h1>
+      <p class="lead"><span class="pn" translate="no">Mirrin</span> remembers you, answers to its name and asks before it acts.</p>
+      <div class="ctas">
+        <a class="btn primary" href="#install">Install it free</a>
+        <a class="btn" href="https://github.com/MavrkAI/Mirrin">Code on GitHub<svg aria-hidden="true"><use href="#i-ext"/></svg></a>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <figure class="stage" aria-labelledby="stage-cap">
+        <div class="screen">
+          <p class="screen-top" aria-hidden="true"><span><span class="pn" translate="no">Mirrin</span> · presence screen</span></p>
+          <button class="stage-ctl" type="button" aria-pressed="false">
+            <svg class="i-pause" viewBox="0 0 10 10" aria-hidden="true"><rect x="1" y="1" width="3" height="8" fill="currentColor"/><rect x="6" y="1" width="3" height="8" fill="currentColor"/></svg>
+            <svg class="i-play" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1l7 4-7 4z" fill="currentColor"/></svg>
+            <span class="t">Pause</span><span class="sr-only"> the animation</span>
+          </button>
+          <div class="stage-body">
+            <div class="char sync" aria-hidden="true"><!-- mirrin:start --><svg viewBox="0 0 200 220" aria-hidden="true" focusable="false" fill="none" stroke-linecap="round"><defs><radialGradient id="hmSuit" gradientUnits="userSpaceOnUse" cx="70" cy="150" r="120"><stop stop-color="#4c5262"/><stop offset=".45" stop-color="#262a34"/><stop offset="1" stop-color="#0b0c10"/></radialGradient><linearGradient id="hmLa" x2="1" y2="1"><stop stop-color="#5c6272"/><stop offset=".45" stop-color="#22252e"/><stop offset="1" stop-color="#08090c"/></linearGradient><radialGradient id="hmS" gradientUnits="userSpaceOnUse" cx="98" cy="88" r="54" fx="86" fy="72"><stop stop-color="#f2c4a0"/><stop offset=".55" stop-color="#d09670"/><stop offset="1" stop-color="#975c3f"/></radialGradient><linearGradient id="hmH" x2=".6" y2="1"><stop stop-color="#664431"/><stop offset=".45" stop-color="#2c1b12"/><stop offset="1" stop-color="#110906"/></linearGradient><radialGradient id="hmB" gradientUnits="userSpaceOnUse" cx="100" cy="100" r="40"><stop offset=".3" stop-color="#3a241852"/><stop offset=".8" stop-color="#24150e99"/><stop offset="1" stop-color="#1e110bb8"/></radialGradient><linearGradient id="hmD" gradientUnits="userSpaceOnUse" x1="0" y1="52" x2="0" y2="94"><stop offset=".2" stop-color="#24150e"/><stop offset="1" stop-color="#5e4030"/></linearGradient><linearGradient id="hmT" x2="0" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#d8d6d0"/></linearGradient><linearGradient id="hmW" x2="0" y2="1"><stop stop-color="#d8c6bc"/><stop offset=".5" stop-color="#fbf6f2"/></linearGradient><radialGradient id="hmI" cy="68%" r="62%"><stop stop-color="#a77446"/><stop offset=".5" stop-color="#55301a"/><stop offset="1" stop-color="#1c0d06"/></radialGradient><linearGradient id="hmLi" x2="0" y2="1"><stop stop-color="#b6766c"/><stop offset="1" stop-color="#8a4c46"/></linearGradient><radialGradient id="hmSh"><stop stop-color="#ffffff5c"/><stop offset="1" stop-color="#ffffff00"/></radialGradient><radialGradient id="hmF"><stop stop-color="#00000073"/><stop offset="1" stop-color="#00000000"/></radialGradient><linearGradient id="hmY" x2="0" y2="1"><stop stop-color="#a87a5e00"/><stop offset=".5" stop-color="#a87a5ecc"/><stop offset="1" stop-color="#a87a5e00"/></linearGradient><radialGradient id="hmLt" cx="40%" cy="35%" r="75%"><stop class="bowc" style="stop-color:color-mix(in srgb,var(--c1) 40%,#fff)"/><stop class="bowc" offset=".6" style="stop-color:var(--c1)"/><stop class="bowc" offset="1" style="stop-color:color-mix(in srgb,var(--c1) 70%,#000)"/></radialGradient><radialGradient id="hmHl"><stop class="bowc" style="stop-color:var(--c1);stop-opacity:.7"/><stop class="bowc" offset="1" style="stop-color:var(--c1);stop-opacity:0"/></radialGradient><path id="hmLp" d="M113,150l-12,48c10-11 22-26 31-40l6-7l-9,4l-9-14c-2,2-5,5-7,8zM87,150l12,48c-10-11-22-26-31-40l-6-7l9,4l9-14c2,2 5,5 7,8z"/><path id="hmHr" d="M64,64c-3-9-3-19 2-27c7-10 19-15 34-15c16,0 28,6 34,15c5,8 5,18 1,27c-1.6-2.6-3.8-4.6-6.2-5.4c-2.2-.6-4.8-.6-7.2-.8c-2.4-1.6-5-2.8-8.4-3.5c-4.6-.9-9.4-1.3-14-1.3c-5,0-9.6,.4-14,1.3c-3.4,.7-6,1.9-8.4,3.5c-2.4,.2-5,.2-7.2,.8c-2.6,.8-4.6,2.8-6,5.8z"/></defs><ellipse cx="100" cy="210" rx="66" ry="6.5" fill="url(#hmF)"/><g class="pb"><g class="turn"><path d="M100,34c20,0 34,12 36,30c1,10 0,20-2,28c-6,4-20,6-34,6c-14,0-28-2-34-6c-2-8-3-18-2-28c1-18 16-30 36-30z" fill="url(#hmH)" class="bd"/><path d="M87,110c1,12 0,24-1,36h27c-1-12-1-24-1-36z" fill="url(#hmS)"/><path d="M100,140c6,0 12-2 17-5c5,1 10,3 14,6c8,6 25,8 35,17c7,7 9,20 9,34v2c0,10-30,16-75,16c-45,0-75-6-75-16v-2c0-14 2-27 9-34c10-9 27-11 35-17c4-3 9-5 14-6c5,3 11,5 17,5z" fill="url(#hmSuit)" class="bd"/><ellipse cx="58" cy="158" rx="15" ry="5" transform="rotate(-22 58 158)" fill="url(#hmSh)"/><g class="front"><path d="M84,138h32l-16,64z" fill="url(#hmT)"/><path d="M112,131c2,1 4,2 5,5l1,6l-6,11l-12-4c4-4 8-9 10-15zM88,131c-2,1-4,2-5,5l-1,6l6,11l12-4c-4-4-8-9-10-15z" fill="url(#hmT)"/><g fill="#16181e"><circle cx="100" cy="166" r="1.3"/><circle cx="100" cy="177" r="1.3"/><circle cx="100" cy="188" r="1.3"/></g><use href="#hmLp" x="1.4" y="1.4" fill="#00000073"/><use href="#hmLp" fill="url(#hmLa)"/><path d="M102,146.4l8.8-3.2c1-.2 1.6,.6 1.6,2l0,6.4c0,1.4-.6,2.2-1.6,2l-8.8-3.2zM98,146.4l-8.8-3.2c-1-.2-1.6,.6-1.6,2l0,6.4c0,1.4 .6,2.2 1.6,2l8.8-3.2z" fill="url(#hmLa)"/><rect x="97" y="146" width="6" height="4.8" rx="1.2" fill="#1c1e25"/><path d="M134.2,178.6l11.4-1.2l.3,2.2l-11.4,1.2z" fill="url(#hmT)"/><path d="M134.6,178.4l2.8-3.8l2,2.8l3.2-4.2l2.8,3.8z" fill="url(#hmT)"/><circle cx="121" cy="164" r="11" fill="url(#hmHl)"/><g transform="matrix(1.18 0 0 1.18 -21.8 -29.5)"><path d="M121,158.5q.7,4.8 5.5,5.5q-4.8,.7-5.5,5.5q-.7-4.8-5.5-5.5q4.8-.7 5.5-5.5z" fill="url(#hmLt)" stroke="#ffffff73" stroke-width=".5"/></g></g><g class="head"><path d="M135,85c5-2 8,4 7,11c-1,7-3,12-8,12zM65,85c-5-2-8,4-7,11c1,7 3,12 8,12z" fill="url(#hmS)"/><path d="M100,45.6c21.6,0 35.8,14.8 35.8,36.4c0,12-1.4,23.6-5,33c-3.8,9.2-12,16.8-20.8,20.2c-3.2,1.2-6.6,1.8-10,1.8c-3.4,0-6.8-.6-10-1.8c-8.8-3.4-17-11-20.8-20.2c-3.6-9.4-5-21-5-33c0-21.6 14.2-36.4 35.8-36.4z" fill="url(#hmS)"/><g fill="url(#hmSh)"><ellipse cx="78" cy="96" rx="6" ry="3"/><ellipse cx="99.4" cy="104" rx="2.6" ry="2"/></g><path d="M100,113c5,1 10,1 15,2c3,0 6-1 8-2c4-2 7-4 9-8c0-3 1-10 1-16c1,0 1,0 2,0c0,7-1,17-5,27c-4,8-11,16-20,20c-3,1-6,2-10,2c-4,0-7-1-10-2c-9-4-16-12-20-20c-4-10-5-20-5-27c1,0 1,0 2,0c0,6 1,13 1,16c2,4 5,6 9,8c2,1 5,2 8,2c5-1 10-1 15-2z" fill="url(#hmB)"/><path d="M102.6,86c1.2,5 2.2,10.4 4,15.6c-.6,1.6-1.8,2.4-3,2.6c.4-6 .2-12-1-18.2z" fill="#8a4a2e29"/><path d="M93.8,106c.2,2 1.8,3.4 3.6,3.4c1,.9 4.2,.9 5.2,0c1.8,0 3.4-1.4 3.6-3.4" stroke="#7a40298c" stroke-width="1.2"/><path d="M91.4,120.6c2.8,.6 5.8,.9 8.8,.7c3.6-.2 6.8-1.2 9.6-3c-.8,3.6-4.2,5.8-9,6c-4.6,.2-8-1.4-9.4-3.7z" fill="url(#hmLi)"/><g class="lower"><path d="M91.4,120.6c2.8,.6 5.8,.9 8.8,.7c3.6-.2 6.8-1.2 9.6-3c-.8,5.6-4.2,8.8-9,9c-4.6,.2-8-2.6-9.4-6.7z" fill="#3a1414"/><path d="M94,121.1c4,.9 9,.7 13.2-1.3l-.4,1.8c-4,1.8-8.6,2.1-12.4,1.1z" fill="#f3ece4"/><path d="M91.4,120.6c1,4.2 4.4,6.8 9,6.6c4.4-.2 7.6-3.2 9.4-8.9c-.4,6.6-4,10.8-9.2,11c-4.8,.2-8.4-3.4-9.2-8.7z" fill="url(#hmLi)"/></g><path d="M90,120.4c3.4-1.6 7-2.6 10-2.6c3.4,0 7-.6 11.6-2.2c-3,2.8-6.8,4.4-11,4.8c-3.6,.3-7,.3-10.6,0z" fill="#a0605a"/><path d="M100,112.6c2.8-.8 6-1.4 8.8-1.2c3,.2 5.2,1.6 6.6,3.8c-2.8-.4-5.6-.2-8.2,.2c-2.6,.4-5,1-7.2,1.6c-2.2-.6-4.6-1-7-1c-2.4,0-4.8,.6-6.8,1.6c1-3 3-5 5.6-5.6c2.6-.6 5.4-.2 8.2,.6z" fill="#22140dd9"/><path class="smile" d="M89.8,119.6c3.6,1.2 7.2,1.6 10.4,1.5c3.8-.3 7.2-1.3 10-3.2c.8-.7 1.5-1.8 2-3.2" stroke="#5e2a26" stroke-width="1.1"/><g class="eyes"><path d="M94,81.2l.2-2.2c-4.2-2.2-8.6-3.4-12.8-3.4c-4.4,0-8,1-10.8,2.8c3.2-.8 6.6-1 10.4-.8c4.4,.2 8.8,1.4 13,3.6zM106,79.6l-.2-2.2c4.2-2.2 8.6-3.4 12.8-3.4c4.4,0 8,1 10.8,2.8c-3.2-.8-6.6-1-10.4-.8c-4.4,.2-8.8,1.4-13,3.6z" fill="#2a1810"/><g class="eye"><g class="open"><path d="M92.2,92.6c-2.4-5-14.6-7-19-1.8c3,5.4 15.4,6.6 19,1.8z" fill="url(#hmW)"/><g class="iris"><circle cx="83" cy="91.4" r="5.2" fill="url(#hmI)" stroke="#140804" stroke-width=".6"/><circle cx="83" cy="91.4" r="2.3" fill="#0d0504"/><circle cx="81" cy="90" r="1.3" fill="#fff"/></g><path d="M92.2,92.6c-3.6,4.8-16,3.6-19-1.8l-.6,2.2c3.4,6 17,7 20.2,1.2z" fill="url(#hmS)"/><path d="M92.6,89.6c-2.4-8-16.6-9.4-20.2-2.2l1.2,.8c4-6 14.6-5.4 19,1.4z" fill="#6b35244d"/><path d="M92.4,93c-2.4-5.4-14.8-7.4-19.4-2l-.8-.2c4-7 17.8-7 20.2,2.2z" fill="#24140e"/></g><path d="M92.4,92.6c-4.2,2.8-13.6,3-19.4-1.6l-.6,.8c5.4,4.8 15.4,4.6 20,.8z" fill="#24140e" class="lid"/></g><g class="eye"><g class="open"><path d="M107.8,92.6c2.4-5 14.6-7 19-1.8c-3,5.4-15.4,6.6-19,1.8z" fill="url(#hmW)"/><g class="iris"><circle cx="117" cy="91.4" r="5.2" fill="url(#hmI)" stroke="#140804" stroke-width=".6"/><circle cx="117" cy="91.4" r="2.3" fill="#0d0504"/><circle cx="115" cy="90" r="1.3" fill="#fff"/></g><path d="M107.8,92.6c3.6,4.8 16,3.6 19-1.8l.6,2.2c-3.4,6-17,7-20.2,1.2z" fill="url(#hmS)"/><path d="M107.4,89.6c2.4-8 16.6-9.4 20.2-2.2l-1.2,.8c-4-6-14.6-5.4-19,1.4z" fill="#6b35244d"/><path d="M107.6,93c2.4-5.4 14.8-7.4 19.4-2l.8-.2c-4-7-17.8-7-20.2,2.2z" fill="#24140e"/></g><path d="M107.6,92.6c4.2,2.8 13.6,3 19.4-1.6l.6,.8c-5.4,4.8-15.4,4.6-20,.8z" fill="#24140e" class="lid"/></g></g><use href="#hmHr" y="2.2" fill="#4a22144d"/><path class="bd" d="M64,94c-1-8-1-18-1-28M64,64c-3-9-3-19 2-27c7-10 19-15 34-15c16,0 28,6 34,15c5,8 5,18 1,27M137,66c0,10 0,20-1,28"/><path d="M129,58c3,4 4,10 4,17c1,7 0,13 0,19c1.4,.8 2.6,.8 3.4,0c.4-8 .6-18 0-28c-.4-8-1.4-15-3.4-20zm-57,0c-3,4-4,10-5,17c0,7 1,13 1,19c-1.4,.8-2.6,.8-3.4,0c-.6-8-.6-18-.2-28c.4-8 1.6-15 3.6-20z" fill="url(#hmD)"/><use href="#hmHr" fill="url(#hmH)"/><path d="M122,57c-2-7-2-15 0-24m-12,20c-4-7-9-15-17-22m3,21c-6-5-12-10-19-13m49,19c3-6 7-10 11-12" stroke="#07030266" stroke-width=".8"/><path d="M104,52c-5-8-11-14-20-19c9,3 16,9 22,19zm-14,2c-5-5-11-8-18-9c8,0 14,3 20,8z" fill="url(#hmY)"/><path d="M72,42c10-11 32-15 52-9c-20-3-38,1-52,9z" fill="url(#hmY)"/></g></g></g><g class="dots" fill="#fff"><circle cx="166" cy="46" r="5"/><circle cx="178" cy="33" r="6"/><circle cx="192" cy="19" r="7"/></g></svg><!-- mirrin:end --></div>
+            <p class="states" aria-hidden="true"><span class="lg lg-l sync">Listening</span><span class="lg lg-t sync">Thinking</span><span class="lg lg-s sync">Speaking</span></p>
+            <div class="transcript">
+              <p class="line line-you"><span class="who">You</span><span class="tx sync">flight to Sydney thursday 7am, book the usual cab</span><span class="wave wave-l sync" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></p>
+              <p class="line line-mv"><span class="who sync"><span class="pn" translate="no">Mirrin</span> <span class="wave wave-s sync" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></span><span class="tx"><span class="s1 sync">Noted.</span> <span class="s2 sync">Cab for 5:10 from home is one approval away once you're happy with the time.</span> <span class="s3 sync">I've put the flight on your calendar and I'll wake you at 4:30.</span></span><span class="dots sync" aria-hidden="true"><i></i><i></i><i></i></span></p>
+            </div>
+          </div>
+        </div>
+        <figcaption id="stage-cap"><span class="fig">Fig. 1</span>The presence screen, illustrated: <span class="pn" translate="no">Mirrin</span>, the gentleman who's two steps ahead, drawn just as the app draws him, and the pin on his lapel takes the state's colour: green while he listens, blue while he thinks and speaks.</figcaption>
+      </figure>
+      <div class="hero-cast">
+        <p class="label">Or pick someone else</p>
+        <ul>
+          <li><a href="#personas"><q class="say" aria-hidden="true">Hello. Nyra here.</q><img src="assets/characters/nyra.svg" width="200" height="220" decoding="async" alt=""><span><b>Nyra</b>Warm, with an eye for detail</span></a></li>
+          <li><a href="#personas"><q class="say" aria-hidden="true">Hiya! Pickoo here.</q><img src="assets/characters/penguin.svg" width="200" height="220" decoding="async" alt=""><span><b>Pickoo</b>A penguin in a bow tie</span></a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- home-offer: Free and Cloud in two lines, in the first screen -->
+    <section class="offer-strip in-hero" aria-labelledby="strip-h">
+      <h2 id="strip-h" class="sr-only">Free, and Cloud (planned)</h2>
+      <ul class="strip">
+        <!-- offer-strip:start -->
+        <li><span class="st small">Available now</span><p><b>Free: the whole twin.</b> Everything it does, on your machine, open source, for good. $0 and no account.</p></li>
+        <li><span class="st small plan">Planned · not on sale</span><p><b><span class="pn" translate="no">Mirrin</span> Cloud: availability.</b> It would add an address that reaches your machine from any network, and off-site space for encrypted backups. Planned at $6 a month.</p></li>
+        <!-- offer-strip:end -->
+        <li class="strip-go"><a href="pricing.html">Pricing, and what we'd see <span aria-hidden="true">→</span></a></li>
+      </ul>
+    </section>
+    <dl class="spec">
+      <div><dt>Runs on</dt><dd>macOS, Linux, Windows</dd></div>
+      <div><dt>Licence</dt><dd>MIT source, <a href="#licence"><span class="nw">GPL-3.0</span> downloads</a></dd></div>
+      <div><dt>Account</dt><dd>None</dd></div>
+      <div><dt>Model</dt><dd>Yours to choose</dd></div>
+    </dl>
+  </div>
+</section>
+
+<!-- home-short: the short version first. Each card links down to its section. -->
+<section class="wrap short" id="does" aria-labelledby="does-h">
+  <div class="short-head"><h2 id="does-h">What it does</h2><p class="label">The short version</p></div>
+  <ul class="does">
+    <li>
+      <svg class="does-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4h0A2.5 2.5 0 0 1 4 13.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.5 8.5h7M8.5 11.5h4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <h3>Text it from anywhere</h3>
+      <p>Message it on WhatsApp, Telegram, Signal or eight other apps, and it answers from your computer at home.</p>
+      <a class="go" href="#text">Where it answers <span aria-hidden="true">→</span></a>
+    </li>
+    <li>
+      <svg class="does-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5.5c0 4.2 2.9 7.6 7 9.5 4.1-1.9 7-5.3 7-9.5V6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m8.8 12 2.2 2.2 4.4-4.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <h3>It asks first</h3>
+      <p>Sending, booking, deleting and paying wait for your yes, with a picture of the page when it's a website.</p>
+      <a class="go" href="#approvals">How approvals work <span aria-hidden="true">→</span></a>
+    </li>
+    <li>
+      <svg class="does-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h9.5L19 7v13.5H6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 10h7M9 13.5h7M9 17h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <h3>It remembers you</h3>
+      <p>Tell it once and it remembers, in one file on your computer. Read every word, and make it forget anything.</p>
+      <a class="go" href="#memory">What it keeps <span aria-hidden="true">→</span></a>
+    </li>
+  </ul>
+</section>
+
+<section class="wrap short" id="how" aria-labelledby="how-h">
+  <div class="short-head"><h2 id="how-h">How it works</h2><p class="label">Three steps</p></div>
+  <ol class="how3">
+    <li>
+      <span class="step-n" aria-hidden="true">1</span>
+      <h3>Install</h3>
+      <p>On a Mac, drag the app into Applications. On Windows, run the setup program. Or, in a terminal, one line:</p>
+      <div class="code step-code">
+        <div class="code-bar"><span>macOS and Linux</span><button class="copy" type="button" data-copy="cmd-0" aria-label="Copy the one-line install command">Copy</button></div>
+        <pre id="cmd-0" tabindex="0" data-copy-text="curl -fsSL https://raw.githubusercontent.com/MavrkAI/Mirrin/main/install.sh | sh"><code><span class="pr" aria-hidden="true">$ </span>curl -fsSL https://raw.githubusercontent.com/MavrkAI/Mirrin/main/install.sh | sh</code></pre>
+      </div>
+      <a class="go" href="#install">Every way to install <span aria-hidden="true">→</span></a>
+    </li>
+    <li>
+      <span class="step-n" aria-hidden="true">2</span>
+      <h3>Talk to it</h3>
+      <p>Say “Hey <span class="pn" translate="no">Mirrin</span>”, or message it from your phone. It thinks with the model you choose: Claude, OpenAI, Gemini, or a free one on your own computer.</p>
+    </li>
+    <li>
+      <span class="step-n" aria-hidden="true">3</span>
+      <h3>It handles it</h3>
+      <p>Reminders, your calendar, a booking on any website, a briefing at 7:00 each morning. Anything that matters waits for your yes.</p>
+    </li>
+  </ol>
+</section>
+
+<nav class="wrap toc long" aria-labelledby="toc-h" style="--rows:6">
+  <div class="toc-head"><h2 id="toc-h" class="label">The long version</h2><span class="label">Part one: the twin</span></div>
+  <ol>
+    <li><a href="#text"><span class="n">1</span><span class="t">Text it from anywhere</span><span class="k">Channels</span></a></li>
+    <li><a href="#personas"><span class="n">2</span><span class="t">Pick who it is</span><span class="k">Personas</span></a></li>
+    <li><a href="#voice"><span class="n">3</span><span class="t">Say its name</span><span class="k">Voice</span></a></li>
+    <li><a href="#approvals"><span class="n">4</span><span class="t">It asks first</span><span class="k">Approvals</span></a></li>
+    <li><a href="#memory"><span class="n">5</span><span class="t">It remembers you</span><span class="k">Memory</span></a></li>
+    <li><a href="#routines"><span class="n">6</span><span class="t">It gets in touch first</span><span class="k">Routines</span></a></li>
+    <li><a href="#yours"><span class="n">7</span><span class="t">It outlives any company</span><span class="k">Ownership</span></a></li>
+    <li><a href="#trust"><span class="n">8</span><span class="t">Built to be handed the keys</span><span class="k">Safety</span></a></li>
+    <li><a href="#free"><span class="n">9</span><span class="t">Free, and Cloud (planned)</span><span class="k">Pricing</span></a></li>
+    <li><a href="#install"><span class="n">10</span><span class="t">Install</span><span class="k">Setup</span></a></li>
+    <li><a href="#inside"><span class="n">11</span><span class="t">What's inside</span><span class="k">Parts</span></a></li>
+    <li><a href="#questions"><span class="n">12</span><span class="t">Questions</span><span class="k">FAQ</span></a></li>
+  </ol>
+</nav>
+
+<!-- home-text -->
+<section class="wrap" id="text" aria-labelledby="text-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">1</span>Channels</span><span class="st">Available now</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>1</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="text-h">Text it from anywhere.</h2>
+        <div class="split">
+          <div class="prose">
+            <p>Your twin lives in the chats you already use. Message yourself on WhatsApp and <span class="pn" translate="no">Mirrin</span> answers from your computer at home. It works in eleven messaging apps, email included, plus voice and the terminal:</p>
+            <ul class="chips" aria-label="The thirteen channels">
+              <li>WhatsApp</li><li>Telegram</li><li>Signal</li><li>iMessage (Mac)</li><li>Discord</li><li>Slack</li><li>Matrix</li><li>Mattermost</li><li>Zulip</li><li>IRC</li><li>Email</li><li class="local">Voice</li><li class="local">Terminal</li>
+            </ul>
+            <p>To pair WhatsApp, you scan a QR code. Only your own “Message yourself” chat counts as you, so texting a friend never gives your twin an instruction. On seven of these apps it can send you pictures too, such as a screenshot of what it's about to do.</p>
+            <p>If a connection drops, it reconnects on its own; if it can't, the Channels page tells you what to fix. Messages you send while it's busy wait their turn.</p>
+            <p class="after">It answers while your computer is on and awake.</p>
+          </div>
+          <figure class="stagebox" aria-labelledby="fig2-cap">
+            <p class="mock-label"><span class="st small">Today</span><span>In your own chat</span></p>
+            <div class="phone app-wa" role="img" aria-label="Illustration: a WhatsApp-style Message yourself chat. You ask for a reminder and then say: flight to Sydney thursday 7am, book the usual cab. Your twin's replies are sent from your own account, so they look like your own messages: Noted. Cab for 5:10 from home is one approval away once you're happy with the time.">
+              <div class="pscreen" aria-hidden="true">
+                <div class="sbar"><span>6:42</span><span class="sys"><svg style="width:17px"><use href="#i-signal"/></svg><svg style="width:15px"><use href="#i-wifi"/></svg><svg style="width:25px;height:12px"><use href="#i-batt"/></svg></span></div>
+                <div class="chead"><svg class="back"><use href="#i-back"/></svg><span class="avatar me">A</span><div><div class="cname">Alex (You)</div><div class="csub">Message yourself</div></div></div>
+                <div class="cbody">
+                  <span class="cchip">Today</span>
+                  <p class="bub out">remind me to call the dentist at four<span class="t">8:15 am</span></p>
+                  <p class="bub out tw">Reminder set for 4:00, sir.<span class="t">8:15 am</span></p>
+                  <p class="bub out">flight to Sydney thursday 7am, book the usual cab<span class="t">6:42 pm</span></p>
+                  <p class="bub out tw">Noted. Cab for 5:10 from home is one approval away once you're happy with the time. I've put the flight on your calendar and I'll wake you at 4:30.<span class="t">6:42 pm</span></p>
+                  <span class="anno"><span class="pn" translate="no">Mirrin</span>'s replies, sent from your computer</span>
+                </div>
+                <div class="cbar"><span class="field">Message</span><span class="circ"></span></div>
+              </div>
+            </div>
+            <figcaption id="fig2-cap"><span class="fig">Fig. 2</span>An illustration. <span class="pn" translate="no">Mirrin</span> writes from your own linked account, so its replies appear as messages from you.</figcaption>
+          </figure>
+        </div>
+
+
+      </div>
+      <div class="sec-wide">
+        <figure class="graph wide-fig" aria-labelledby="fig3-cap">
+          <svg class="dg dg-wide" viewBox="0 0 880 212" role="img" aria-labelledby="fig3-t">
+            <title id="fig3-t">Your phone sends a message to the chat service. Your machine has already connected out to that service, so the message arrives at your twin. No public address, no server of ours, no open port.</title>
+            <rect class="box" x="86" y="30" width="68" height="120" rx="11"/>
+            <line class="ln" x1="110" y1="41" x2="130" y2="41"/>
+            <rect class="fill-soft" x="95" y="56" width="40" height="14" rx="7"/>
+            <rect class="fill-acc" x="105" y="78" width="40" height="14" rx="7"/>
+            <rect class="fill-soft" x="95" y="100" width="30" height="14" rx="7"/>
+            <text class="h" x="120" y="180" text-anchor="middle">You, anywhere</text>
+            <text class="s" x="120" y="200" text-anchor="middle">in a chat app you already use</text>
+            <rect class="soft" x="345" y="54" width="190" height="72" rx="36"/>
+            <text class="h" x="440" y="86" text-anchor="middle">The chat service</text>
+            <text class="s" x="440" y="106" text-anchor="middle">its servers, not ours</text>
+            <rect class="box" x="700" y="34" width="120" height="84" rx="6"/>
+            <rect class="plate" x="708" y="42" width="104" height="68" rx="3"/>
+            <circle cx="760" cy="76" r="16" fill="url(#g-listen)"/>
+            <path class="box" d="M748 118h24l4 18h-32z"/>
+            <line class="ln" x1="730" y1="136.5" x2="790" y2="136.5"/>
+            <text class="h" x="760" y="180" text-anchor="middle">Your machine</text>
+            <text class="s" x="760" y="200" text-anchor="middle">your twin runs here</text>
+            <path class="ln" d="M162 85H337" marker-end="url(#ah)"/>
+            <text class="s" x="250" y="74" text-anchor="middle">your message</text>
+            <path class="ln-acc" d="M692 76H545" marker-end="url(#ah-acc)"/>
+            <text class="s acc" x="618" y="65" text-anchor="middle">connects out</text>
+            <path class="ln-m dash" d="M545 100H690" marker-end="url(#ah-m)"/>
+            <text class="s" x="618" y="120" text-anchor="middle">message arrives</text>
+          </svg>
+          <svg class="dg dg-tall" viewBox="0 0 340 384" role="img" aria-labelledby="fig3-tt">
+            <title id="fig3-tt">Your phone sends a message to the chat service. Your machine has already connected out to that service, so the message arrives at your twin. No public address, no server of ours, no open port.</title>
+            <rect class="box" x="20" y="8" width="62" height="108" rx="11"/>
+            <line class="ln" x1="41" y1="18" x2="61" y2="18"/>
+            <rect class="fill-soft" x="28" y="32" width="36" height="12" rx="6"/>
+            <rect class="fill-acc" x="38" y="52" width="36" height="12" rx="6"/>
+            <rect class="fill-soft" x="28" y="72" width="28" height="12" rx="6"/>
+            <text class="h" x="98" y="52">You, anywhere</text>
+            <text class="s" x="98" y="71">in a chat app you already use</text>
+            <path class="ln" d="M51 124V168" marker-end="url(#ah)"/>
+            <text class="s" x="62" y="150">your message</text>
+            <rect class="soft" x="40" y="176" width="220" height="58" rx="29"/>
+            <text class="h" x="150" y="201" text-anchor="middle">The chat service</text>
+            <text class="s" x="150" y="220" text-anchor="middle">its servers, not ours</text>
+            <path class="ln-acc" d="M222 280V244" marker-end="url(#ah-acc)"/>
+            <text class="s acc" x="212" y="266" text-anchor="end">connects out</text>
+            <path class="ln-m dash" d="M246 242V278" marker-end="url(#ah-m)"/>
+            <text class="s" x="256" y="266">arrives</text>
+            <rect class="box" x="200" y="286" width="112" height="74" rx="6"/>
+            <rect class="plate" x="207" y="293" width="98" height="60" rx="3"/>
+            <circle cx="256" cy="323" r="14" fill="url(#g-listen)"/>
+            <path class="box" d="M244 360h24l4 14h-32z"/>
+            <line class="ln" x1="226" y1="374.5" x2="286" y2="374.5"/>
+            <text class="h" x="186" y="318" text-anchor="end">Your machine</text>
+            <text class="s" x="186" y="337" text-anchor="end">your twin runs here</text>
+          </svg>
+          <ul class="ledger" aria-label="What that means">
+            <li><span>Public address needed</span><b>None</b></li>
+            <li><span>Servers of ours in between</span><b>None</b></li>
+            <li><span>Ports you open</span><b>None</b></li>
+          </ul>
+          <figcaption id="fig3-cap"><span class="fig">Fig. 3</span>How a message reaches your twin. Your computer reaches out to the chat service, so nothing on it sits waiting for the internet to knock.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- home-personas -->
+<section class="wrap" id="personas" aria-labelledby="pers-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">2</span>Personas</span><span class="st">Available now</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>2</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="pers-h">Pick who it is.</h2>
+        <div class="prose">
+          <p>Your twin comes with three personas, each with its own name, character, way of talking and voice. When you first open it, the Welcome window asks who you'd like and lets you hear each voice; change your mind any time from the menu bar.</p>
+        </div>
+        <figure class="cast-fig" aria-labelledby="cast-cap">
+          <ul class="cast">
+            <li>
+              <img src="assets/characters/mirrin.svg" width="200" height="220" loading="lazy" decoding="async" alt="Drawing of the default persona: a man with swept-back dark hair and a short beard, in a black dinner jacket with a bow tie, a pin on his lapel.">
+              <h3><span class="pn" translate="no">Mirrin</span></h3>
+              <p>The gentleman who's two steps ahead: unflappable, precise, quietly dry. A man in a dinner jacket. Calls you sir, if you like. The default.</p>
+              <p class="cast-v">Voice: George, a British man</p>
+              <q class="say"><span class="sr-only">Greets you with: </span>Good to see you. What can I take off your plate?</q>
+            </li>
+            <li>
+              <img src="assets/characters/nyra.svg" width="200" height="220" loading="lazy" decoding="async" alt="Drawing of Nyra: a woman with long dark hair swept over one shoulder, in a navy blazer, a sparkle clip in her hair.">
+              <h3>Nyra</h3>
+              <p>Warm and composed, with an eye for the detail everyone else misses. A woman in a navy blazer.</p>
+              <p class="cast-v">Voice: Nova, an American woman</p>
+              <q class="say"><span class="sr-only">Greets you with: </span>Hello. Nyra here.</q>
+            </li>
+            <li>
+              <img src="assets/characters/penguin.svg" width="200" height="220" loading="lazy" decoding="async" alt="Drawing of a small round penguin with big eyes, rosy cheeks and a bow tie.">
+              <h3>Pickoo</h3>
+              <p>A cheerful little penguin with a bow tie who gets things done. Playful, but never silly about money or anything that can't be undone.</p>
+              <p class="cast-v">Voice: Puck, pitched up and a touch quicker</p>
+              <q class="say"><span class="sr-only">Greets you with: </span>Hiya! Pickoo here.</q>
+            </li>
+          </ul>
+          <figcaption id="cast-cap"><span class="fig">Fig. 4</span>The three, at rest, as the presence screen draws them. The pin, the hair clip and the bow tie change colour as they listen, think and speak.</figcaption>
+        </figure>
+        <div class="prose">
+          <p>Each answers to its own name: “Hey <span class="pn" translate="no">Mirrin</span>”, “Nyra, …” and “Hey Pickoo”. Your twin listens for its name by transcribing what it hears on your computer, and nothing leaves your machine to do it. The first release has no trained wake-word model, so every persona, <span class="pn" translate="no">Mirrin</span> included, answers a beat slower than a purpose-built one would. A faster one is planned.</p>
+          <p>Or create your own with <code>mirrin persona new</code>: one short file with a name, a character, a way of talking, a voice and the name it answers to. Personas can be shared in packs. A persona without a drawing of its own gets the penguin.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- home-voice -->
+<section class="wrap" id="voice" aria-labelledby="voice-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">3</span>Voice</span><span class="st">Available now</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>3</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="voice-h">Say its name. It answers from your own machine.</h2>
+        <div class="split even">
+          <div class="prose">
+            <p>Everything is heard and spoken on your computer. Your twin turns what you say into text right there, and answers when that text starts with its name. Anything else is ignored, and none of it leaves your machine. It replies in a natural voice, made on your machine too: George, a British voice, for <span class="pn" translate="no">Mirrin</span>.</p>
+            <p>It answers a sentence at a time, then keeps listening for a few seconds, so you can reply without the name. When it asks you something on its own (“Shall I go to checkout?”), answer with its name: “<span class="pn" translate="no">Mirrin</span>, yes”.</p>
+            <p>If you trail off mid-thought (“open the…”), it waits for the rest and hears the two as one request. And it talks like a person, not a computer: “the second of October”, not “Oct 2”; “$349.30”, not “349.30 AUD”; a question in words, not a reference number; and the clicks and retries along the way go unsaid.</p>
+            <p class="after">Voice needs a one-time setup that downloads about 850&nbsp;MB of models.</p>
+          </div>
+          <figure class="hears-fig" aria-labelledby="fig5-cap" style="margin:0">
+            <div class="hears">
+              <div class="hears-row"><q>Hey <span class="pn" translate="no">Mirrin</span>, remind me to call the dentist at four.</q><span class="verdict yes">Answers</span><span class="checks"><span>transcribed here ✓</span><span>starts with its name ✓</span></span></div>
+              <div class="hears-row"><q>I told Sam about <span class="pn" translate="no">Mirrin</span> last night.</q><span class="verdict quiet">Stays quiet</span><span class="checks"><span>transcribed here ✓</span><span class="no">starts with its name ✗</span></span></div>
+            </div>
+            <figcaption id="fig5-cap"><span class="fig">Fig. 5</span>How it hears its name, all on your machine: only a request that begins with its name, or has “Hey” and its name in it, counts.</figcaption>
+          </figure>
+        </div>
+
+        <figure aria-labelledby="fig6-cap">
+          <div class="plate" id="demo-media">
+            <img src="assets/demo-poster.jpg" width="1280" height="660" loading="lazy" decoding="async" alt="The real presence screen after the request: the orb on the left, today's board on the right with a 16:00 reminder, Call the dentist, and the caption: Reminder set. Melbourne: 12°, overcast, no rain.">
+            <a class="play-pill" href="assets/demo.mp4" data-play><span class="pi" aria-hidden="true"><svg viewBox="0 0 10 10"><path d="M1 0l9 5-9 5z" fill="currentColor"/></svg></span>Play with sound · 0:16</a>
+          </div>
+          <figcaption id="fig6-cap" class="quote-cap"><span class="fig">Fig. 6</span>A real recording of the presence screen, 16 seconds with sound, made before the characters arrived (it shows the earlier orb). Asked <q>Hey <span class="pn" translate="no">Mirrin</span>, remind me to call the dentist at four, and what's the weather?</q>, it puts the reminder on today's board and answers <q>Reminder set. Melbourne: 12°, overcast, no rain.</q> In this recording the orb stays in its resting colour.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- home-approvals -->
+<section class="wrap" id="approvals" aria-labelledby="appr-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">4</span>Approvals</span><span class="st">Available now</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>4</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="appr-h">It asks first, and shows you a screenshot.</h2>
+        <div class="prose">
+          <p>Everything your twin can do is marked read, write or dangerous. Reading happens on its own. Sending, booking, deleting, paying and running commands wait for your yes.</p>
+          <p>When it wants your yes for something on a website, the ask comes with a picture of the page, captioned “What <span class="pn" translate="no">Mirrin</span> is about to submit”. Reply <code>yes 12</code> or <code>no 12</code> in the chat, or tap Approve on the presence screen. A plain “yes” works too, for the one thing it has just asked; if it isn't sure which you mean, it checks.</p>
+          <p>Every ask is in plain words. A payment reads “Pay 389.00 AUD for Jetstar MEL-SYD Tue 6am”, never code, with each detail on its own labelled line. Out loud, you can say yes to an everyday change, like sending a message; a dangerous one is never approved by voice, since anyone in the room could say it, so it goes to your phone and the screen instead.</p>
+        </div>
+        <figure aria-labelledby="fig7-cap" style="margin:2rem 0 0">
+        <div class="trio">
+          <div class="trio-item t-chat">
+            <p class="mock-label"><span class="st small">Today</span><span>In your chat</span></p>
+            <div class="phone app-tg" role="img" aria-label="Illustration: a Telegram-style chat with your twin. It says: The 5:10 cab from home to the airport is ready to book, $58. Reply yes 12 or no 12. Then a picture of the booking page, Confirm booking circled, captioned with what it is about to submit. You reply yes 12. It replies: Booked, sir.">
+              <div class="pscreen" aria-hidden="true">
+                <div class="sbar"><span>6:44</span><span class="sys"><svg style="width:17px"><use href="#i-signal"/></svg><svg style="width:15px"><use href="#i-wifi"/></svg><svg style="width:25px;height:12px"><use href="#i-batt"/></svg></span></div>
+                <div class="chead"><svg class="back"><use href="#i-back"/></svg><span class="avatar orbish"></span><div><div class="cname"><span class="pn" translate="no">Mirrin</span></div><div class="csub">bot</div></div></div>
+                <div class="cbody">
+                  <p class="bub in">The 5:10 cab from home to the airport is ready to book, $58. Reply <code>“yes 12”</code> or <code>“no 12”</code>.<span class="t">6:44 pm</span></p>
+                  <div class="bub in shot-bub">
+                    <div class="shot">
+                      <div class="shot-url"><i></i><i></i><i></i><span>rides.example/confirm</span></div>
+                      <div class="shot-body">
+                        <div class="shot-h">Confirm your ride</div>
+                        <div class="shot-row"><span>Pick-up</span><b>Thu, 5:10 am</b></div>
+                        <div class="shot-row"><span>Route</span><b>Home → Airport, T2</b></div>
+                        <div class="shot-row"><span>Total</span><b>$58.00</b></div>
+                        <div class="shot-btn">Confirm booking</div>
+                      </div>
+                    </div>
+                    <p class="shot-cap">What <span class="pn" translate="no">Mirrin</span> is about to submit<span class="t">6:44 pm</span></p>
+                  </div>
+                  <p class="bub out">yes 12<span class="t">6:45 pm</span></p>
+                  <p class="bub in">Booked, sir.<span class="t">6:45 pm</span></p>
+                </div>
+                <div class="cbar"><span class="field">Message</span><span class="circ"></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="trio-item t-screen">
+            <p class="mock-label"><span class="st small">Today</span><span>On the presence screen</span></p>
+            <div class="pcard" role="img" aria-label="Illustration of the presence screen's Needs you card: Book the 5:10 cab to the airport, $58. Act on a website, needs care, number 12, via Telegram. Deny and Approve buttons, and the picture of the page.">
+              <div aria-hidden="true">
+                <p class="pcard-h">Needs you <span class="pcard-n">1</span></p>
+                <div class="need">
+                  <p class="need-s">Book the 5:10 cab to the airport, $58</p>
+                  <div class="need-m"><span class="need-tag">Act on a website</span><span class="need-tag risk">Needs care</span><span>#12</span><span>1 min ago</span><span>via Telegram</span></div>
+                  <div class="need-btns"><span class="nb no">Deny</span><span class="nb yes">Approve</span></div>
+                  <div class="need-shot">
+                    <div class="shot">
+                      <div class="shot-url"><i></i><i></i><i></i><span>rides.example/confirm</span></div>
+                      <div class="shot-body">
+                        <div class="shot-h">Confirm your ride</div>
+                        <div class="shot-row"><span>Route</span><b>Home → Airport, T2</b></div>
+                        <div class="shot-row"><span>Total</span><b>$58.00</b></div>
+                        <div class="shot-btn">Confirm booking</div>
+                      </div>
+                    </div>
+                    <span class="need-zoom">Tap to enlarge</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="trio-item t-lock">
+            <p class="mock-label"><span class="st small next">Being tested</span></p>
+            <div class="lock" role="img" aria-label="Illustration of a phone lock screen at 6:44 with a notification: your twin needs a yes. Book the 5:10 cab, $58.">
+              <div aria-hidden="true">
+                <div class="lock-date">Tuesday 29 September</div>
+                <div class="lock-time">6:44</div>
+                <div class="notif"><span class="avatar orbish"></span><div><div class="notif-top"><span class="pn" translate="no">Mirrin</span> needs a yes <span>now</span></div><div class="notif-body">Book the 5:10 cab, $58</div></div></div>
+              </div>
+            </div>
+            <p class="cap under">On your lock screen, sent by your own computer, with no server of ours in between. Tap it to see the picture and decide. Dangerous ones ask for a passkey: Face ID, a fingerprint or your device PIN.</p>
+          </div>
+        </div>
+        <figcaption id="fig7-cap"><span class="fig">Fig. 7</span>One approval, three places to answer it. Illustrations, with the app's real wording. Lock-screen approvals come through a web app you add to your Home Screen (no app store). It's in the first release, and it is still being tested on real phones.</figcaption>
+        </figure>
+        <div class="prose" style="margin-top:2.25rem">
+          <p>Money gets extra care: every payment needs your yes, whatever your settings say. Buttons that look like a payment (Pay, Buy, Checkout, Book now, Confirm booking, Subscribe, Transfer…) always come to you with a picture, even if you've told it to use the browser freely.</p>
+          <p>It also keeps track of what it spends, against two limits in your local currency (worked out from your time zone). Out of the box they are 100 a payment and 500 a month in dollars, pounds, euros or francs, and similar round amounts where the unit is worth far less: ¥10,000 and ¥50,000 in yen. Only you can raise them, on the Spending page (Spending… in the menu bar or tray), which shows this month's total and every payment it has made, and changes them on this computer only. Everything it does goes into a log you can read.</p>
+        </div>
+        <figure aria-labelledby="fig8-cap" style="max-width:var(--measure)">
+          <table class="tbl risk">
+            <thead><tr><th scope="col">Level</th><th scope="col">For example</th><th scope="col">Out of the box</th></tr></thead>
+            <tbody>
+              <tr><th scope="row" class="lvl">read</th><td>Reading a calendar, fetching a page</td><td class="auto">Automatic</td></tr>
+              <tr><th scope="row" class="lvl">write</th><td>Creating an event, sending an email</td><td class="ask">Asks first</td></tr>
+              <tr><th scope="row" class="lvl">dangerous</th><td>Running commands, deleting files, payments. Even a tool you've marked as always allowed asks for these.</td><td class="ask">Asks first</td></tr>
+            </tbody>
+          </table>
+          <figcaption id="fig8-cap"><span class="fig">Fig. 8</span>The three levels, and what each one covers.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- home-memory -->
+<section class="wrap" id="memory" aria-labelledby="mem-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">5</span>Memory</span><span class="st">Available now</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>5</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="mem-h">It remembers you. You can read every word.</h2>
+        <div class="split even">
+          <div class="prose">
+            <p>Tell it once that you take the 7:40 train, or that your sister is called Priya, and it remembers. Every Sunday morning it writes a short portrait of you from what it knows.</p>
+            <p>Facts about health, money, relationships or secrets need your yes before it keeps them.</p>
+            <p>The Memory page shows all of it: the portrait, every fact, and what your twin has been doing. Forget anything that's wrong and add anything it missed. Forgetting is thorough: the fact goes from its logs and its daily copies too. Your own messages keep it until you clear the conversation with <code>/forget</code>.</p>
+            <p>It all lives in one file on your own computer, not in someone else's data centre. Once a day it checks that file and copies it, keeping the last seven.</p>
+          </div>
+          <figure class="win" aria-labelledby="fig9-cap">
+            <div class="win-bar" aria-hidden="true"><span class="win-dots"><i></i><i></i><i></i></span><span class="win-url">127.0.0.1:7742/memory</span></div>
+            <div class="win-body" role="img" aria-label="Illustration of the Memory page: How it sees you, a short portrait; Facts, each with a Forget button; a box to add one; and Recent activity.">
+              <div aria-hidden="true">
+                <p class="win-h">Your twin</p>
+                <p class="win-sub">Who it is, and everything it knows about you.</p>
+                <p class="win-k">How it sees you</p>
+                <p class="portrait">An early riser who takes the 7:40 train, flies to Sydney most months and would rather be told than asked. Close to his sister, Priya.</p>
+                <div class="portrait-meta"><span>Sunday, 08:00</span><span class="mini-btn">Refresh</span></div>
+                <p class="win-k">Facts</p>
+                <ul class="mfacts">
+                  <li><span class="subj">commute</span><span>Takes the 7:40 train on weekdays.</span><span class="forget">Forget</span></li>
+                  <li><span class="subj">family</span><span>Sister is called Priya.</span><span class="forget">Forget</span></li>
+                  <li><span class="subj">travel</span><span>Uses the same cab firm for airport runs.</span><span class="forget">Forget</span></li>
+                </ul>
+                <div class="add-row"><span class="fake-input subj-in">general</span><span class="fake-input">Something it should know, as a full sentence</span><span class="mini-btn primary">Remember</span></div>
+                <p class="win-k">Recent activity</p>
+                <ul class="activity">
+                  <li><code>approval.granted</code><span>#12 browser_act</span><time>Tue 18:45</time></li>
+                  <li><code>message.out</code><span>Noted. Cab for 5:10 from home…</span><time>Tue 18:42</time></li>
+                </ul>
+              </div>
+            </div>
+            <figcaption id="fig9-cap" style="padding:0 1.15rem 1rem"><span class="fig">Fig. 9</span>The Memory page, illustrated with its real labels.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- home-routines -->
+<section class="wrap" id="routines" aria-labelledby="rout-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">6</span>Routines</span><span class="st">Available now</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>6</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="rout-h">It gets in touch first.</h2>
+        <div class="split">
+          <div class="prose">
+            <p>A fresh install comes with a morning briefing at 7:00: the shape of your day and anything waiting on a decision, sent to your chat. Move it, change it or delete it. If a routine can't run, it tells you why in plain words, once a day at most.</p>
+            <p>It keeps an eye on your calendar and inbox and gets in touch when something changes. Long jobs, like chasing a refund, run in the background on a board you can see. They pause when they need you and pick up again after a restart.</p>
+            <div class="code yaml">
+              <div class="code-bar"><span>morning-briefing.yaml</span><span>excerpt · ships with it</span></div>
+              <pre><code><span class="k">name:</span> morning briefing
+<span class="c">…</span>
+<span class="k">schedule:</span> <span class="s">"0 7 * * *"</span>
+<span class="k">prompt:</span> |
+  Prepare the morning briefing. Check today's calendar and any reminders due today.
+  <span class="c">…</span></code></pre>
+            </div>
+            <p style="margin-top:1rem">Each routine is one short file like this, so anyone can write one and share it: <a href="protocols.html">the six it starts with, and writing your own</a>.</p>
+          </div>
+          <figure class="stagebox blue" aria-labelledby="fig10-cap">
+            <p class="mock-label"><span class="st small">Today</span><span>Before you ask</span></p>
+            <div class="phone app-sg" role="img" aria-label="Illustration: a Signal-style chat at 7:00. Your twin: Morning, sir. A light Wednesday. 9:30 standup, then lunch with Priya at 1. Tomorrow: cab at 5:10, flight at 7. One decision: your landlord wants to inspect on the 14th. Shall I say yes? You: yes, mornings only. Your twin: Drafted. Reply yes 13 to send it.">
+              <div class="pscreen" aria-hidden="true">
+                <div class="sbar"><span>7:04</span><span class="sys"><svg style="width:17px"><use href="#i-signal"/></svg><svg style="width:15px"><use href="#i-wifi"/></svg><svg style="width:25px;height:12px"><use href="#i-batt"/></svg></span></div>
+                <div class="chead"><svg class="back"><use href="#i-back"/></svg><span class="avatar orbish"></span><div><div class="cname"><span class="pn" translate="no">Mirrin</span></div></div></div>
+                <div class="cbody">
+                  <span class="cchip">Wednesday</span>
+                  <p class="bub in">Morning, sir. A light Wednesday.<br><br>9:30 standup, then lunch with Priya at 1. Tomorrow: cab at 5:10, flight at 7.<br><br>One decision: your landlord wants to inspect on the 14th. Shall I say yes?<span class="t">7:00 am</span></p>
+                  <p class="bub out">yes, mornings only<span class="t">7:04 am</span></p>
+                  <p class="bub in">Drafted. Reply “yes 13” to send it.<span class="t">7:04 am</span></p>
+                </div>
+                <div class="cbar"><span class="field">Message</span><span class="circ"></span></div>
+              </div>
+            </div>
+            <figcaption id="fig10-cap"><span class="fig">Fig. 10</span>An illustration. Sending the reply still asks first.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- home-survives -->
+<section class="wrap" id="yours" aria-labelledby="yours-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">7</span>Ownership</span><span class="st">Available now</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>7</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="yours-h">It outlives any company, ours included.</h2>
+        <div class="prose">
+          <p>Personal AI tends to vanish when the company behind it is sold or shut down. <span class="pn" translate="no">Mirrin</span> is built so that can't happen to yours.</p>
+        </div>
+        <figure class="pull">
+          <blockquote><p>If MavrkAI vanished tomorrow, your twin would carry on.</p></blockquote>
+          <figcaption class="under">It never needed us. The only MavrkAI addresses your twin ever contacts are on GitHub: a pack from the community list that you choose to install or update, and our releases when you run <code>mirrin update</code>. It keeps its own copy of the list, built into each version. Once the list is signed, your twin will fetch the latest from GitHub when you search.</figcaption>
+        </figure>
+        <div class="prose">
+          <ul class="facts">
+            <li><strong>No account.</strong> You never sign up for anything to use it.</li>
+            <li><strong>No server of ours.</strong> Your twin talks straight to your AI provider and your chat apps. There's no tracking or analytics of any kind.</li>
+            <li><strong>Your files.</strong> Memory, portrait, personas and routines live in one folder on your computer, <code>~/.mirrin</code>. <code>mirrin identity export</code> packs them into a single file you keep, with your keys and passwords left out.</li>
+            <li id="licence"><strong>Open source.</strong> The source is MIT: yours to read, change and fork. The default downloads include WhatsApp, whose code (libsignal) is GPL-3.0, so those downloads are GPL-3.0 as a whole. Every release also has an MIT build of the program without WhatsApp (it contains one MPL-2.0 library, yamux).</li>
+            <li><strong>Any AI model.</strong> If your provider disappears, switch to another from the menu bar.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- home-trust -->
+<section class="wrap" id="trust" aria-labelledby="trust-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">8</span>Safety</span><span class="st">Available now</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>8</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="trust-h">Built to be handed the keys.</h2>
+        <div class="prose">
+          <p>A twin with your email and a browser signed in as you has to earn that trust. Here is how <span class="pn" translate="no">Mirrin</span> goes about it.</p>
+          <ol class="numlist">
+            <li><h3>Nothing listens on the internet unless you say so.</h3><p>Its control panel answers only your own computer until you turn on remote access, and every request needs a secret key. Your other devices connect over an encrypted link that ends on your computer, each with its own key you can revoke.</p></li>
+            <li><h3>Changes wait for you.</h3><p>Reading is automatic. Anything that changes something asks first, and shows you the whole command, script or message, never just the first line. Dangerous actions ask by default, even for a tool you've marked as always allowed.</p></li>
+            <li><h3>Only you count as you.</h3><p>On WhatsApp, that's your own chat. Email counts as yours only when your mail provider confirms it came from you, and on IRC only your registered account does, not a nickname anyone could borrow. If you let your twin answer other people, they never see your memory, and anything it would do for them waits for your yes.</p></li>
+            <li><h3>Passwords and keys stay yours.</h3><p>You can watch its browser live on the presence screen. When a site wants a login, a code or a CAPTCHA, your twin hands you the page and says what it needs: press Take over on this computer, do the part only you should, then Hand back, and it carries on where it left off. Other devices can watch, but taking over happens on this computer only. When you show it a task to learn, it never records what you type into a password field. Your API keys sit in files only you can read, and add-on tools it runs never see them.</p></li>
+            <li><h3>Sensitive things ask first.</h3><p>Remembering anything about health, money, relationships or secrets. Opening files that hold keys or passwords, like saved logins or SSH keys. Both ask by default, and those files always ask, as payments and commands do, whatever your settings say.</p></li>
+            <li><h3>Everything is logged.</h3><p>Type <code>/audit</code> in any chat, or read the log on the Memory page.</p></li>
+            <li><h3>Our security thinking is public.</h3><p>The <a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/threat-model.md">threat model</a> is published, with how to report a problem privately. Please try to break it.</p></li>
+          </ol>
+          <div class="candid">
+            <p><strong>Known issue:</strong> browsers share cookies between the web servers on one computer, so another web server on this computer that your browser visits (a local development server, say) receives the key your twin's pages use in that browser. Web pages can't use it against your twin, but a program behind that server could replay it, if it can't simply read your twin's own files; it never gets the master key.</p>
+            <p>This is early software, used every day by the person who wrote it. Read the threat model before you give it your inbox.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- home-pricing -->
+<section class="wrap" id="free" aria-labelledby="free-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">9</span>Pricing</span><span class="st plan">Cloud: planned, not on sale</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>9</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="free-h">Free for good. Cloud, if you want it.</h2>
+        <div class="plans">
+          <article class="offer free" aria-labelledby="plan-free">
+            <div class="offer-top"><h3 id="plan-free">Free</h3><span class="st small">Free, for good</span></div>
+            <p class="price">$0</p>
+            <p class="per">open source · no account</p>
+            <p>The whole twin, on your machine, for good.</p>
+            <!-- free-list:start -->
+            <ul class="ticks">
+              <li><b>The whole twin:</b> voice that answers to its name, memory you can read, a signed-in browser, routines and personas</li>
+              <li>Eleven messaging channels (ten in the MIT build, which has no WhatsApp), plus voice and the terminal</li>
+              <li>Approvals with a picture of the page, spending limits, an audit log</li>
+              <li>Any model: Claude, OpenAI, Gemini, or one on your machine</li>
+              <li>Your twin exported to one file</li>
+              <li>The presence screen on your other devices, over Tailscale</li>
+              <li>Secure access from any network, through Tailscale, your own certificate or your own relay</li>
+              <li>Encrypted backup to a folder, iCloud Drive or any S3 bucket, locked with 12 words</li>
+              <li class="soon"><b>Being tested on phones:</b> a web app you add to your Home Screen (no app store), with a key for each device</li>
+              <li class="soon"><b>Being tested on phones:</b> lock-screen approvals, with a passkey (Face ID, a fingerprint or your device PIN) for the dangerous ones</li>
+            </ul>
+            <!-- free-list:end -->
+            <div class="ctas"><a class="btn primary" href="#install">Install it free</a></div>
+          </article>
+          <article class="offer" aria-labelledby="plan-cloud">
+            <div class="offer-top"><h3 id="plan-cloud"><span class="pn" translate="no">Mirrin</span> Cloud</h3><span class="st small plan">Planned · not on sale</span></div>
+            <p class="price">$6 a month</p>
+            <p class="per">or $60 a year · planned pricing</p>
+            <p>It will rent you two things a server is actually good for: an address that reaches your machine from any network, and off-site space for encrypted backups.</p>
+            <p>It will never hold your twin, your keys or your memories.</p>
+            <div class="ctas"><a class="btn quiet" href="cloud.html">How Cloud will work</a><a class="btn quiet" href="pricing.html">Pricing, and what we'd see</a></div>
+          </article>
+        </div>
+        <p class="cap plans-cap">Free is the longest list on purpose. Cloud is targeted to open in early 2027; to follow along, <a href="https://github.com/MavrkAI/Mirrin/releases">watch releases on GitHub</a> or add <a href="https://github.com/MavrkAI/Mirrin/releases.atom">their feed</a> to a feed reader, with no account.</p>
+        <p class="nothing">There is nothing to buy today.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- home-install -->
+<section class="wrap" id="install" aria-labelledby="install-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">10</span>Setup</span><span class="st-pair"><span class="label plat">macOS · Linux · Windows</span><span class="st">Available now</span></span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>10</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="install-h">Install</h2>
+        <div class="prose wide">
+          <div class="candid"><p><strong>What you need:</strong> on a Mac, the app; on Windows, the setup program; on Linux, or wherever you'd rather use a terminal, one line. And an AI model to think with: an account with Claude, OpenAI or Gemini (you pay them for what you use), or a free model on your own computer through Ollama.</p></div>
+          <h3 class="inst-h">On a Mac: the app</h3>
+          <p>Download <code>Mirrin-&lt;version&gt;-macos.dmg</code> from <a href="https://github.com/MavrkAI/Mirrin/releases">Releases</a> (one app for Apple silicon and Intel), drag the app into Applications and open it. It lives in the menu bar. The first time, a Welcome window finds or checks your model key, asks who you'd like your twin to be, and can restore a twin from an encrypted backup with your 12 words. Until the Mac builds are notarized by Apple, macOS blocks the app the first time you open it: choose System Settings → Privacy &amp; Security → Open Anyway. The app doesn't start itself when you sign in: to have it do that, add it to the login items in System Settings → General.</p>
+          <h3 class="inst-h">On Windows: the setup program</h3>
+          <p>Download <code>Mirrin-&lt;version&gt;-windows-setup.exe</code> from <a href="https://github.com/MavrkAI/Mirrin/releases">Releases</a>. It installs for you alone, so it needs no administrator. It offers to run <code>mirrin init</code> when it finishes (paste your model key when it asks), and to start your twin in the system tray each time you sign in.</p>
+          <h3 class="inst-h">Anywhere: one line in a terminal</h3>
+          <div class="code">
+            <div class="code-bar"><span>One line · macOS and Linux</span><button class="copy" type="button" data-copy="cmd-1" aria-label="Copy the install command for macOS and Linux">Copy</button></div>
+            <pre id="cmd-1" tabindex="0" data-copy-text="curl -fsSL https://raw.githubusercontent.com/MavrkAI/Mirrin/main/install.sh | sh"><code><span class="pr" aria-hidden="true">$ </span>curl -fsSL https://raw.githubusercontent.com/MavrkAI/Mirrin/main/install.sh | sh</code></pre>
+          </div>
+          <div class="code">
+            <div class="code-bar"><span>One line · Windows PowerShell</span><button class="copy" type="button" data-copy="cmd-win" aria-label="Copy the install command for Windows">Copy</button></div>
+            <pre id="cmd-win" tabindex="0" data-copy-text="irm https://raw.githubusercontent.com/MavrkAI/Mirrin/main/install.ps1 | iex"><code><span class="pr" aria-hidden="true">PS&gt; </span>irm https://raw.githubusercontent.com/MavrkAI/Mirrin/main/install.ps1 | iex</code></pre>
+          </div>
+          <div class="code">
+            <div class="code-bar"><span>Then, after the one line · macOS, Linux and Windows</span><button class="copy" type="button" data-copy="cmd-2" aria-label="Copy the setup commands">Copy</button></div>
+            <pre id="cmd-2" tabindex="0" data-copy-text="mirrin init&#10;mirrin service install"><code><span class="c"># three questions, and your model key</span>
+mirrin init
+<span class="c"># keep it running, and start it each time you sign in</span>
+mirrin service install</code></pre>
+          </div>
+          <p class="sr-only" aria-live="polite" id="copy-status"></p>
+          <p style="margin-top:1.5rem"><code>init</code> asks who you are, which model to use and where to reach you. Paste your Claude, OpenAI or Gemini key when it asks, or pick Ollama and no key is needed. It checks the key works and keeps it on your computer. It pairs WhatsApp by QR code if you give it a number, then <span class="pn" translate="no">Mirrin</span> has a first look around and introduces himself with something real he found. For the first week he suggests one thing a day; say “stop nudging” and he stops.</p>
+          <p><code>service install</code> starts your twin straight away, and again each time you log in, and waits until it answers. If it doesn't come up, it tells you why in plain words. Keys you've exported in your shell go into <code>~/.mirrin/secrets.env</code>, which only you can read, so the background twin has them too.</p>
+          <p><strong>On a Mac,</strong> that's a background service with its icon in the menu bar. <strong>On Linux,</strong> <code>service install</code> runs your twin headless, with no app indicator, so there's no Channels… menu to click. Run <code>mirrin tray</code> instead of the service for the indicator, or keep the service and open the local Channels page with <code>xdg-open "http://127.0.0.1:7742/channels?token=$(cat ~/.mirrin/data/api.token)"</code> (if you haven't changed <code>api.listen</code>).</p>
+          <p><strong>On Windows,</strong> it isn't a Windows service, which would run out of sight with no tray, microphone or browser window you can see. Instead it puts a small script in your own Startup folder that starts your twin in the system tray when you sign in, the same one the setup program writes, so it needs no administrator. <code>mirrin service uninstall</code> takes it out again.</p>
+          <p>To reach it from your phone, choose <strong>Channels…</strong> in the menu bar or tray. For the voice, run <code>mirrin voice setup</code> once (about 850&nbsp;MB; on a Mac, first run <code>brew install whisper-cpp sox uv</code>).</p>
+          <div class="candid"><p><strong>Safe downloads:</strong> both installers check every download against the release's published checksums before installing anything, and try the new copy before replacing yours. If you have <code>cosign</code>, the Mac and Linux one also checks the Sigstore signature on that list. The Mac builds aren't notarized by Apple yet. If you'd rather read the installers first, they are <a href="https://raw.githubusercontent.com/MavrkAI/Mirrin/main/install.sh">install.sh</a> and <a href="https://raw.githubusercontent.com/MavrkAI/Mirrin/main/install.ps1">install.ps1</a>. Or build from source with <code>go install github.com/MavrkAI/Mirrin/cmd/mirrin@latest</code>.</p></div>
+          <p>Ready-made builds: the Mac app as a disk image, Macs (Apple silicon and Intel), Linux and Windows (<span class="nw">x86-64</span> and ARM64), and the Windows setup program for <span class="nw">x86-64</span>. The app, the setup program and the default programs include WhatsApp and are GPL-3.0; each program also comes as an MIT build without WhatsApp.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- home-how -->
+<section class="wrap" id="inside" aria-labelledby="inside-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">11</span>Parts</span><span class="st">Available now</span></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>11</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="inside-h">What's inside</h2>
+        <div class="more" id="parts">
+          <p class="prose">Seven parts: one app, a brain you choose, hands, a heartbeat, a face, a character and routines you can share.</p>
+          <button class="btn quiet more-btn" type="button" aria-expanded="false" aria-controls="parts-body">Show the seven parts</button>
+          <div class="more-body" id="parts-body">
+            <ol class="parts">
+              <li><div><h3>One app in your menu bar.</h3><p><span class="pn" translate="no">Mirrin</span> is a single program running quietly in the background: in the menu bar on macOS, the system tray on Windows and the app indicator on Linux.</p></div></li>
+              <li><div><h3>A brain you choose.</h3><p>Claude by default, or OpenAI, Gemini, any OpenAI-compatible service, or a model on your own computer through Ollama. Switch from the menu bar. You bring the key and pay the provider directly.</p></div></li>
+              <li><div><h3>Hands.</h3><p>Its own Chrome window stays signed in to your sites and reads each page, so it can get things done on any website. Google Calendar, Gmail and Drive once you connect them. Add-on tools that run on your computer (MCP servers) plug in behind the same approvals. If no tool fits, it writes a small one you approve once. Show it a website task once and it can repeat it.</p></div></li>
+              <li><div><h3>A heartbeat.</h3><p>Reminders, scheduled routines, and an eye on your calendar and inbox. Long jobs sit on a board you can see.</p></div></li>
+              <li><div><h3>A face.</h3><p>The presence screen: your twin's character, what it heard, what it's doing and what needs you, with big Approve and Deny buttons, today as a timeline and the task board. After a minute of quiet it becomes a big clock. Keep it in a laptop tab or on a screen on the wall.</p></div></li>
+              <li><div><h3>A character.</h3><p>A persona: a name, a character, a way of talking, a voice and the name it answers to. <span class="pn" translate="no">Mirrin</span>, the gentleman who's two steps ahead, is the default; Nyra and Pickoo come with him. Yours can be anyone.</p></div></li>
+              <li><div><h3>Routines you can share.</h3><p>Protocols are short routines that run on a schedule or when you ask (“run the morning briefing”). They're shared in packs that anyone can publish.</p></div></li>
+            </ol>
+            <figure class="graph" aria-labelledby="fig11-cap" style="max-width:36rem">
+              <svg class="dg orbs" viewBox="0 0 360 168" role="img" aria-labelledby="fig11-t">
+                <title id="fig11-t">The state colours on the presence screen: periwinkle when idle, green while listening, blue while thinking or speaking.</title>
+                <rect x="0" y="0" width="360" height="128" rx="6" fill="#0b0d12"/>
+                <circle cx="60" cy="52" r="24" fill="#6d7cff"/>
+                <circle cx="180" cy="52" r="24" fill="#3ddc84"/>
+                <circle cx="300" cy="52" r="24" fill="#7aa2ff"/>
+                <g text-anchor="middle" style="font-size:10.5px;letter-spacing:.14em;font-weight:600">
+                  <text x="60" y="104" style="fill:#d9dde6">IDLE</text>
+                  <text x="180" y="104" style="fill:#d9dde6">LISTENING</text>
+                  <text x="300" y="98" style="fill:#d9dde6">THINKING</text>
+                  <text x="300" y="112" style="fill:#d9dde6">OR SPEAKING</text>
+                </g>
+                <text class="m s" x="60" y="152" text-anchor="middle">#6d7cff</text>
+                <text class="m s" x="180" y="152" text-anchor="middle">#3ddc84</text>
+                <text class="m s" x="300" y="152" text-anchor="middle">#7aa2ff</text>
+              </svg>
+              <figcaption id="fig11-cap"><span class="fig">Fig. 11</span>The states, each in the colour the presence screen uses (its dark theme). On the screen the character wears them: the pin on <span class="pn" translate="no">Mirrin</span>'s dinner jacket, the sparkle clip in Nyra's hair, and the bow tie on the penguin (Pickoo and any persona without a drawing of its own). Amber is kept for what needs you.</figcaption>
+            </figure>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ: eight questions. Seven are on cloud.html too, with the same answers (TestSharedFAQAnswersMatch); "What will the model cost me?" is only here, and cloud.html keeps "What does Cloud cost to run?". -->
+<section class="wrap" id="questions" aria-labelledby="faq-h">
+  <div class="sec">
+    <div class="sec-bar"><span class="label"><span class="n">12</span>FAQ</span><a class="label" href="cloud.html#questions">More questions, on the Cloud page</a></div>
+    <div class="sec-num" aria-hidden="true"><small>Section</small>12</div>
+    <div class="sec-body">
+      <div class="sec-main">
+        <h2 id="faq-h">Questions</h2>
+        <ol class="faq">
+          <li><details open><summary>Why is it free?</summary><div class="a">
+            <p>Your twin runs on your machine, so it costs us nothing when you use it. We run no server for it, so there's nothing to charge for. Its source is MIT licensed (the default downloads, which include WhatsApp, are GPL-3.0, and an MIT build comes without it), it needs no account, and nothing it does today will move behind a paywall. The planned Cloud will charge only for what genuinely needs a server of ours: an address and off-site storage. If you'd like to fund the free version, we intend the planned Supporter plan for exactly that.</p></div></details></li>
+          <li><details><summary>What happens if MavrkAI disappears?</summary><div class="a">
+            <p>Your twin keeps working, because it never needed us. There's no account and no server of ours in the loop, and the source is MIT on GitHub for anyone to fork. The only MavrkAI addresses your twin ever contacts are on GitHub: a pack from the community list that you choose to install or update, and our releases when you run <code>mirrin update</code>. Search already uses the copy of the list built into your twin, so it would carry on; packs from that list couldn't be installed or updated until you point your twin at another list in its settings. The routines you already have would keep running.</p>
+            <p>We've designed Cloud to fail gently too. The pledge is 90 days' notice and backups that stay downloadable. Backups would be in a standard encrypted format (<code>age</code>) that your 12 words unlock without us, and the relay is open source so you can run your own. A Cloud pass will be checked on your computer and last up to 35 days, so even a sudden outage on our side would give you weeks.</p></div></details></li>
+          <li><details><summary>Do you see my data?</summary><div class="a">
+            <p>On the free version there is nothing for us to see. We run no server, and there's no tracking of any kind. Your AI provider sees what you send it. Choose Ollama and the model runs on your machine too, so your conversations never leave it, beyond the chat app you have them in. The screen's weather still asks Open-Meteo, with your time zone's city, unless you set <code>ui.weather: false</code>.</p>
+            <p>With the planned Cloud we would see connection details: your address, when your machine connects, your home IP, the rough network your phone connects from, bytes and duration, and backup sizes and times. We could not see inside the connection: messages, screens, approvals, memory, voice. The full list, with a command to check each line, is <a href="pricing.html#see">on the pricing page</a>.</p></div></details></li>
+          <li><details><summary>Can I self-host the relay?</summary><div class="a">
+            <p>Yes. The relay is in the first release, as its own program and container. Run it on a small server, point your twin at it with <code>mirrin reach use relay</code>, use your own domain, and MavrkAI isn't involved at all. If you use Tailscale, the presence screen and chat already work over it, and a secure address over Tailscale (<code>mirrin reach use tailscale</code>) is in the same release.</p></div></details></li>
+          <li><details><summary>What will the model cost me?</summary><div class="a">
+            <p>That's between you and your provider: you pay them on your own key, for what you use. Your twin estimates it from list prices (<code>mirrin usage</code> shows today, this month and the last week) and warns you at 80% of a monthly budget and again when it's passed: US$25 out of the box, which you change with <code>usage.monthly_budget</code>. The warning comes as a notice on your desktop, on its Health page and in <code>mirrin doctor</code>. Choose Ollama and the model costs nothing.</p></div></details></li>
+          <li><details><summary>Which models does it use?</summary><div class="a">
+            <p>You choose, and you can switch from the menu bar: Claude (the default), OpenAI, Google Gemini, any OpenAI-compatible service, or a local model through Ollama. You bring your own key and pay the provider directly. We don't resell tokens, and Cloud would never touch your model calls. A fair warning: small local models are private, but they make more mistakes with tools than the big hosted ones.</p></div></details></li>
+          <li><details><summary>Does it work without the internet?</summary><div class="a">
+            <p>The core does. With Ollama, the AI model, memory, listening and voice all run on your computer. You'll need a connection once to download the voice models (about 850&nbsp;MB) and your Ollama model. Anything that is the internet by nature needs a connection: the chat apps, web browsing, email, Google and the weather.</p></div></details></li>
+          <li><details><summary>Does it run on Windows and Linux?</summary><div class="a">
+            <p>Yes, the same program runs on all three: as a background service with a menu bar icon on a Mac, as a background service on Linux (<code>mirrin tray</code> adds an app indicator), and in the system tray on Windows, started when you sign in, with no administrator needed. macOS is the most polished: it has the floating character, and iMessage is Mac-only. On Windows, for voice you'll install whisper.cpp and sox yourself for now. There are ready-made builds for Macs with Apple silicon or Intel, and for Linux and Windows on <span class="nw">x86-64</span> and ARM64.</p></div></details></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-grid">
+    <div class="colophon">
+      <a class="brand" href="index.html"><svg aria-hidden="true"><use href="#i-mark"/></svg><span class="pn" translate="no">Mirrin</span></a>
+      <p>A personal AI twin that lives on your own machine. Source MIT; default downloads GPL-3.0, with an MIT build too. Made by MavrkAI. Cloud is planned and not on sale.</p>
+      <p class="oss">Check it yourself: <span class="pn" translate="no">Mirrin</span> is <a href="https://github.com/MavrkAI/Mirrin">open source</a>.</p>
+      <p>Colophon: set in Newsreader, and in Colophon Sans and Mono (cut from IBM Plex), served from this site under the SIL Open Font License. This site sets no cookies, runs no analytics and asks no other server for anything. Your theme choice stays in this browser.</p>
+    </div>
+    <nav aria-label="Footer: this site">
+      <h2>This site</h2>
+      <ul>
+        <li><a href="index.html">Part one: the twin</a></li>
+        <li><a href="cloud.html">Part two: Cloud, planned</a></li>
+        <li><a href="protocols.html">Protocols</a></li>
+        <li><a href="pricing.html">Pricing (planned)</a></li>
+        <li><a href="#install">Install</a></li>
+        <li><a href="#questions">Questions</a></li>
+        <li><a href="legal.html">Terms and privacy (drafts)</a></li>
+      </ul>
+    </nav>
+    <nav aria-label="Footer: source">
+      <h2>Source</h2>
+      <ul>
+        <li><a href="https://github.com/MavrkAI/Mirrin">Code on GitHub</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/threat-model.md">Threat model</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/SECURITY.md">Report a problem</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/LICENSE">Licence (MIT source)</a></li>
+      </ul>
+    </nav>
+    <!-- build-on-it:start -->
+    <nav aria-label="Footer: build on it">
+      <h2>Build on it</h2>
+      <ul>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/protocols/README.md">Protocols docs</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/personas.md">Personas</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/skills.md">Skills</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/CONTRIBUTING.md">Contributing</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/CHANGELOG.md">Changelog</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/SECURITY.md">Security</a></li>
+      </ul>
+    </nav>
+    <!-- build-on-it:end -->
+  </div>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement;
+
+  /* Theme: dark unless you choose light, which this browser remembers. */
+  var btn = document.querySelector('.theme');
+  var tc = document.querySelector('meta[name="theme-color"]');
+  function dark() { return root.getAttribute('data-theme') !== 'light'; }
+  function sync() {
+    if (btn) btn.setAttribute('aria-pressed', String(dark()));
+    if (tc) tc.setAttribute('content', dark() ? '#0c0f1c' : '#f7f8fc');
+  }
+  sync();
+  if (btn) btn.addEventListener('click', function () {
+    var next = dark() ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    sync();
+  });
+
+  /* "Show the seven parts" (collapsed on smaller screens only). */
+  document.querySelectorAll('.more-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var box = b.closest('.more'), open = !box.classList.contains('open');
+      box.classList.toggle('open', open);
+      b.setAttribute('aria-expanded', String(open));
+      b.textContent = open ? 'Hide the seven parts' : 'Show the seven parts';
+    });
+  });
+
+  /* Copy buttons. */
+  var live = document.getElementById('copy-status');
+  document.querySelectorAll('[data-copy]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var el = document.getElementById(b.getAttribute('data-copy'));
+      var text = el.getAttribute('data-copy-text') || el.innerText;
+      function done(ok) {
+        b.textContent = ok ? 'Copied' : 'Select and copy';
+        b.classList.toggle('ok', ok);
+        if (live) live.textContent = ok ? 'Copied to the clipboard.' : 'Copy failed. Select the text and copy it.';
+        setTimeout(function () { b.textContent = 'Copy'; b.classList.remove('ok'); }, 1800);
+      }
+      if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+      else done(false);
+    });
+  });
+
+  /* The drawn presence screen: pause, and rest while off screen. */
+  var st = document.querySelector('.stage'), pb = st && st.querySelector('.stage-ctl');
+  if (pb) pb.addEventListener('click', function () {
+    var p = st.classList.toggle('is-paused');
+    pb.setAttribute('aria-pressed', String(p));
+    pb.querySelector('.t').textContent = p ? 'Play' : 'Pause';
+  });
+  if (st && 'IntersectionObserver' in window) new IntersectionObserver(function (e) { st.classList.toggle('offscreen', !e[0].isIntersecting); }).observe(st);
+
+  /* The recording: load the video only when asked. */
+  var play = document.querySelector('[data-play]');
+  if (play) play.addEventListener('click', function (e) {
+    e.preventDefault();
+    var box = document.getElementById('demo-media');
+    var v = document.createElement('video');
+    v.src = play.getAttribute('href'); v.poster = 'assets/demo-poster.jpg';
+    v.controls = true; v.playsInline = true; v.autoplay = true; v.width = 1280; v.height = 660;
+    v.setAttribute('aria-label', 'The presence screen, 16 seconds with sound and burned-in captions');
+    box.classList.add('playing'); box.replaceChildren(v); v.focus();
+  });
+
+  /* Motion: the cast comes alive. With reduced motion none of this runs and
+     the page is the still frame. Nothing here hides what is already on
+     screen, so a failed script leaves the page as it is without one. */
+  if (!window.matchMedia || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  root.classList.add('lively');
+
+  // A blink: the open eye gives way to the closed lid for a moment.
+  function blink(host) {
+    host.classList.add('blinknow');
+    setTimeout(function () { host.classList.remove('blinknow'); }, 150);
+  }
+  // Blinks at random moments, now and then twice, only while the tab shows.
+  function blinker(host) {
+    (function next() {
+      setTimeout(function () {
+        if (!document.hidden) {
+          blink(host);
+          if (Math.random() < 0.2) setTimeout(function () { blink(host); }, 330);
+        }
+        next();
+      }, 2200 + Math.random() * 4600);
+    })();
+  }
+  // A reaction plays once from the start, however often it is asked for.
+  function react(host) {
+    host.classList.remove('react');
+    void host.getBoundingClientRect();
+    host.classList.add('react');
+    clearTimeout(host._react);
+    host._react = setTimeout(function () { host.classList.remove('react'); }, 1900);
+  }
+
+  /* Scroll reveals, once each, for what is still below the fold. */
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        var el = e.target;
+        io.unobserve(el);
+        el.classList.add('in');
+        // then hand the transform back to hover
+        setTimeout(function () { el.classList.remove('rv', 'in'); }, 1500 + (parseFloat(el.style.getPropertyValue('--i')) || 0) * 100);
+      });
+    }, {rootMargin: '0px 0px -6% 0px'});
+    document.querySelectorAll('.short-head, .does > li, .how3 > li, .toc, .sec, .cast > li').forEach(function (el) {
+      if (el.getBoundingClientRect().top < innerHeight) return;
+      if (el.tagName === 'LI') el.style.setProperty('--i', Array.prototype.indexOf.call(el.parentNode.children, el));
+      el.classList.add('rv');
+      io.observe(el);
+    });
+  }
+
+  /* The portraits: each <img> becomes its drawing, so it can blink and react
+     in character to hover and focus. Ids get a suffix, as the same drawing
+     can be on the page twice; the file's own <style> is in site.css (.cv). */
+  var drawn = 0;
+  function vivify(img, host) {
+    var src = img.getAttribute('src'), file = (src.match(/(\w+)\.svg$/) || [])[1];
+    var kind = file === 'mirrin' ? 'gent' : file; // site.css never spells the name
+    if (!kind || !window.fetch) return;
+    fetch(src).then(function (r) { if (!r.ok) throw r; return r.text(); }).then(function (t) {
+      var sfx = '-v' + (++drawn);
+      t = t.replace(/<style>[\s\S]*?<\/style>/, '')
+        .replace(/ id="([^"]+)"/g, ' id="$1' + sfx + '"')
+        .replace(/url\(#([^)]+)\)/g, 'url(#$1' + sfx + ')')
+        .replace(/href="#([^"]+)"/g, 'href="#$1' + sfx + '"');
+      var box = document.createElement('span');
+      box.className = 'cv cv-' + kind;
+      box.innerHTML = t;
+      var svg = box.querySelector('svg');
+      if (!svg) return;
+      svg.setAttribute('focusable', 'false');
+      if (img.alt) { svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', img.alt); }
+      else svg.setAttribute('aria-hidden', 'true');
+      if (host.closest('.hero-cast')) svg.setAttribute('preserveAspectRatio', 'xMidYMax meet');
+      svg.querySelectorAll('[fill*="Cheek"]').forEach(function (e) { e.classList.add('ck'); });
+      // Nyra's sparkle clip twinkles: three little stars around it
+      if (kind === 'nyra') svg.insertAdjacentHTML('beforeend', [[54, 43, 1], [80, 48, 0.7], [59, 69, 0.55]].map(function (s) {
+        return '<path class="spk" transform="translate(' + s[0] + ' ' + s[1] + ') scale(' + s[2] + ')" d="M0-7 1.6-1.6 7 0 1.6 1.6 0 7-1.6 1.6-7 0-1.6-1.6z"/>';
+      }).join(''));
+      img.replaceWith(box);
+      blinker(box);
+    }).catch(function () {});
+  }
+  function enliven(host) {
+    var img = host.querySelector('img');
+    if (!img) return;
+    host.addEventListener('mouseenter', function () { react(host); });
+    host.addEventListener('focusin', function () { react(host); });
+    vivify(img, host);
+  }
+  document.querySelectorAll('.hero-cast a').forEach(enliven);
+  var cards = document.querySelectorAll('.cast > li');
+  cards.forEach(function (li) { li.tabIndex = 0; }); // so the keyboard can greet them too
+  if ('IntersectionObserver' in window) {
+    var near = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { near.unobserve(e.target); enliven(e.target); } });
+    }, {rootMargin: '300px 0px'});
+    cards.forEach(function (li) { near.observe(li); });
+  } else cards.forEach(enliven);
+
+  /* The default persona on the stage: he blinks at random, nods hello as he
+     arrives and when the pointer comes to him, and turns a little towards
+     the pointer, as the presence screen does (not on a touch screen). */
+  var ch = st && st.querySelector('.char');
+  if (!ch) return;
+  blinker(ch);
+  setTimeout(function () { react(ch); }, 1500);
+  ch.addEventListener('mouseenter', function () { react(ch); });
+  if (!matchMedia('(pointer: fine)').matches) return;
+  var frame = 0, px = 0, py = 0, side = 0, rest = 0;
+  function settle() { ch.style.removeProperty('--lx'); ch.style.removeProperty('--ly'); side = 0; }
+  document.addEventListener('pointermove', function (ev) {
+    px = ev.clientX; py = ev.clientY;
+    if (frame) return;
+    frame = requestAnimationFrame(function () {
+      frame = 0;
+      if (st.classList.contains('is-paused') || st.classList.contains('offscreen')) { settle(); return; }
+      var r = ch.getBoundingClientRect();
+      var lx = Math.max(-1, Math.min(1, (px - r.left - r.width / 2) / 340));
+      var ly = Math.max(-1, Math.min(1, (py - r.top - r.height * 0.4) / 420));
+      // a blink as he turns from one side to the other
+      var now = Math.abs(lx) > 0.45 ? (lx > 0 ? 1 : -1) : side;
+      if (side && now !== side) blink(ch);
+      side = now;
+      ch.style.setProperty('--lx', lx.toFixed(3));
+      ch.style.setProperty('--ly', ly.toFixed(3));
+      clearTimeout(rest); rest = setTimeout(settle, 2600);
+    });
+  }, {passive: true});
+  document.addEventListener('pointerleave', settle);
+})();
+</script>
+</body>
+</html>

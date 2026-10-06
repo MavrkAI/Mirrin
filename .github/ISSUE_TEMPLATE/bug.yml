@@ -1,0 +1,19 @@
+name: Bug report
+description: Something didn't work
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes: { label: Version, description: "`mirrin version`", placeholder: v0.2.0 }
+    validations: { required: true }
+  - type: dropdown
+    id: os
+    attributes: { label: OS, options: [macOS, Linux, Windows] }
+    validations: { required: true }
+  - type: textarea
+    id: what
+    attributes: { label: What happened, description: "What you did, what you expected, what you got. `mirrin report` writes a problem report (versions, self-checks, settings and recent log lines, with keys and messages left out); read it, then attach it here." }
+    validations: { required: true }
+  - type: textarea
+    id: doctor
+    attributes: { label: "`mirrin doctor` output" }

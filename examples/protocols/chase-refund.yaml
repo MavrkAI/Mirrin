@@ -1,0 +1,15 @@
+name: chase refund
+description: Get money back from a merchant, politely and persistently.
+version: 1.0.0
+author: Mirrin
+tags: [email, browser, chores]
+requires: [email]
+schedule: ""
+prompt: |
+  The user wants a refund. Find the order or receipt email (list_emails and read_email, or gmail_search
+  and gmail_read with Gmail) to get the merchant, order number, date, amount and what went wrong. Look up the merchant's refund or
+  contact page with fetch_url or browser_inspect. Then either draft a firm, courteous refund request
+  email citing the order details and the relevant consumer-law right to a remedy, or fill their
+  refund form with browser_act, screenshotting before the final submit. Either way the user
+  approves before anything is sent. Finally set a follow_up for five business days from now to
+  check for their reply.

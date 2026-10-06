@@ -1,0 +1,11 @@
+name: evening wrap
+description: Close out the day and set up tomorrow.
+version: 1.0.0
+author: Mirrin
+tags: [briefing, daily]
+requires: [reminders]
+schedule: "0 21 * * *"
+prompt: |
+  Look at tomorrow's calendar and any reminders due tomorrow. If the first event is early or
+  unusual, say so. Ask at most one question if something needs preparing. Keep it to three lines.
+  If tomorrow is empty and nothing is due, reply NOTHING_TO_REPORT.

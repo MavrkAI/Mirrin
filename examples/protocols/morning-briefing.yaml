@@ -1,0 +1,13 @@
+name: morning briefing
+description: The day at a glance, delivered before the user asks.
+version: 1.0.0
+author: Mirrin
+tags: [briefing, daily]
+requires: [reminders]
+schedule: "0 7 * * *"
+prompt: |
+  Prepare the morning briefing. Check today's calendar and any reminders due today.
+  If email is available, note anything from the last 12 hours that needs a reply or a decision.
+  Deliver it as a short message: greeting, the day's shape in two or three lines,
+  then anything that needs a decision. Skip sections that are empty. If there is truly nothing
+  (no events, no reminders, no mail), reply NOTHING_TO_REPORT.

@@ -1,0 +1,54 @@
+name: pages
+# Publishes site/ to GitHub Pages at https://mirrin.app (site/README.md,
+# "Deploy with GitHub Pages"). Settings -> Pages -> Source must be "GitHub
+# Actions", with mirrin.app as the custom domain and Enforce HTTPS on; the
+# site/CNAME file only records the domain, since an Actions deployment takes
+# it from Settings.
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      # The pages say only what the code does; publish nothing that has gone stale.
+      - name: The pages are still true of the code
+        run: MIRRIN_HOME="$RUNNER_TEMP/mirrin-home" go test ./site
+      # Publish a copy without the working files: the README (launch notes),
+      # the test, and the sources of og.png, apple-touch-icon.png and the
+      # portraits. rm without -f, so a renamed file stops the deploy.
+      - name: Stage what is published
+        run: |
+          mkdir _site
+          cp -R site/. _site/
+          for f in site/README.md site/site_test.go site/assets/og-card.html site/assets/icon-card.html site/assets/characters/draw.js; do
+            rm "_site/${f#site/}"
+          done
+          find _site -type f | sort
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

@@ -1,0 +1,47 @@
+name: Report a pack
+description: A pack in the registry that is broken, misleading or noisy
+labels: [pack report]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **If the pack could hurt someone, don't report it here: issues are public.** That includes a pack that sends your data somewhere, tries to get round approvals, or acts without asking. Report it privately instead, with **Security → Report a vulnerability** (https://github.com/MavrkAI/Mirrin/security/advisories/new). docs/protocols/security.md says what happens next.
+  - type: input
+    id: pack
+    attributes:
+      label: Pack
+      description: Its name, as `mirrin protocols search` shows it.
+    validations: { required: true }
+  - type: input
+    id: repo
+    attributes:
+      label: Repository
+      placeholder: https://github.com/someone/mirrin-pack-something
+  - type: input
+    id: commit
+    attributes:
+      label: Commit
+      description: The short commit the Routines page shows for the pack, if you have it installed.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What's wrong?
+      options:
+        - It won't install
+        - A protocol fails or never runs
+        - It does something its description doesn't say
+        - It messages me when there's nothing to say
+        - Its repository has gone
+        - Something else
+    validations: { required: true }
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you got, with any message word for word.
+    validations: { required: true }
+  - type: input
+    id: version
+    attributes:
+      label: Mirrin version
+      description: "`mirrin version`"

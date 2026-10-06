@@ -1,0 +1,18 @@
+# Caddy on a probe VM: TLS in front of the probe's results, which the
+# watcher reads with a bearer token. Installed as /etc/caddy/Caddyfile.
+# No `log` directive: no access log.
+{
+	email @@OPS_EMAIL@@
+}
+
+@@PROBE_HOST@@ {
+	handle /v1/results {
+		reverse_proxy 127.0.0.1:9102
+	}
+	handle /healthz {
+		reverse_proxy 127.0.0.1:9102
+	}
+	handle {
+		respond 404
+	}
+}

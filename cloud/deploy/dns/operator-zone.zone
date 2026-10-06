@@ -1,0 +1,39 @@
+; The operator zone, @@OPERATOR_ZONE@@: DNS only, at Cloudflare (every
+; record "DNS only", never proxied: the relays and the control plane end
+; their own TLS). Import it in the dashboard (DNS > Records > Import) or
+; with the API; render.sh ROLE=dns writes it with the real addresses.
+; The zone must not be signed with a key MavrkAI can't rotate; enable
+; Cloudflare DNSSEC and put its DS at the registrar.
+;
+; Handles never live here: they are in the tenant zone, @@TENANT_ZONE@@
+; (tenant-zone.md).
+$ORIGIN @@OPERATOR_ZONE@@.
+$TTL 3600
+
+; Only Let's Encrypt issues for the operator's names.
+@                 CAA   0 issue "letsencrypt.org"
+@                 CAA   0 issuewild ";"
+@                 CAA   0 iodef "mailto:@@SECURITY_EMAIL@@"
+
+; The control plane (Caddy in front of mirrin-cloud).
+cloud             300 A     @@CP_IPV4@@
+cloud             300 AAAA  @@CP_IPV6@@
+
+; Each relay's control name: its own reserved addresses only, TTL 300 so
+; a relay IP migration settles in minutes (RUNBOOK.md).
+r1.relay          300 A     @@R1_IPV4@@
+r1.relay          300 AAAA  @@R1_IPV6@@
+r2.relay          300 A     @@R2_IPV4@@
+r2.relay          300 AAAA  @@R2_IPV6@@
+
+; Operations: the watcher's dead-man /healthz, and the probes.
+watch.ops         300 A     @@CP_IPV4@@
+watch.ops         300 AAAA  @@CP_IPV6@@
+probe-b.ops       300 A     @@PROBE_B_IPV4@@
+probe-b.ops       300 AAAA  @@PROBE_B_IPV6@@
+probe-c.ops       300 A     @@PROBE_C_IPV4@@
+probe-c.ops       300 AAAA  @@PROBE_C_IPV6@@
+
+; denylist.@@OPERATOR_ZONE@@ is the deny-list bucket's R2 custom domain:
+; add it in R2 > @@R2_DENYLIST_BUCKET@@ > Settings > Custom Domains, which
+; creates the record itself.

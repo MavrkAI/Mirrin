@@ -1,0 +1,149 @@
+<!doctype html>
+<!--
+  404.html: what GitHub Pages serves for an address the site doesn't have.
+  Shares site.css with the other pages.
+
+  ROOT PATHS. Pages serves this file at whatever address was asked for, at
+  any depth (/a/b/c), so every link and asset here starts with "/" and works
+  only from the site's root: preview it through the local server (README.md,
+  "Preview locally"), not from disk. It is marked noindex and is not in
+  sitemap.xml.
+
+  PRODUCT NAME TOKEN
+  The name renders as "Mirrin". Change it in the <title>, aria-label="Mirrin
+  home", and every <span class="pn" translate="no">Mirrin</span>.
+       Count: grep -o 'class="pn"' 404.html | wc -l
+              prints 6 today: 4 in the page and 2 in this comment.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page not found · Mirrin</title>
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0c0f1c">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preload" href="/assets/fonts/newsreader.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/colophon-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/site.css">
+<script>document.documentElement.classList.add('js');try{if(localStorage.getItem('theme')==='light'){document.documentElement.setAttribute('data-theme','light');document.querySelector('meta[name="theme-color"]').content='#f7f8fc'}}catch(e){}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<svg class="defs" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="g-brand" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3ddc84"/><stop offset="1" stop-color="#7aa2ff"/></linearGradient>
+  </defs>
+  <symbol id="i-mark" viewBox="0 0 32 32"><rect width="32" height="32" rx="7.5" fill="#161a45"/><g transform="translate(3 3) scale(0.26)"><g fill="none" stroke-width="11" stroke-linecap="round"><path d="M18.5 80V58a14.75 14.75 0 0 1 29.5 0V80" stroke="#ffffff"/><path d="M52 80V58a14.75 14.75 0 0 1 29.5 0V80" stroke="#9ea4ff"/></g><circle cx="33.25" cy="25" r="8" fill="#ffffff"/><circle cx="66.75" cy="25" r="8" fill="#9ea4ff"/></g></symbol>
+</svg>
+
+<header class="mast">
+  <div class="wrap mast-in">
+    <a class="brand" href="/index.html" aria-label="Mirrin home"><svg aria-hidden="true"><use href="#i-mark"/></svg><span class="pn" translate="no">Mirrin</span></a>
+    <span class="runhead">Page not found</span>
+    <nav class="nav" aria-label="Primary">
+      <ul>
+        <li><a href="/index.html">The twin</a></li>
+        <li><a href="/index.html#install">Install</a></li>
+        <li><a href="/protocols.html">Protocols</a></li>
+        <li><a href="/cloud.html">Cloud<span class="sr-only">,</span><span class="tag">planned</span></a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin">GitHub</a></li>
+      </ul>
+    </nav>
+    <button class="theme" type="button" aria-pressed="true">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg>
+      <span>Dark theme</span>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="wrap hero" aria-labelledby="hero-h">
+  <p class="kicker"><span>Error 404</span><span>Page not found</span></p>
+  <h1 id="hero-h">Nothing lives at this address.</h1>
+  <div class="prose">
+    <p class="lead">The page you asked for isn't on this site. It may have moved, or the link may have a typing slip in it. Everything <span class="pn" translate="no">Mirrin</span> has to say is on the pages below, and the code is on GitHub.</p>
+  </div>
+</section>
+
+<nav class="wrap toc always" aria-labelledby="toc-h" style="--rows:2">
+  <div class="toc-head"><h2 id="toc-h" class="label">Where to go</h2><span class="label">Four pages</span></div>
+  <ol>
+    <li><a href="/index.html"><span class="n">1</span><span class="t">The twin: what it is and how to install it</span><span class="k">Home</span></a></li>
+    <li><a href="/protocols.html"><span class="n">2</span><span class="t">Protocols: routines anyone can write</span><span class="k">Protocols</span></a></li>
+    <li><a href="/cloud.html"><span class="n">3</span><span class="t">Cloud: reach and backup, planned</span><span class="k">Cloud</span></a></li>
+    <li><a href="/pricing.html"><span class="n">4</span><span class="t">Pricing: free, and Cloud (planned)</span><span class="k">Pricing</span></a></li>
+  </ol>
+</nav>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-grid">
+    <div class="colophon">
+      <a class="brand" href="/index.html"><svg aria-hidden="true"><use href="#i-mark"/></svg><span class="pn" translate="no">Mirrin</span></a>
+      <p>A personal AI twin that lives on your own machine. Source MIT; default downloads GPL-3.0, with an MIT build too. Made by MavrkAI. Cloud is planned and not on sale.</p>
+      <p class="oss">Check it yourself: <span class="pn" translate="no">Mirrin</span> is <a href="https://github.com/MavrkAI/Mirrin">open source</a>.</p>
+      <p>This site sets no cookies, runs no analytics and asks no other server for anything. Your theme choice stays in this browser.</p>
+    </div>
+    <nav aria-label="Footer: this site">
+      <h2>This site</h2>
+      <ul>
+        <li><a href="/index.html">Part one: the twin</a></li>
+        <li><a href="/cloud.html">Part two: Cloud, planned</a></li>
+        <li><a href="/protocols.html">Protocols</a></li>
+        <li><a href="/pricing.html">Pricing (planned)</a></li>
+        <li><a href="/legal.html">Terms and privacy (drafts)</a></li>
+      </ul>
+    </nav>
+    <nav aria-label="Footer: source">
+      <h2>Source</h2>
+      <ul>
+        <li><a href="https://github.com/MavrkAI/Mirrin">Code on GitHub</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/cloud-trust.md">What Cloud can and can't see</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/LICENSE">Licence (MIT source)</a></li>
+        <li><a href="/pricing.html#licence">The licences, in plain words</a></li>
+      </ul>
+    </nav>
+    <!-- build-on-it:start -->
+    <nav aria-label="Footer: build on it">
+      <h2>Build on it</h2>
+      <ul>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/protocols/README.md">Protocols docs</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/personas.md">Personas</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/docs/skills.md">Skills</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/CONTRIBUTING.md">Contributing</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/CHANGELOG.md">Changelog</a></li>
+        <li><a href="https://github.com/MavrkAI/Mirrin/blob/main/SECURITY.md">Security</a></li>
+      </ul>
+    </nav>
+    <!-- build-on-it:end -->
+  </div>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.querySelector('.theme');
+  var tc = document.querySelector('meta[name="theme-color"]');
+  function dark() { return root.getAttribute('data-theme') !== 'light'; }
+  function sync() {
+    if (btn) btn.setAttribute('aria-pressed', String(dark()));
+    if (tc) tc.setAttribute('content', dark() ? '#0c0f1c' : '#f7f8fc');
+  }
+  sync();
+  if (btn) btn.addEventListener('click', function () {
+    var next = dark() ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    sync();
+  });
+})();
+</script>
+</body>
+</html>

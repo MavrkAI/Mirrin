@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="referrer" content="no-referrer"><title>Trust</title>
+<style>
+/* ---- shared by every settings page (keep the copies identical; pagetest checks) ---- */
+:root{color-scheme:light dark;--bg:#0f1115;--fg:#e8e8ea;--muted:#8b8f98;--card:#171a21;--line:#262a33;--edge:#646a7a;--accent:#7aa2ff;--on-accent:#000;--ok:#3ddc84;--warn:#f5c542;--fail:#ff6b6b;--off:#5c6270}
+@media (prefers-color-scheme: light){:root{--bg:#f6f7f9;--fg:#14161a;--muted:#5f6470;--card:#fff;--line:#e3e6eb;--edge:#80868f;--accent:#2f5bd3;--on-accent:#fff;--ok:#137a43;--warn:#8a5a00;--fail:#c62828;--off:#9aa0aa}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,system-ui,sans-serif;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+[hidden]{display:none!important}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,textarea,select{font-size:16px}::placeholder{color:var(--muted);opacity:1}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+button{background:transparent;border:1px solid var(--edge);color:var(--fg);border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit;min-height:36px}
+button.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}button:disabled{opacity:.55;cursor:default}
+.gate{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 20px;margin:8px 0 20px}
+.gate h1{margin:0 0 6px}.gate p{color:var(--muted);margin:0 0 14px}
+main.gated>:not(#gate){display:none!important}#gateNote:empty{display:none}
+.state{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;color:var(--muted);margin-bottom:8px}
+.state.err{color:var(--fg);border-color:var(--fail);margin-bottom:16px}.state.err strong{display:block;color:var(--fail)}.state.err button{margin-top:10px}
+.msg{font-size:13px}.msg.err{color:var(--fail)}.msg.ok{color:var(--ok)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.pagenav{display:flex;gap:1.1rem;align-items:center;overflow-x:auto;scrollbar-width:none;white-space:nowrap;border-bottom:1px solid var(--line);margin:0 0 1.2rem;padding:.2rem 0 .6rem;-webkit-mask-image:linear-gradient(to right,#000 88%,transparent);mask-image:linear-gradient(to right,#000 88%,transparent)}
+.pagenav::-webkit-scrollbar{display:none}.pagenav a{text-decoration:none;color:var(--muted);font-size:.9rem;padding:.35rem 0;flex:0 0 auto}.pagenav a:hover{color:var(--fg)}
+@media (min-width:760px){.pagenav{flex-wrap:wrap;row-gap:.2rem;overflow:visible;-webkit-mask-image:none;mask-image:none}}
+.pagenav a[aria-current="page"]{color:var(--fg);font-weight:600;box-shadow:inset 0 -2px 0 var(--accent)}.pagenav .home{color:var(--accent);font-weight:600}
+/* ---- end of shared ---- */
+/* the device and safety pages */
+main{max-width:860px;margin:0 auto;padding:20px 16px 64px}h1{font-size:22px;margin:0 0 4px}.sub{color:var(--muted);margin:0 0 20px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:28px 0 10px}
+.tabs{display:flex;flex-wrap:wrap;gap:2px 18px;margin:0 0 18px;font-size:14px;border-bottom:1px solid var(--line)}.tabs a{text-decoration:none;padding:8px 0;border-bottom:2px solid transparent;margin-bottom:-1px}.tabs a[aria-current=page]{color:var(--fg);border-bottom-color:var(--accent);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.actions{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+button.danger{color:var(--fail)}
+a.btn{display:inline-flex;align-items:center;min-height:36px;border:1px solid var(--edge);border-radius:8px;padding:6px 12px;text-decoration:none}a.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+code{background:var(--bg);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere;font-size:.92em}
+.muted{color:var(--muted)}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 3px}
+input[type=text],input[type=password]{width:100%;background:var(--bg);border:1px solid var(--edge);color:var(--fg);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:16px}
+.help{font-size:13px;color:var(--muted);margin:4px 0 0}
+.vis summary{cursor:pointer;font-weight:600}.vis h3{font-size:15px;margin:16px 0 8px}
+.vrow{border-top:1px solid var(--line);padding:10px 0;overflow-wrap:anywhere}.vrow dl{margin:4px 0 0}.vrow dt{font-size:13px;color:var(--muted);margin-top:4px}.vrow dd{margin:0}
+dl.facts{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:10px 0 0;font-size:14px}dl.facts dt{color:var(--muted)}dl.facts dd{margin:0;min-width:0;overflow-wrap:anywhere}
+@media(max-width:480px){dl.facts{grid-template-columns:1fr;gap:0}dl.facts dd{margin-bottom:8px}}
+.badge{display:inline-block;font-size:12px;border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--muted);white-space:nowrap}.badge.on{color:var(--ok);border-color:var(--ok)}.badge.warn{color:var(--warn);border-color:var(--warn)}.badge.err{color:var(--fail);border-color:var(--fail)}
+/* this page */
+[tabindex="-1"]:focus{outline:none}
+.out{list-style:none;margin:0;padding:0}.out li{padding:12px 0;border-top:1px solid var(--line)}.out li:first-child{border-top:0;padding-top:0}.out li:last-child{padding-bottom:0}
+.out .top{display:flex;gap:10px;align-items:baseline;justify-content:space-between;flex-wrap:wrap}.out .w{font-weight:600}.out p{margin:3px 0 0;font-size:14px}
+.fp{font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere;word-break:break-all}
+pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;font-size:13px;white-space:pre-wrap;word-break:break-all;margin:8px 0 0}
+ol.plain{margin:0;padding-left:20px}ol.plain li{margin:10px 0}
+</style></head><body><main>
+<section id="gate" class="gate" role="alert" hidden><h1>This device isn't paired</h1><p id="gateHint"></p><p id="gatePair" hidden><a href="/devices/add">Pair this device</a></p><p class="msg" id="gateNote"></p><button type="button" class="primary" id="gateRetry">Try again</button></section>
+<h1>Trust</h1><p class="sub">What leaves this computer, what your devices see, and how to check both yourself.</p>
+<div id="problem" class="state err" role="alert" hidden><strong>Couldn’t load everything</strong><span id="problemText"></span><div><button type="button" id="problemRetry">Try again</button></div></div>
+<section aria-labelledby="outH"><h2 id="outH">What leaves this computer</h2>
+<div class="card"><p class="help" style="margin:0 0 12px">Your memory, settings and keys stay here. These are the only connections <span data-name></span> makes, and only when the line says so. No analytics, no account, and no update checks unless you ask.</p>
+<ul class="out" id="out"><li class="state loading">Loading…</li></ul></div></section>
+<section aria-labelledby="certH"><h2 id="certH">What your devices see</h2>
+<div id="certs"></div>
+<div class="card" id="ct" hidden></div></section>
+<section aria-labelledby="verifyH"><h2 id="verifyH">Check it yourself</h2>
+<div class="card" id="verify"></div></section>
+<section aria-labelledby="visH"><h2 id="visH">If a hosted relay carries your connections</h2>
+<details class="card vis" id="vis"><summary>What its operator can and can't see</summary><!--visibility--></details></section>
+<script>
+/* ---- shared by every settings page (keep the copies identical; pagetest checks) ---- */
+// Every request goes through api(), which puts each way a request can fail
+// into plain words, and shows "This device isn't paired" when that is why.
+const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function twinName(){try{const n=localStorage.getItem('antbot.name');if(n)return n}catch{}const m=document.querySelector('meta[name="mirrin-name"]');return (m&&m.content)||'Mirrin'}
+for(const el of document.querySelectorAll('[data-name]'))el.textContent=twinName();
+const PAGE_TITLE=document.title=twinName()+' · '+document.title;
+const FRIENDLY={not_paired:"This device isn't paired.",passkey_required:'This needs Face ID or Touch ID, which this device has not set up.',forbidden:"This device isn't allowed to do that."};
+async function problem(res){let raw='';try{raw=(await res.text()).trim()}catch{}let code='',hint='',msg='',pair='';
+  try{const j=JSON.parse(raw);if(j&&typeof j==='object'){code=String(j.error||'');hint=String(j.hint||j.fix||'').replace(/`/g,'');msg=String(j.message||'');pair=String(j.pair_url||'')}}catch{}
+  const plain=!code&&raw&&raw.length<300&&!raw.startsWith('<')?raw:'';
+  if(!/^\/[^/\\]/.test(pair))pair='';
+  return{status:res.status,code,hint,pair,text:(msg&&hint?msg+' '+hint:msg)||hint||FRIENDLY[code]||(res.status===401?FRIENDLY.not_paired:plain)||(code?code.replace(/_/g,' '):'')||'Something went wrong (error '+res.status+').'}}
+async function api(url,opts){
+  const o=Object.assign({},opts);o.headers=Object.assign({Accept:'application/json'},opts&&opts.headers);let res;
+  try{res=await fetch(url,o)}catch{throw Object.assign(new Error("Can't reach "+twinName()+". Check that it is running on this computer, then try again."),{offline:true})}
+  if(res.ok){if(document.querySelector('main').classList.contains('gated'))ungate();return res}
+  const p=await problem(res);
+  if(res.status===401){
+    // A page can be paired while one of its buttons isn't allowed yet; only a refused page load means the device is signed out.
+    if(p.code!=='not_paired'&&o.method&&o.method!=='GET'){const pr=await fetch(PROBE,{headers:{Accept:'application/json'}}).catch(()=>null);if(pr&&pr.ok)throw Object.assign(new Error(FRIENDLY.forbidden),{forbidden:true})}
+    gate(p);throw Object.assign(new Error(p.text),{unpaired:true})}
+  throw Object.assign(new Error(p.text),{status:res.status,code:p.code})}
+const getJSON=async u=>(await api(u)).json();
+const post=(u,b)=>api(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})});
+let retrying=false;
+function gate(p){$('#gateHint').textContent=(p&&p.hint)||'Open this page again from the menu bar icon on the computer '+twinName()+' runs on.';
+  // On this computer the twin sends where to pair (pair_url); elsewhere the hint names `mirrin pair --screen`.
+  $('#gatePair').hidden=!(p&&p.pair);if(p&&p.pair)$('#gatePair a').href=p.pair;
+  say($('#gateNote'),retrying?'Still not paired. Pair this device, then try again.':'','err');$('#gate').hidden=false;document.querySelector('main').classList.add('gated');document.title=twinName()+' · Not paired'}
+function ungate(){$('#gate').hidden=true;say($('#gateNote'),'');document.querySelector('main').classList.remove('gated');document.title=PAGE_TITLE}
+// failed says why the page (or part of it) didn't load, with a Try again; recovered clears it.
+function failed(e){if(e&&e.unpaired)return;$('#problemText').textContent=e.message;$('#problem').hidden=false;for(const l of document.querySelectorAll('.loading'))l.hidden=true}
+function recovered(){$('#problem').hidden=true;for(const l of document.querySelectorAll('.loading'))l.hidden=false}
+function say(el,text,kind){el.className='msg'+(kind?' '+kind:'');el.textContent=text||''}
+// A button that is busy (disabled) drops keyboard focus to the page; it gets it back when it is ready again.
+let lastFocus=null;document.addEventListener('focusin',e=>{lastFocus=e.target});
+new MutationObserver(ms=>{for(const m of ms){const b=m.target;if(b===lastFocus&&!b.disabled&&b.isConnected&&(!document.activeElement||document.activeElement===document.body))b.focus({preventScroll:true})}}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['disabled']});
+// Try again checks in place: a reload would show the API's bare refusal instead of this card.
+$('#gateRetry').onclick=async()=>{if(retrying)return;retrying=true;say($('#gateNote'),'Checking…');try{await loadAll()}finally{retrying=false}};$('#problemRetry').onclick=()=>loadAll();
+// One way round every page: back to the screen, then each settings page.
+(()=>{const m=document.querySelector('main');if(!m||document.body.dataset.nav==='off')return;
+  const P=[['/ui','← Screen'],['/memory','Memory'],['/channels','Channels'],['/accounts','Accounts'],['/devices/add','Add your phone'],['/devices/page','Devices'],['/reach','Reach'],['/backup','Backup'],['/trust','Trust'],['/spending','Spending'],['/protocols','Routines'],['/voice/setup','Voice'],['/health','Health']];
+  const n=document.createElement('nav');n.className='pagenav';n.setAttribute('aria-label','Pages');
+  n.innerHTML=P.map(([h,t],i)=>`<a href="${h}"${i===0?' class="home"':''}${location.pathname===h?' aria-current="page"':''}>${t}</a>`).join('');
+  m.prepend(n);const c=n.querySelector('[aria-current]');if(c&&n.scrollWidth>n.clientWidth)c.scrollIntoView({block:'nearest',inline:'nearest'});})();
+/* ---- end of shared ---- */
+const PROBE='/trust/info';
+const ROUTE={tailscale:'Tailscale',relay:'your relay',files:'your own certificate',cloud:'the relays'};
+function day(t){const d=new Date(t);return isNaN(d)||d.getFullYear()<2000?'':d.toLocaleDateString([],{day:'numeric',month:'long',year:'numeric'})}
+function row(k,v){return v?'<dt>'+k+'</dt><dd>'+v+'</dd>':''}
+function outItem(o){return '<li><div class="top"><span class="w">'+esc(o.what)+'</span>'+(o.on?'<span class="badge on">In use</span>':'<span class="badge">Not in use</span>')+'</div>'+
+  '<p class="muted">'+esc(o.when)+'</p><p>'+esc(o.data)+'</p>'+(o.on&&o.where?'<p class="muted">Here: '+esc(o.where)+'</p>':'')+'</li>'}
+function certCard(c){return '<div class="card"><p style="margin:0"><strong>'+esc(c.host)+'</strong> <span class="muted">through '+esc(ROUTE[c.route]||c.route)+'</span></p><dl class="facts">'+
+  row('Key fingerprint','<span class="fp">'+esc(c.current)+'</span>')+row('Next key','<span class="fp">'+esc(c.next)+'</span>')+
+  row('Certificate SHA-256','<span class="fp">'+esc(c.sha256)+'</span>')+row('Issued by',esc(c.issuer))+row('Valid until',esc(day(c.not_after)))+'</dl></div>'}
+function ctCard(ct,certs){const el=$('#ct');
+  const relay=certs.find(c=>c.route==='relay'||c.route==='cloud'),ts=certs.find(c=>c.route==='tailscale');
+  if(ct){const cls=ct.state==='ok'?'on':ct.state==='fail'?'err':'warn';
+    el.innerHTML='<p style="margin:0"><strong>Certificate logs</strong> <span class="badge '+cls+'">'+(ct.state==='ok'?'Nothing unexpected':ct.state==='fail'?'Needs you':'Check')+'</span></p>'+
+      '<p class="muted" style="margin:6px 0 0">'+esc(ct.detail)+(ct.checked&&day(ct.checked)?' · checked '+esc(new Date(ct.checked).toLocaleString([],{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})):'')+'</p>'+
+      (ct.fix&&ct.state!=='ok'?'<p class="help">'+esc(ct.fix.replace(/`/g,''))+'</p>':'')+
+      (ct.alarm?'<p class="msg err">'+esc(ct.alarm)+' Approvals from other devices are paused until you clear it: type <code>mirrin reach alarm clear</code> in Terminal on this computer, or send /alarm clear in your own chat.</p>':'')+
+      '<p class="help">Every 6 hours '+esc(twinName())+' asks Cert Spotter and crt.sh for certificates issued for '+esc(relay?relay.host:'its name')+', and checks its CAA records (which say who may issue them): any certificate whose key isn\'t this computer\'s raises an alarm.</p>';
+    el.hidden=false;return}
+  if(ts){el.innerHTML='<p style="margin:0"><strong>Certificate logs</strong></p><p class="help">Certificates for '+esc(ts.host)+' come from Tailscale and are logged publicly like any other. Tailscale controls that name, so '+esc(twinName())+' watches the logs only for a relay name of your own.</p>';el.hidden=false;return}
+  el.hidden=true}
+function verifySteps(certs){const c=certs[0];
+  if(!c)return '<p style="margin:0">Nothing is served to other devices, so there is no certificate to check. To see what leaves this computer as it happens, watch its connections with a firewall app such as Little Snitch or LuLu: the list above is all you should see.</p>';
+  const h=esc(c.host);
+  return '<ol class="plain">'+
+    '<li>On this computer, type <code>mirrin reach fingerprint</code> in Terminal. Its Current key should match the key fingerprint above.</li>'+
+    '<li>From another computer, ask the address itself which key it presents:<pre>openssl s_client -connect '+h+':'+(Number(c.port)||443)+' -servername '+h+' &lt;/dev/null 2&gt;/dev/null | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl base64 | tr \'+/\' \'-_\' | tr -d \'=\'</pre>It should print the key fingerprint above (or the next key, just after a renewal).</li>'+
+    '<li>Look the name up in the public logs: <a href="https://crt.sh/?q='+encodeURIComponent(c.host)+'" target="_blank" rel="noopener">crt.sh ↗</a>. Every certificate there should be one this computer asked for.</li>'+
+    (c.route==='relay'||c.route==='cloud'?'<li>Type <code>mirrin reach verify</code> in Terminal: it checks all of this from outside, and your CAA records too.</li>':'')+
+    '<li>On your phone, open the address in Safari (or your browser, not the Home Screen app, which has no address bar) and tap the padlock to see the certificate: its SHA-256 should match the one above.</li></ol>'}
+async function loadAll(){try{const t=await getJSON('/trust/info');recovered();
+  const out=(t.outbound||[]).slice().sort((a,b)=>(b.on-a.on));$('#out').innerHTML=out.map(outItem).join('')||'<li>Nothing.</li>';
+  const certs=t.certs||[];$('#certs').innerHTML=certs.length?certs.map(certCard).join(''):'<div class="card">Only on this computer: nothing is served to other devices right now, so there is no certificate to show. <a href="/devices/add?view=reach">Reach from anywhere</a></div>';
+  ctCard(t.ct,certs);$('#verify').innerHTML=verifySteps(certs)}catch(e){failed(e)}}
+loadAll();
+</script></main></body></html>

@@ -1,0 +1,33 @@
+AWS Signature Version 4 test vectors, stored verbatim. MANIFEST.sha256 lists
+the SHA-256 of every vector file (check with `shasum -a 256 -c MANIFEST.sha256`
+here); TestVectorFilesAreVerbatim pins the manifest itself:
+  SHA-256 of MANIFEST.sha256: f70fca5e65bef4d29ce6d144de2e152941280752d8ba20dfacb3e2eb507f5119
+Every file below was also checked, when copied, against the upstream git blob
+ids from the GitHub trees API.
+
+aws4_testsuite/
+  The AWS Signature Version 4 Test Suite (Apache-2.0; its LICENSE and NOTICE
+  are kept beside it), as AWS published it and botocore carries it.
+  Source: https://github.com/boto/botocore/tree/86201a3e9c58a61369b8bcf4b658bfd4463fc41f/tests/unit/auth/aws4_testsuite
+  Commit: 86201a3e9c58a61369b8bcf4b658bfd4463fc41f (2026-09-25)
+  The whole suite: each case has the request (.req), canonical request
+  (.creq), string to sign (.sts), Authorization value (.authz) and signed
+  request (.sreq). The credentials, region, service and time it uses are
+  stated in the newer suite's context.json files below.
+
+aws-signing-test-suite/
+  The newer AWS signing test suite from aws-c-auth (Apache-2.0; LICENSE and
+  NOTICE kept). Only the cases whose request carries no header but Host are
+  copied, with their query-string (presigned) outputs, for Presign.
+  Source: https://github.com/awslabs/aws-c-auth/tree/c4bc791ac6985eedb503e882cd450cc5b344c2f2/tests/aws-signing-test-suite/v4
+  Commit: c4bc791ac6985eedb503e882cd450cc5b344c2f2 (2026-09-09)
+
+s3-header-examples.txt, s3-presign-example.txt
+  The worked examples of the Amazon S3 API Reference. The live pages now load
+  their text with JavaScript, so they were read from the Internet Archive's
+  copies. Each file's header names its page and snapshot; the code blocks are
+  verbatim (HTML tags removed, entities decoded).
+  https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html
+    snapshot 20250618153710, HTML SHA-256 e4c4cf1b33b4f37f93998603464fdd22581c320ea9b65b9371cca6b0e818dbde
+  https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
+    snapshot 20250616154435, HTML SHA-256 1731347a80fdb8b298a9d5f853eabf7af182568a8db2386a229cf0df09950631

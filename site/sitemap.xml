@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Every public page that may be indexed. legal.html is left out: it holds
+     drafts and is marked noindex. site_test.go keeps this list and the pages'
+     canonical links in step. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://mirrin.app/</loc></url>
+  <url><loc>https://mirrin.app/protocols.html</loc></url>
+  <url><loc>https://mirrin.app/cloud.html</loc></url>
+  <url><loc>https://mirrin.app/pricing.html</loc></url>
+</urlset>

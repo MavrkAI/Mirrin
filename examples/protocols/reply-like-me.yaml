@@ -1,0 +1,14 @@
+name: reply like me
+description: Reply to an email the way the user would write it.
+version: 1.0.0
+author: Mirrin
+tags: [email, chores]
+requires: [email]
+schedule: ""
+prompt: |
+  The user wants to reply to an email. If they named it, find it (list_emails, or gmail_search with Gmail);
+  otherwise ask which one. Read it (read_email or gmail_read). Then read two or three of the user's own
+  recent sent emails (list_sent_emails and read_sent_email, or gmail_search for "in:sent" and gmail_read)
+  to match their tone, sign-off and length. Recall anything you know about the sender.
+  Draft the reply in their voice, show it in full, and send it (reply_email or gmail_reply); the approval
+  step lets them say yes or ask for changes. Never send without that approval.

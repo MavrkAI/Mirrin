@@ -1,0 +1,84 @@
+# mirrin-canary on the control-plane VM: the canary twin, the region-a
+# probe, the watcher (the only thing that pages) and the deny-list mirror.
+# Rendered by render.sh; installed as /etc/mirrin-canary/canary.yaml and
+# checked with
+#   mirrin-canary check-config --config /etc/mirrin-canary/canary.yaml
+# Each role runs as its own instance of mirrin-canary@.service. Secrets
+# are environment variables filled from systemd encrypted credentials.
+# cloud/ops/ALERTS.md says what each alarm means and what to do.
+
+api: https://@@CLOUD_HOST@@
+tenant_zone: @@TENANT_ZONE@@
+# mirrin-canary@twin keeps its device key, entitlement, ACME account and
+# certificate here (StateDirectory=mirrin-canary-twin).
+data_dir: /var/lib/mirrin-canary-twin
+# Until the public keys ship in a release, list them; then this can go.
+# During a key rotation the second kid (ENT_KID2 / DL_KID2) is listed too.
+entitlement_keys:
+  @@ENT_KID@@: @@ENT_PUB@@
+@@?ENT_KID2@@  @@ENT_KID2@@: @@ENT_PUB2@@
+denylist_keys:
+  @@DL_KID@@: @@DL_PUB@@
+@@?DL_KID2@@  @@DL_KID2@@: @@DL_PUB2@@
+
+twin:
+  handle: @@CANARY_HANDLE@@
+  acme_email: @@OPS_EMAIL@@
+  status_listen: 127.0.0.1:9101
+
+probe:
+  region: @@PROBE_REGION@@
+  host: @@CANARY_HANDLE@@.@@TENANT_ZONE@@
+  relays:
+    - {id: r1, addrs: ["@@R1_IPV4@@:443", "[@@R1_IPV6@@]:443"]}
+    - {id: r2, addrs: ["@@R2_IPV4@@:443", "[@@R2_IPV6@@]:443"]}
+  every: 60s
+  timeout: 10s
+  listen: 127.0.0.1:9102
+  token_env: CANARY_PROBE_TOKEN
+
+watch:
+  listen: 127.0.0.1:9103   # Caddy serves /healthz as https://@@WATCH_HOST@@/healthz
+  every: 60s
+  regions:
+    - {name: @@PROBE_REGION@@, url: "http://127.0.0.1:9102/v1/results"}
+    - {name: b, url: "https://@@PROBE_B_HOST@@/v1/results"}
+    - {name: c, url: "https://@@PROBE_C_HOST@@/v1/results"}
+  token_env: CANARY_PROBE_TOKEN
+  # The one paging rule: every relay failing, from at least 2 regions,
+  # for 3 consecutive rounds. Do not loosen it; add an email check instead.
+  page_regions: 2
+  page_after: 3
+  clear_after: 3
+  relay_after: 3
+  silent_after: 10
+  cert_warn: 480h
+  checks:
+    - {name: control plane, kind: http, url: "https://@@CLOUD_HOST@@/v1/version", after: 5}
+    - {name: deny-list mirror, kind: denylist, url: "https://@@DENYLIST_HOST@@/denylist.paseto", max_age: 15m, after: 3}
+    - {name: relay r1 control name, kind: http, url: "https://r1.relay.@@OPERATOR_ZONE@@/healthz", after: 3}
+    - {name: relay r2 control name, kind: http, url: "https://r2.relay.@@OPERATOR_ZONE@@/healthz", after: 3}
+    - {name: canary twin tunnels, kind: http, url: "http://127.0.0.1:9101/healthz", after: 5}
+    # Liveness only: Litestream answering. That the replica is current is
+    # the weekly restore drill's job (cloud/ops/RUNBOOK.md, Routine).
+    - {name: litestream, kind: http, url: "http://127.0.0.1:9090/metrics", after: 5}
+  page:
+    format: pagerduty
+    routing_key_env: PAGERDUTY_ROUTING_KEY
+  email:
+    smtp: @@SMTP_ADDR@@
+    from: @@OPS_EMAIL@@
+    to: [@@OPS_EMAIL@@]
+    username_env: SMTP_USERNAME
+    password_env: SMTP_PASSWORD
+
+mirror:
+  source: https://@@CLOUD_HOST@@/v1/denylist
+  every: 60s
+  refresh: 5m
+  endpoint: https://@@R2_ACCOUNT_ID@@.r2.cloudflarestorage.com
+  bucket: @@R2_DENYLIST_BUCKET@@
+  key: denylist.paseto
+  region: auto
+  access_key_env: MIRROR_ACCESS_KEY_ID
+  secret_key_env: MIRROR_SECRET_ACCESS_KEY

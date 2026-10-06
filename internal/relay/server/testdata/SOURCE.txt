@@ -1,0 +1,17 @@
+rfc8448-clienthello.txt
+  The two ClientHello records of RFC 8448, "Example Handshake Traces for
+  TLS 1.3" (sections 3 and 4), copied verbatim from
+  https://www.rfc-editor.org/rfc/rfc8448.txt. TestPeekRFC8448 and the fuzz
+  seeds read them.
+
+fuzz/FuzzPeekClientHello/openssl-3.6.4-mlkem
+fuzz/FuzzPeekClientHello/curl-8.7.1-libressl-3.3.6
+  Real first flights captured on 2026-09-27 by a local listener on
+  127.0.0.1 that saved the first bytes each client sent:
+    openssl s_client -connect 127.0.0.1:18443 -servername h.test -alpn h2,http/1.1
+      (OpenSSL 3.6.4; its default key shares include X25519MLKEM768)
+    curl --resolve h.test:18443:127.0.0.1 https://h.test:18443/
+      (curl 8.7.1, LibreSSL 3.3.6, macOS)
+  Each is a Go fuzz corpus entry: the bytes, then where to split them
+  across two reads. TestPeekCapturedHellos checks both name h.test and
+  offer h2 and http/1.1.

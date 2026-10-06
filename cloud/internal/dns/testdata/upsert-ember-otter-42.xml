@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ChangeResourceRecordSetsRequest xmlns="https://route53.amazonaws.com/doc/2013-04-01/">
+  <ChangeBatch>
+    <Comment>mirrin-cloud: ember-otter-42</Comment>
+    <Changes>
+      <Change>
+        <Action>UPSERT</Action>
+        <ResourceRecordSet>
+          <Name>ember-otter-42.mirrin.link.</Name>
+          <Type>A</Type>
+          <TTL>300</TTL>
+          <ResourceRecords>
+            <ResourceRecord>
+              <Value>192.0.2.1</Value>
+            </ResourceRecord>
+            <ResourceRecord>
+              <Value>198.51.100.1</Value>
+            </ResourceRecord>
+          </ResourceRecords>
+        </ResourceRecordSet>
+      </Change>
+      <Change>
+        <Action>UPSERT</Action>
+        <ResourceRecordSet>
+          <Name>ember-otter-42.mirrin.link.</Name>
+          <Type>AAAA</Type>
+          <TTL>300</TTL>
+          <ResourceRecords>
+            <ResourceRecord>
+              <Value>2001:db8::1</Value>
+            </ResourceRecord>
+            <ResourceRecord>
+              <Value>2001:db8::2</Value>
+            </ResourceRecord>
+          </ResourceRecords>
+        </ResourceRecordSet>
+      </Change>
+      <Change>
+        <Action>UPSERT</Action>
+        <ResourceRecordSet>
+          <Name>ember-otter-42.mirrin.link.</Name>
+          <Type>CAA</Type>
+          <TTL>300</TTL>
+          <ResourceRecords>
+            <ResourceRecord>
+              <Value>0 issue &#34;letsencrypt.org; accounturi=https://acme-v02.api.letsencrypt.org/acme/acct/123456789; validationmethods=tls-alpn-01&#34;</Value>
+            </ResourceRecord>
+            <ResourceRecord>
+              <Value>0 issuewild &#34;;&#34;</Value>
+            </ResourceRecord>
+            <ResourceRecord>
+              <Value>0 iodef &#34;mailto:security@mirrin.app&#34;</Value>
+            </ResourceRecord>
+          </ResourceRecords>
+        </ResourceRecordSet>
+      </Change>
+    </Changes>
+  </ChangeBatch>
+</ChangeResourceRecordSetsRequest>

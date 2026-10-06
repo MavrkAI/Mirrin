@@ -1,0 +1,49 @@
+# mirrin-relay for Mirrin Cloud (hosted mode): r1 and r2 run this, one at
+# each provider, on a reserved address. Rendered by render.sh from
+# hosts/common.env and hosts/@@RELAY_ID@@.env; installed as
+# /etc/mirrin-relay/relay.yaml and checked with
+#   mirrin-relay check-config --config /etc/mirrin-relay/relay.yaml
+# It holds public keys only. docs/relay-selfhost.md explains every field.
+
+id: @@RELAY_ID@@
+listen: ":443"
+http_listen: ":80"
+
+# The one name this relay terminates TLS for (the tunnel endpoint,
+# /v1/status, /healthz, /v1/version). Its A/AAAA records point at this
+# relay's reserved addresses only; there is no anycast.
+control_hostname: @@RELAY_HOST@@
+state_dir: /var/lib/mirrin-relay
+acme_email: @@OPS_EMAIL@@
+
+# Hosted mode: every tunnel hostname is <handle>.@@TENANT_ZONE@@, carried
+# only with an entitlement signed by an ent-* key below, and refused while
+# the deny list (signed by a dl-* key) names the handle or the key. During
+# a key rotation the second kid (ENT_KID2 / DL_KID2) is listed too
+# (cloud/ops/RUNBOOK.md, "Key rotation").
+zones: [@@TENANT_ZONE@@]
+issuer_keys:
+  - {kid: @@ENT_KID@@, key: @@ENT_PUB@@}
+  - {kid: @@DL_KID@@, key: @@DL_PUB@@}
+@@?ENT_KID2@@  - {kid: @@ENT_KID2@@, key: @@ENT_PUB2@@}
+@@?DL_KID2@@  - {kid: @@DL_KID2@@, key: @@DL_PUB2@@}
+denylist_url: https://@@CLOUD_HOST@@/v1/denylist
+mirror_url: https://@@DENYLIST_HOST@@/denylist.paseto
+
+limits:
+  streams_per_tunnel: 64
+  bps: 20000000
+  hello_per_ip_per_min: 10
+  idle: 10m
+
+abuse:
+  distinct_nets_per_day: 200
+  suspend_for: 168h
+  # Mails the abuse inbox on each suspension (relay-notify.sh).
+  notify_command: /usr/local/lib/mirrin/relay-notify
+
+metrics_listen: 127.0.0.1:9100
+
+conn_log:
+  entries: 1048576
+  hourly_entries: 1048576

@@ -1,0 +1,91 @@
+# RFC 3720 (iSCSI), appendix B.4 "CRC Examples": the CRC-32C test vectors.
+# Source: https://www.rfc-editor.org/rfc/rfc3720.txt
+# Full RFC text SHA-256: 0c014dbc041bfc2308c1990387aabffdb21050c3ec140c96522c12005b572db3
+# Lines 12129-12214 of that file, verbatim, follow. The CRC bytes are listed in
+# the order iSCSI sends them, least significant byte first.
+B.4.  CRC Examples
+
+   N.B.  all Values are Hexadecimal
+
+   32 bytes of zeroes:
+
+     Byte:        0  1  2  3
+
+        0:       00 00 00 00
+      ...
+       28:       00 00 00 00
+
+      CRC:       aa 36 91 8a
+
+   32 bytes of ones:
+
+     Byte:        0  1  2  3
+
+        0:       ff ff ff ff
+      ...
+       28:       ff ff ff ff
+
+
+
+
+Satran, et al.              Standards Track                   [Page 217]
+
+RFC 3720                         iSCSI                        April 2004
+
+
+      CRC:       43 ab a8 62
+
+   32 bytes of incrementing 00..1f:
+
+     Byte:        0  1  2  3
+
+        0:       00 01 02 03
+      ...
+       28:       1c 1d 1e 1f
+
+      CRC:       4e 79 dd 46
+
+   32 bytes of decrementing 1f..00:
+
+     Byte:        0  1  2  3
+
+        0:       1f 1e 1d 1c
+      ...
+       28:       03 02 01 00
+
+      CRC:       5c db 3f 11
+
+   An iSCSI - SCSI Read (10) Command PDU
+
+    Byte:        0  1  2  3
+
+       0:       01 c0 00 00
+       4:       00 00 00 00
+       8:       00 00 00 00
+      12:       00 00 00 00
+      16:       14 00 00 00
+      20:       00 00 04 00
+      24:       00 00 00 14
+      28:       00 00 00 18
+      32:       28 00 00 00
+      36:       00 00 00 00
+      40:       02 00 00 00
+      44:       00 00 00 00
+
+     CRC:       56 3a 96 d9
+
+
+
+
+
+
+
+
+
+
+
+Satran, et al.              Standards Track                   [Page 218]
+
+RFC 3720                         iSCSI                        April 2004
+
+

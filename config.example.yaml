@@ -1,0 +1,124 @@
+# Copy to ~/.mirrin/config.yaml (or run `mirrin init`).
+name: Mirrin              # what you call your twin (any name)
+persona: mirrin           # its personality: mirrin | nyra | pickoo | plain | one of yours (mirrin persona list)
+user:
+  name: Tony
+  honorific: ""             # how it addresses you: sir, ma'am or your name; empty is the persona's own (sir for Mirrin, your name for the others)
+  timezone: Local           # follows your Mac as you travel; name a zone (Asia/Tokyo) only to pin it
+  about: Runs a small company. Two kids. Hates early meetings.
+  quiet_hours: ""           # when news that can wait is held until morning: HH:MM-HH:MM or off; empty is push.quiet_hours, else 22:00-07:00
+
+llm:
+  provider: anthropic       # anthropic | openai | gemini | ollama | openai-compatible
+  model: claude-opus-5
+  providers:
+    anthropic: {api_key_env: ANTHROPIC_API_KEY, model: claude-opus-5}
+    openai:    {api_key_env: OPENAI_API_KEY, model: gpt-4.1}
+    gemini:    {api_key_env: GEMINI_API_KEY, model: gemini-2.5-pro}
+    ollama:    {base_url: "http://127.0.0.1:11434/v1", model: llama3.1}
+  max_tokens: 16000
+  effort: high          # low | medium | high | xhigh | max
+  voice_effort: low     # spoken replies favour speed
+  voice_model: ""       # optional faster model for speech, e.g. claude-sonnet-5
+  history_turns: 40
+
+channels:
+  whatsapp:
+    enabled: true
+    owner: "+61400000000"
+    reply_to_others: false
+  cli:
+    enabled: true
+  voice:
+    enabled: false
+    mode: push                # push (Enter to talk) or wake (always listening)
+    wake_word: mirrin
+    whisper_model: ~/.mirrin/models/ggml-small.en.bin
+    engine: auto              # auto | kokoro | elevenlabs | system | command
+    voice: bm_george          # run `mirrin voice setup` to install Kokoro
+    followup_seconds: 6
+    chime_sound: ""           # optional file for the wake chime, e.g. /System/Library/Sounds/Tink.aiff
+    talk_over: normal         # off | low | normal | high — interrupt by talking over it (its name always works)
+
+autonomy:
+  read: auto
+  write: ask
+  dangerous: ask
+  always_allow: [set_reminder]
+  always_ask: []
+
+skills:
+  reminders: { enabled: true }
+  web:
+    enabled: true
+    # Hosts on your own network (or this computer) that fetch_url and the
+    # browser may reach: names, addresses or ranges. Everything else local
+    # is refused. One list for both.
+    allow_hosts: []         # e.g. [nas.local, 192.168.1.20, 10.0.0.0/24]
+  system:
+    enabled: true
+    allowed_dirs: ["~"]
+    allow_shell: true
+  browser:
+    enabled: true
+    headless: true
+    keep_screenshots_days: 14   # page screenshots kept this long; -1 keeps them until the size cap
+    screenshots_max_mb: 200     # oldest removed first past this; -1 for no cap
+  calendar:
+    enabled: false
+    credentials_file: ~/.mirrin/google-credentials.json
+    token_file: ~/.mirrin/google-token.json
+    calendar_id: primary
+  email:
+    enabled: false
+    imap_host: imap.gmail.com
+    imap_port: 993
+    smtp_host: smtp.gmail.com
+    smtp_port: 587
+    username: you@gmail.com
+    password_env: MIRRIN_EMAIL_PASSWORD
+    from_name: Tony
+
+mcp:
+  servers: []
+  # - name: files
+  #   command: npx
+  #   args: ["-y", "@modelcontextprotocol/server-filesystem", "~/Documents"]
+  #   risk: read
+
+ui:
+  weather: true           # the ambient screen's weather, for your time zone's city (Open-Meteo, no key); false turns it off
+  latitude: 0             # e.g. -37.81 for Melbourne; only to use somewhere other than your time zone's city
+  longitude: 0            # e.g. 144.96
+  ambient_after_seconds: 60
+
+# What the model costs. Estimates in US dollars from list prices built into
+# Mirrin (`mirrin usage prices`); your provider's bill is what counts.
+usage:
+  monthly_budget: 25      # warn at 80% and when it's reached (Health, menu, doctor); 0 = no warning
+  # prices:               # your own, per million tokens, keyed by model or provider/model
+  #   claude-opus-5: {input: 5, output: 25, cache_read: 0.5, cache_write: 6.25}
+  #   custom/my-model: {input: 0.2, output: 0.6}
+
+# How long the activity log and bulky tool output are kept. Facts, reminders
+# and your conversations are never removed by this.
+retention:
+  audit_days: 90          # activity-log entries older than this are deleted; 0 keeps them
+  trim_after_days: 30     # then quotes and long tool results are cut short; 0 never
+
+api:
+  listen: 127.0.0.1:7742
+  remote: false             # true + a Tailscale (or LAN) listen address lets paired devices reach it
+
+# Encrypted backups: set up with `mirrin backup init`, which writes this
+# section (only public keys: the 12 words that unlock backups are never stored).
+# backup:
+#   recipient: age1pq1…   # keep private: whoever has it can add snapshots your words open
+#   recovery_pub: …
+#   target: icloud        # icloud (macOS) or folder
+#   path: /Volumes/NAS/mirrin-backups   # for target: folder
+#   sessions: false       # also back up the WhatsApp session
+
+protocols_dir: ~/.mirrin/protocols
+protocol_registry: ""     # community index; empty = the Mirrin registry
+data_dir: ~/.mirrin/data

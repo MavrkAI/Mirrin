@@ -1,0 +1,12 @@
+numpy<2.3
+scipy
+soundfile
+onnx
+onnxruntime
+torch
+openwakeword==0.6.0
+kokoro-onnx==0.6.1
+piper-tts
+tqdm
+scikit-learn
+requests

@@ -1,0 +1,18 @@
+Official PASETO test vectors, stored verbatim (JSON has no comments, so the
+source is recorded here and TestVectorFilesAreVerbatim pins the SHA-256s).
+
+Repository: https://github.com/paseto-standard/test-vectors
+Commit:     32d7406591eb022f9eff88abb84106dd9d42c0f2 (2024-04-28)
+
+paseto-v4-public.json
+  Source: https://github.com/paseto-standard/test-vectors/blob/32d7406591eb022f9eff88abb84106dd9d42c0f2/v4.json
+  Git blob: d665aee9c67a1dea6b2874b1b5463caa375ab0de (matches the GitHub contents API)
+  SHA-256:  0b72948b65d1f73f574c9ad2aa3481ec27bf8c632f5f6e1596cd41f5b9703387
+  The whole v4 file: the 4-S public vectors, the 4-F failure vectors, and the
+  4-E v4.local vectors, which this package must refuse.
+
+paseto-v3.json
+  Source: https://github.com/paseto-standard/test-vectors/blob/32d7406591eb022f9eff88abb84106dd9d42c0f2/v3.json
+  Git blob: 1467106f8e2f764983409cda40b784905ffb0f30 (matches the GitHub contents API)
+  SHA-256:  acc983640edf3ec6115aaeadf3c15a1556aac87f8300b5e8cbd264da7b996cbe
+  Used only to show that every v3 token is refused.

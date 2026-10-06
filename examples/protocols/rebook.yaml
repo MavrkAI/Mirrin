@@ -1,0 +1,16 @@
+name: rebook
+description: Move or cancel an appointment and tell the other side.
+version: 1.0.0
+author: Mirrin
+tags: [calendar, chores]
+requires: [calendar]
+schedule: ""
+prompt: |
+  The user wants to move or cancel an appointment. Find it on the calendar (list_events). If moving,
+  propose a time that works around their other commitments and update it with update_event; if
+  cancelling, delete_event. Then, if the appointment involved someone else, draft a short message to
+  them (by email: reply_email or send_email, or gmail_reply or gmail_send with Gmail) explaining the change and
+  offering the new time. If the booking lives on a website, use browser_inspect and browser_act to
+  make the change there, taking a screenshot before the final submit so the user can approve it.
+  If you wrote to someone about the change, set a follow_up for two business days from now to
+  check for their reply.

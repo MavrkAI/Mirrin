@@ -1,0 +1,60 @@
+# mirrin-cloud's config, for the production control plane. Secrets are not
+# here: each *_env names the environment variable that holds one (systemd
+# LoadCredential= or EnvironmentFile= fills them). `mirrin-cloud serve --dev`
+# needs none of this.
+
+listen: 127.0.0.1:8787            # behind a TLS proxy; or set cert_file and key_file
+trusted_proxies: ["127.0.0.1", "::1"] # the proxy: client addresses come from its X-Forwarded-For
+public_url: https://cloud.mirrin.app
+data_dir: /var/lib/mirrin-cloud   # cloud.db; replicate it with Litestream
+tenant_zone: mirrin.link
+iodef: mailto:security@mirrin.app
+
+relays:
+  - id: r1
+    url: wss://r1.relay.mirrin.app/v1/tunnel
+    ips: [192.0.2.1, 2001:db8::1]
+  - id: r2
+    url: wss://r2.relay.mirrin.app/v1/tunnel
+    ips: [198.51.100.1, 2001:db8::2]
+
+plan: cloud
+features: [reach, backup]
+backup_quota: 21474836480         # 20 GiB
+activations_per_week: 40          # under Let's Encrypt's 50 a week for the zone
+link_starts_per_minute: 10        # per client (IPv4 address, IPv6 /48), in memory only
+link_starts_total_per_minute: 60  # from everyone: bounds checkouts opened at Paddle
+device_requests_per_minute: 30    # per device key, on the signed device routes
+acme_account_hosts: [acme-v02.api.letsencrypt.org]
+
+keys:
+  dir: $CREDENTIALS_DIRECTORY     # <kid>.pem files, from systemd encrypted credentials
+  entitlement: ent-2026a
+  denylist: dl-2026a
+
+billing:
+  provider: paddle
+  paddle:
+    api_base: https://api.paddle.com
+    api_key_env: PADDLE_API_KEY
+    webhook_secret_env: PADDLE_WEBHOOK_SECRET
+    prices:
+      cloud: pri_REPLACE_ME
+
+dns:
+  provider: route53
+  route53:
+    hosted_zone_id: ZREPLACEME
+    access_key_env: ROUTE53_ACCESS_KEY_ID
+    secret_key_env: ROUTE53_SECRET_ACCESS_KEY
+
+# Backup objects: ciphertext only, under ns/<namespace>/, at presigned URLs
+# the daemon sends to directly. Leave provider empty to keep no backups.
+storage:
+  provider: r2
+  r2:
+    endpoint: https://ACCOUNTID.r2.cloudflarestorage.com
+    bucket: mirrin-backups
+    region: auto
+    access_key_env: R2_ACCESS_KEY_ID
+    secret_key_env: R2_SECRET_ACCESS_KEY

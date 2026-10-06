@@ -1,0 +1,36 @@
+<!doctype html>
+<!-- Source for assets/og.png (1200x630). Not linked from the site, and not
+     published (.github/workflows/pages.yml leaves it out). The default persona
+     on the right is characters/mirrin.svg, which draw.js makes from the
+     screen's own code.
+     NAME TOKEN: the product name appears twice below: in <span class="pn">, and
+     as the default persona's name, the first in the legend. After a rename,
+     change both and re-render (see README.md, "Social card"). -->
+<html lang="en-GB"><head><meta charset="utf-8"><title>Social card</title>
+<link rel="stylesheet" href="../site.css">
+<style>
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; background: #0c0f1c; }
+  .card { position: relative; width: 1200px; height: 630px; display: grid; grid-template-columns: 1fr 430px; gap: 0; }
+  .left { padding: 64px 40px 56px 72px; display: flex; flex-direction: column; }
+  .brand { font: 600 30px/1 var(--sans); display: flex; align-items: center; gap: 14px; color: #e7eaf7; }
+  .brand svg { width: 44px; height: 44px; }
+  h1 { font: 450 74px/1.02 var(--serif); letter-spacing: -0.022em; color: #e7eaf7; margin: 46px 0 0; max-width: 11ch; }
+  .foot { margin-top: auto; padding: 0; border: 0; font: 600 17px/1 var(--sans); letter-spacing: 0.12em; text-transform: uppercase; color: #8f98b6; display: flex; gap: 22px; }
+  .foot span + span::before { content: "·"; margin-right: 22px; color: #3a4163; }
+  .right { background: radial-gradient(120% 80% at 50% 0%, #121622 0%, #0b0d12 60%); display: grid; place-items: center; }
+  .right img { width: 330px; height: auto; margin-top: -36px; }
+  .legend { position: absolute; right: 0; bottom: 52px; width: 430px; display: flex; justify-content: center; gap: 22px; font: 500 14px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: #9aa1ae; }
+  .legend span:first-child { color: #eceef3; }
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3ddc84"/><stop offset="1" stop-color="#7aa2ff"/></linearGradient></defs></svg>
+<div class="card">
+  <div class="left">
+    <div class="brand"><svg viewBox="0 0 32 32"><rect width="32" height="32" rx="7.5" fill="#161a45"/><g transform="translate(3 3) scale(0.26)"><g fill="none" stroke-width="11" stroke-linecap="round"><path d="M18.5 80V58a14.75 14.75 0 0 1 29.5 0V80" stroke="#ffffff"/><path d="M52 80V58a14.75 14.75 0 0 1 29.5 0V80" stroke="#9ea4ff"/></g><circle cx="33.25" cy="25" r="8" fill="#ffffff"/><circle cx="66.75" cy="25" r="8" fill="#9ea4ff"/></g></svg><span class="pn">Mirrin</span></div>
+    <h1>Your own AI. <span style="color:#a2a8ff">On your own machine.</span></h1>
+    <div class="foot"><span>Free</span><span>Open source</span><span>No account</span></div>
+  </div>
+  <div class="right"><img src="characters/mirrin.svg" alt=""></div>
+  <div class="legend"><span>Mirrin</span><span>Nyra</span><span>Pickoo</span></div>
+</div>
+</body></html>

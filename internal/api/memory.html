@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your twin</title>
+<style>
+/* ---- shared by every settings page (keep the copies identical; pagetest checks) ---- */
+:root{color-scheme:light dark;--bg:#0f1115;--fg:#e8e8ea;--muted:#8b8f98;--card:#171a21;--line:#262a33;--edge:#646a7a;--accent:#7aa2ff;--on-accent:#000;--ok:#3ddc84;--warn:#f5c542;--fail:#ff6b6b;--off:#5c6270}
+@media (prefers-color-scheme: light){:root{--bg:#f6f7f9;--fg:#14161a;--muted:#5f6470;--card:#fff;--line:#e3e6eb;--edge:#80868f;--accent:#2f5bd3;--on-accent:#fff;--ok:#137a43;--warn:#8a5a00;--fail:#c62828;--off:#9aa0aa}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,system-ui,sans-serif;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+[hidden]{display:none!important}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,textarea,select{font-size:16px}::placeholder{color:var(--muted);opacity:1}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+button{background:transparent;border:1px solid var(--edge);color:var(--fg);border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit;min-height:36px}
+button.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}button:disabled{opacity:.55;cursor:default}
+.gate{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 20px;margin:8px 0 20px}
+.gate h1{margin:0 0 6px}.gate p{color:var(--muted);margin:0 0 14px}
+main.gated>:not(#gate){display:none!important}#gateNote:empty{display:none}
+.state{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;color:var(--muted);margin-bottom:8px}
+.state.err{color:var(--fg);border-color:var(--fail);margin-bottom:16px}.state.err strong{display:block;color:var(--fail)}.state.err button{margin-top:10px}
+.msg{font-size:13px}.msg.err{color:var(--fail)}.msg.ok{color:var(--ok)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.pagenav{display:flex;gap:1.1rem;align-items:center;overflow-x:auto;scrollbar-width:none;white-space:nowrap;border-bottom:1px solid var(--line);margin:0 0 1.2rem;padding:.2rem 0 .6rem;-webkit-mask-image:linear-gradient(to right,#000 88%,transparent);mask-image:linear-gradient(to right,#000 88%,transparent)}
+.pagenav::-webkit-scrollbar{display:none}.pagenav a{text-decoration:none;color:var(--muted);font-size:.9rem;padding:.35rem 0;flex:0 0 auto}.pagenav a:hover{color:var(--fg)}
+@media (min-width:760px){.pagenav{flex-wrap:wrap;row-gap:.2rem;overflow:visible;-webkit-mask-image:none;mask-image:none}}
+.pagenav a[aria-current="page"]{color:var(--fg);font-weight:600;box-shadow:inset 0 -2px 0 var(--accent)}.pagenav .home{color:var(--accent);font-weight:600}
+/* ---- end of shared ---- */
+/* this page */
+main { max-width:860px; margin:0 auto; padding:24px 16px 64px }
+h1 { font-size:22px; margin:0 0 4px } .sub { color:var(--muted); margin:0 0 20px }
+h2 { font-size:15px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:28px 0 10px }
+.fact { display:flex; gap:12px; align-items:flex-start; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:8px }
+.fact .body { flex:1; min-width:0; overflow-wrap:anywhere } .fact .subject { font-size:12px; color:var(--accent); text-transform:uppercase; letter-spacing:.04em }
+.fact .meta { font-size:12px; color:var(--muted); margin-top:4px }
+button.del { color:var(--fail) }
+.pager { display:flex; gap:8px; flex-wrap:wrap } #factsCount { color:var(--muted); margin:0 0 8px }
+form { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:6px }
+input { flex:1; min-width:140px; background:var(--card); border:1px solid var(--edge); color:var(--fg); border-radius:8px; padding:8px 10px; font:inherit; font-size:16px }
+input.subject { flex:0 0 140px }
+table { width:100%; border-collapse:collapse; font-size:13px } td { padding:6px 8px; border-top:1px solid var(--line); vertical-align:top; overflow-wrap:anywhere } td.k { color:var(--muted); white-space:nowrap }
+.empty { color:var(--muted); padding:16px; text-align:center }
+#addMsg { display:block; min-height:1.5em; margin-bottom:10px }
+@media (max-width:600px) { form input, input.subject { flex:1 1 100% } }
+</style>
+</head>
+<body>
+<main>
+<section id="gate" class="gate" role="alert" hidden><h1>This device isn't paired</h1><p id="gateHint"></p><p id="gatePair" hidden><a href="/devices/add">Pair this device</a></p><p class="msg" id="gateNote"></p><button type="button" class="primary" id="gateRetry">Try again</button></section>
+  <h1 id="title">Your twin</h1>
+  <p class="sub" id="subtitle">Who it is, and everything it knows about you. Changes apply immediately.</p>
+<div id="problem" class="state err" role="alert" hidden><strong>Couldn’t load everything</strong><span id="problemText"></span><div><button type="button" id="problemRetry">Try again</button></div></div>
+  <h2>Who it is</h2>
+  <div class="fact" id="twin"><div class="body"><div class="subject" id="twin-persona"></div><div id="twin-character" class="empty loading">Loading…</div><div class="meta" id="twin-meta"></div></div></div>
+
+  <form id="add">
+    <label class="sr" for="addSubject">Subject</label><input class="subject" id="addSubject" name="subject" placeholder="subject (family, work…)" value="general">
+    <label class="sr" for="addContent">What it should know</label><input id="addContent" name="content" placeholder="Something it should know, as a full sentence" required>
+    <button class="primary" type="submit">Remember</button>
+  </form>
+  <span class="msg" id="addMsg" role="status"></span>
+
+  <h2>How it sees you</h2>
+  <div class="fact" id="portrait"><div class="body"><div id="portrait-text" class="empty">No portrait yet.</div><div class="meta" id="portrait-meta"></div><div class="msg" id="portraitMsg" role="status"></div></div><button type="button" id="refresh">Refresh</button></div>
+
+  <h2>Facts</h2>
+  <form id="factsFind" role="search"><label class="sr" for="factsQ">Find a fact</label><input id="factsQ" type="search" placeholder="Find a fact"><button type="submit">Find</button></form>
+  <p class="msg" id="factsMsg" role="status"></p>
+  <p class="msg" id="factsCount" aria-live="polite"></p>
+  <div id="facts"><div class="state loading">Loading…</div></div>
+  <div class="pager"><button type="button" id="factsPrev" hidden>Earlier facts</button><button type="button" id="factsNext" hidden>Later facts</button></div>
+
+  <h2>Recent activity</h2>
+  <div id="auditBox"><table id="audit" aria-label="Recent activity"><tr class="loading"><td class="empty">Loading…</td></tr></table></div>
+<script>
+/* ---- shared by every settings page (keep the copies identical; pagetest checks) ---- */
+// Every request goes through api(), which puts each way a request can fail
+// into plain words, and shows "This device isn't paired" when that is why.
+const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function twinName(){try{const n=localStorage.getItem('antbot.name');if(n)return n}catch{}const m=document.querySelector('meta[name="mirrin-name"]');return (m&&m.content)||'Mirrin'}
+for(const el of document.querySelectorAll('[data-name]'))el.textContent=twinName();
+const PAGE_TITLE=document.title=twinName()+' · '+document.title;
+const FRIENDLY={not_paired:"This device isn't paired.",passkey_required:'This needs Face ID or Touch ID, which this device has not set up.',forbidden:"This device isn't allowed to do that."};
+async function problem(res){let raw='';try{raw=(await res.text()).trim()}catch{}let code='',hint='',msg='',pair='';
+  try{const j=JSON.parse(raw);if(j&&typeof j==='object'){code=String(j.error||'');hint=String(j.hint||j.fix||'').replace(/`/g,'');msg=String(j.message||'');pair=String(j.pair_url||'')}}catch{}
+  const plain=!code&&raw&&raw.length<300&&!raw.startsWith('<')?raw:'';
+  if(!/^\/[^/\\]/.test(pair))pair='';
+  return{status:res.status,code,hint,pair,text:(msg&&hint?msg+' '+hint:msg)||hint||FRIENDLY[code]||(res.status===401?FRIENDLY.not_paired:plain)||(code?code.replace(/_/g,' '):'')||'Something went wrong (error '+res.status+').'}}
+async function api(url,opts){
+  const o=Object.assign({},opts);o.headers=Object.assign({Accept:'application/json'},opts&&opts.headers);let res;
+  try{res=await fetch(url,o)}catch{throw Object.assign(new Error("Can't reach "+twinName()+". Check that it is running on this computer, then try again."),{offline:true})}
+  if(res.ok){if(document.querySelector('main').classList.contains('gated'))ungate();return res}
+  const p=await problem(res);
+  if(res.status===401){
+    // A page can be paired while one of its buttons isn't allowed yet; only a refused page load means the device is signed out.
+    if(p.code!=='not_paired'&&o.method&&o.method!=='GET'){const pr=await fetch(PROBE,{headers:{Accept:'application/json'}}).catch(()=>null);if(pr&&pr.ok)throw Object.assign(new Error(FRIENDLY.forbidden),{forbidden:true})}
+    gate(p);throw Object.assign(new Error(p.text),{unpaired:true})}
+  throw Object.assign(new Error(p.text),{status:res.status,code:p.code})}
+const getJSON=async u=>(await api(u)).json();
+const post=(u,b)=>api(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})});
+let retrying=false;
+function gate(p){$('#gateHint').textContent=(p&&p.hint)||'Open this page again from the menu bar icon on the computer '+twinName()+' runs on.';
+  // On this computer the twin sends where to pair (pair_url); elsewhere the hint names `mirrin pair --screen`.
+  $('#gatePair').hidden=!(p&&p.pair);if(p&&p.pair)$('#gatePair a').href=p.pair;
+  say($('#gateNote'),retrying?'Still not paired. Pair this device, then try again.':'','err');$('#gate').hidden=false;document.querySelector('main').classList.add('gated');document.title=twinName()+' · Not paired'}
+function ungate(){$('#gate').hidden=true;say($('#gateNote'),'');document.querySelector('main').classList.remove('gated');document.title=PAGE_TITLE}
+// failed says why the page (or part of it) didn't load, with a Try again; recovered clears it.
+function failed(e){if(e&&e.unpaired)return;$('#problemText').textContent=e.message;$('#problem').hidden=false;for(const l of document.querySelectorAll('.loading'))l.hidden=true}
+function recovered(){$('#problem').hidden=true;for(const l of document.querySelectorAll('.loading'))l.hidden=false}
+function say(el,text,kind){el.className='msg'+(kind?' '+kind:'');el.textContent=text||''}
+// A button that is busy (disabled) drops keyboard focus to the page; it gets it back when it is ready again.
+let lastFocus=null;document.addEventListener('focusin',e=>{lastFocus=e.target});
+new MutationObserver(ms=>{for(const m of ms){const b=m.target;if(b===lastFocus&&!b.disabled&&b.isConnected&&(!document.activeElement||document.activeElement===document.body))b.focus({preventScroll:true})}}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['disabled']});
+// Try again checks in place: a reload would show the API's bare refusal instead of this card.
+$('#gateRetry').onclick=async()=>{if(retrying)return;retrying=true;say($('#gateNote'),'Checking…');try{await loadAll()}finally{retrying=false}};$('#problemRetry').onclick=()=>loadAll();
+// One way round every page: back to the screen, then each settings page.
+(()=>{const m=document.querySelector('main');if(!m||document.body.dataset.nav==='off')return;
+  const P=[['/ui','← Screen'],['/memory','Memory'],['/channels','Channels'],['/accounts','Accounts'],['/devices/add','Add your phone'],['/devices/page','Devices'],['/reach','Reach'],['/backup','Backup'],['/trust','Trust'],['/spending','Spending'],['/protocols','Routines'],['/voice/setup','Voice'],['/health','Health']];
+  const n=document.createElement('nav');n.className='pagenav';n.setAttribute('aria-label','Pages');
+  n.innerHTML=P.map(([h,t],i)=>`<a href="${h}"${i===0?' class="home"':''}${location.pathname===h?' aria-current="page"':''}>${t}</a>`).join('');
+  m.prepend(n);const c=n.querySelector('[aria-current]');if(c&&n.scrollWidth>n.clientWidth)c.scrollIntoView({block:'nearest',inline:'nearest'});})();
+/* ---- end of shared ---- */
+const PROBE='/memory/facts';
+let NAME=twinName();
+// Facts come a page at a time, oldest first: a twin can know thousands.
+// A fact just added is the newest, so adding one goes to the last page.
+const FACTS_PAGE=200;let factsOffset=0,factsQuery='',factsTotal=0;
+async function loadFacts(){
+  const got=await getJSON('/memory/facts?offset='+factsOffset+'&limit='+FACTS_PAGE+(factsQuery?'&q='+encodeURIComponent(factsQuery):''));
+  const facts=Array.isArray(got)?got:(got.facts||[]),total=Array.isArray(got)?facts.length:Number(got.total)||0;factsTotal=total;
+  // past the end (the last facts on a page were forgotten): show the last page there is
+  if(!facts.length&&factsOffset>0&&total>0){factsOffset=Math.floor((total-1)/FACTS_PAGE)*FACTS_PAGE;return loadFacts()}
+  const n=v=>Number(v).toLocaleString();
+  $('#factsCount').textContent=total>facts.length?`Showing ${n(factsOffset+1)}–${n(factsOffset+facts.length)} of ${n(total)}`+(factsQuery?` matching “${factsQuery}”`:''):'';
+  $('#factsPrev').hidden=factsOffset===0;$('#factsNext').hidden=factsOffset+facts.length>=total;
+  const box=$('#facts');box.innerHTML='';
+  if(!facts.length)box.innerHTML=factsQuery?`<div class="state">Nothing matches “${esc(factsQuery)}”.</div>`:`<div class="state">Nothing yet. Tell ${esc(NAME)} something worth keeping, here or in chat.</div>`;
+  for(const f of facts){
+    const el=document.createElement('div');el.className='fact';
+    el.innerHTML=`<div class="body"><div class="subject">${esc(f.subject)}</div><div>${esc(f.content)}</div>
+      <div class="meta">#${esc(f.id)} · ${esc(new Date(f.created_at).toLocaleString())} · from ${esc(f.source||'unknown')}</div></div>
+      <button type="button" class="del">Forget<span class="sr"> fact #${esc(f.id)}</span></button>`;
+    el.querySelector('button').onclick=async e=>{
+      if(!confirm(`Forget this? ${NAME} will lose it everywhere, including its backups.\n\n“${f.content}”`))return;
+      e.target.disabled=true;
+      try{await api('/memory/facts/'+encodeURIComponent(f.id),{method:'DELETE'});say($('#factsMsg'),'Forgotten.','ok');loadPortrait().catch(()=>{});await loadFacts()}
+      catch(err){e.target.disabled=false;if(!err.unpaired)say($('#factsMsg'),"Couldn't forget it: "+err.message,'err')}
+    };
+    box.appendChild(el);
+  }
+}
+async function loadAudit(){
+  const audit=await getJSON('/memory/audit');
+  $('#audit').innerHTML=audit.map(e=>`<tr><td class="k">${esc(new Date(e.ts).toLocaleString())}</td><td class="k">${esc(e.kind)}</td><td>${esc(e.detail)}</td></tr>`).join('')||'<tr><td class="empty">No activity yet.</td></tr>';
+}
+async function loadTwin(){
+  const t=await getJSON('/memory/twin');
+  if(t.name){NAME=t.name;try{localStorage.setItem('antbot.name',t.name)}catch{}}
+  $('#title').textContent=NAME+(t.spoken&&t.spoken!==t.name?' (“'+t.spoken+'”)':'');document.title=NAME+' · Your twin';
+  $('#subtitle').textContent=(t.user?t.user+'’s twin. ':'')+'Who it is, and everything it knows about you.';
+  $('#twin-persona').textContent='persona: '+(t.persona||'')+(t.tagline?' — '+t.tagline:'');
+  $('#twin-character').className='';$('#twin-character').textContent=t.character||'';
+  $('#twin-meta').textContent=(t.style||[]).join(' · ')+(t.voice?' · voice '+t.voice:'')+(t.wake_word?' · say “Hey '+t.wake_word+'”':'');
+}
+async function loadPortrait(){
+  const p=await getJSON('/memory/portrait');
+  if(p.text){$('#portrait-text').className='';$('#portrait-text').textContent=p.text;$('#portrait-meta').textContent='updated '+new Date(p.updated_at).toLocaleString()}
+  else{$('#portrait-text').className='empty';$('#portrait-meta').textContent='';$('#portrait-text').textContent=p.aside?"I set my portrait aside after you asked me to forget something. I'll write a fresh one on Sunday, or now if you press Refresh.":`No portrait yet. ${NAME} writes one after a week of conversations, or now if you press Refresh.`}
+}
+async function loadAll(){
+  recovered();
+  const rs=await Promise.allSettled([loadTwin().then(loadPortrait),loadFacts(),loadAudit()]);
+  const bad=rs.find(r=>r.status==='rejected');if(bad)failed(bad.reason);
+}
+$('#refresh').onclick=async()=>{
+  const b=$('#refresh');b.disabled=true;b.textContent='Thinking…';say($('#portraitMsg'),'');
+  try{await post('/memory/portrait');await loadPortrait()}catch(e){if(!e.unpaired)say($('#portraitMsg'),"Couldn't refresh it: "+e.message,'err')}
+  finally{b.disabled=false;b.textContent='Refresh'}
+};
+$('#add').onsubmit=async ev=>{
+  ev.preventDefault();const form=ev.target,fd=new FormData(form),btn=form.querySelector('button');btn.disabled=true;say($('#addMsg'),'');
+  try{await post('/memory/facts',{subject:fd.get('subject'),content:fd.get('content')});form.content.value='';say($('#addMsg'),'Remembered.','ok');factsOffset=Math.floor(factsTotal/FACTS_PAGE)*FACTS_PAGE;await loadFacts()}
+  catch(e){if(!e.unpaired)say($('#addMsg'),"Couldn't remember that: "+e.message,'err')}
+  finally{btn.disabled=false}
+};
+$('#factsFind').onsubmit=ev=>{ev.preventDefault();factsQuery=$('#factsQ').value.trim();factsOffset=0;loadFacts().catch(failed)};
+$('#factsPrev').onclick=()=>{factsOffset=Math.max(0,factsOffset-FACTS_PAGE);loadFacts().catch(failed)};
+$('#factsNext').onclick=()=>{factsOffset+=FACTS_PAGE;loadFacts().catch(failed)};
+loadAll();
+</script>
+</main>
+</body>
+</html>

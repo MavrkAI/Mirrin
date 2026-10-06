@@ -1,0 +1,39 @@
+{
+  "comment": "bip39: the official English 128-bit vectors (trezor/python-mnemonic vectors.json, MIT). antbot: golden key derivations (docs/backup-format.md), cross-checked with Python HKDF and OpenSSL. These phrases are public test vectors: never use them for a real twin.",
+  "bip39": [
+    {"entropy": "00000000000000000000000000000000", "mnemonic": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"},
+    {"entropy": "7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f", "mnemonic": "legal winner thank year wave sausage worth useful legal winner thank yellow"},
+    {"entropy": "80808080808080808080808080808080", "mnemonic": "letter advice cage absurd amount doctor acoustic avoid letter advice cage above"},
+    {"entropy": "ffffffffffffffffffffffffffffffff", "mnemonic": "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong"},
+    {"entropy": "9e885d952ad362caeb4efe34a8e91bd2", "mnemonic": "ozone drill grab fiber curtain grace pudding thank cruise elder eight picnic"},
+    {"entropy": "c0ba5a8e914111210f2bd131f3d5e08d", "mnemonic": "scheme spot photo card baby mountain device kick cradle pact join borrow"},
+    {"entropy": "23db8160a31d3e0dca3688ed941adbf3", "mnemonic": "cat swing flag economy stadium alone churn speed unique patch report train"},
+    {"entropy": "f30f8c1da665478f49b001d94c5fc452", "mnemonic": "vessel ladder alter error federal sibling chat ability sun glass valve picture"}
+  ],
+  "antbot": [
+    {
+      "phrase": "legal winner thank year wave sausage worth useful legal winner thank yellow",
+      "entropy": "7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f",
+      "pq_seed": "ae310ed74c656492ef0cce0841ec1d2604b3b95663b8291eb130deb30dcb3247",
+      "x25519_seed": "f5d3ce2023615cd2b3e94adb385f013c8d33b093ee72b83d98c53f6ef9c30815",
+      "recovery_seed": "8162d3a4339e38a65402aa2dce9685c7aea8c71e4219695f4b481c5b8efd4056",
+      "recipient_prefix": "age1pq18y5qf4g2wy0cwl0749gxmfutrd5gyqphd",
+      "recipient_sha256": "ede662cc8a2548a7c8ddcbba1333fbb4ece1904664989238e2f7511df00c54b1",
+      "x25519_recipient": "age12he9vran3eweystsgzf7gf559ndn7t7xw3ztdzae3g8ckf45l3tsh99u5q",
+      "recovery_pub": "6lOTY_zGUp_V34wsxNOkad6tlNsk3J24XUwfJg9zw5M",
+      "namespace": "xtutvadnogfdegisiijio6tcry"
+    },
+    {
+      "phrase": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+      "entropy": "00000000000000000000000000000000",
+      "pq_seed": "9ba67575e7ef38d9a53585b73cb3d538c3358c9b37b16a12c24b4fca0be2c9c2",
+      "x25519_seed": "bbddd8f3d9ca7b5bc12a81293998c1f8a78601924785e0796293068fa1849f80",
+      "recovery_seed": "e12cc74e29c94c6e5501c892f4b94b554f2a010b1226c54e6217e0cd2e727e91",
+      "recipient_prefix": "age1pq1mmez46ltn5sv2t2cawfl85clv49f7sjjw",
+      "recipient_sha256": "fabf66522ba49372118bd6c20e5744b7d0046fadccf6f96f2c84173f09b28657",
+      "x25519_recipient": "age1z022c458qt0j3duq2xved2r74qr2e5flcx97y73yj754w0ztjf7syceuvu",
+      "recovery_pub": "Tp4FBafn4kP0iNGUirAh8wmjUf5RMIEsdc8cUXftdIw",
+      "namespace": "yyqwbuqw4hdtq2lfmrtiqoj4hn"
+    }
+  ]
+}

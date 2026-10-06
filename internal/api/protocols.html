@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Protocols</title>
+<style>
+/* ---- shared by every settings page (keep the copies identical; pagetest checks) ---- */
+:root{color-scheme:light dark;--bg:#0f1115;--fg:#e8e8ea;--muted:#8b8f98;--card:#171a21;--line:#262a33;--edge:#646a7a;--accent:#7aa2ff;--on-accent:#000;--ok:#3ddc84;--warn:#f5c542;--fail:#ff6b6b;--off:#5c6270}
+@media (prefers-color-scheme: light){:root{--bg:#f6f7f9;--fg:#14161a;--muted:#5f6470;--card:#fff;--line:#e3e6eb;--edge:#80868f;--accent:#2f5bd3;--on-accent:#fff;--ok:#137a43;--warn:#8a5a00;--fail:#c62828;--off:#9aa0aa}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,system-ui,sans-serif;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+[hidden]{display:none!important}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,textarea,select{font-size:16px}::placeholder{color:var(--muted);opacity:1}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+button{background:transparent;border:1px solid var(--edge);color:var(--fg);border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit;min-height:36px}
+button.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}button:disabled{opacity:.55;cursor:default}
+.gate{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 20px;margin:8px 0 20px}
+.gate h1{margin:0 0 6px}.gate p{color:var(--muted);margin:0 0 14px}
+main.gated>:not(#gate){display:none!important}#gateNote:empty{display:none}
+.state{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;color:var(--muted);margin-bottom:8px}
+.state.err{color:var(--fg);border-color:var(--fail);margin-bottom:16px}.state.err strong{display:block;color:var(--fail)}.state.err button{margin-top:10px}
+.msg{font-size:13px}.msg.err{color:var(--fail)}.msg.ok{color:var(--ok)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.pagenav{display:flex;gap:1.1rem;align-items:center;overflow-x:auto;scrollbar-width:none;white-space:nowrap;border-bottom:1px solid var(--line);margin:0 0 1.2rem;padding:.2rem 0 .6rem;-webkit-mask-image:linear-gradient(to right,#000 88%,transparent);mask-image:linear-gradient(to right,#000 88%,transparent)}
+.pagenav::-webkit-scrollbar{display:none}.pagenav a{text-decoration:none;color:var(--muted);font-size:.9rem;padding:.35rem 0;flex:0 0 auto}.pagenav a:hover{color:var(--fg)}
+@media (min-width:760px){.pagenav{flex-wrap:wrap;row-gap:.2rem;overflow:visible;-webkit-mask-image:none;mask-image:none}}
+.pagenav a[aria-current="page"]{color:var(--fg);font-weight:600;box-shadow:inset 0 -2px 0 var(--accent)}.pagenav .home{color:var(--accent);font-weight:600}
+/* ---- end of shared ---- */
+/* this page */
+main{max-width:900px;margin:0 auto;padding:24px 16px 64px}h1{font-size:22px;margin:0 0 4px}.sub{color:var(--muted);margin:0 0 20px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:28px 0 10px}
+.row{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px}
+.row .b{flex:1;min-width:0;overflow-wrap:anywhere}.row .n{font-weight:600}.row .d{color:var(--muted)}.row .m{font-size:12px;color:var(--muted);margin-top:4px}
+.row .msg{margin-top:6px}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border:1px solid var(--line);border-radius:999px;color:var(--muted);margin-right:4px}
+.miss{color:var(--warn)}
+button{white-space:nowrap}button.danger{color:var(--fail)}
+form{display:flex;gap:8px;margin-bottom:12px}input{flex:1;min-width:0;background:var(--card);border:1px solid var(--edge);color:var(--fg);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:16px}
+.empty{color:var(--muted);padding:12px 0}.hint{font-size:13px;color:var(--muted)}
+#findMsg{display:block;margin:-4px 0 12px}
+code{background:var(--card);padding:1px 5px;border-radius:4px}
+.upd{color:var(--accent)}.row .acts{display:flex;flex-direction:column;gap:6px}
+.preview{margin-top:8px;font-size:14px}.preview li{margin:6px 0}.preview pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--bg);border-radius:6px;padding:6px 8px;margin:4px 0 0;font:13px/1.4 ui-monospace,Menlo,monospace}
+#packTools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0 8px}
+/* a routine's switch, Skip next and time field */
+.row{flex-wrap:wrap}.ctl{flex-basis:100%;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;border-top:1px solid var(--line);padding-top:10px}
+.sw{display:inline-flex;align-items:center;gap:8px;min-height:36px;cursor:pointer}
+.sw input{-webkit-appearance:none;appearance:none;flex:none;position:relative;width:42px;height:24px;margin:0;padding:0;border-radius:999px;border:1px solid var(--edge);background:var(--off);cursor:pointer}
+.sw input::before{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--fg);transition:transform .15s}
+.sw input:checked{background:var(--accent);border-color:var(--accent)}.sw input:checked::before{transform:translateX(18px);background:var(--on-accent)}
+form.sched{margin:0;flex-wrap:wrap;align-items:center}form.sched input{flex:none;width:auto;padding:6px 8px}
+select{background:var(--card);border:1px solid var(--edge);color:var(--fg);border-radius:8px;padding:6px 8px;font-family:inherit}
+</style></head><body><main>
+<section id="gate" class="gate" role="alert" hidden><h1>This device isn't paired</h1><p id="gateHint"></p><p id="gatePair" hidden><a href="/devices/add">Pair this device</a></p><p class="msg" id="gateNote"></p><button type="button" class="primary" id="gateRetry">Try again</button></section>
+<h1>Protocols</h1><p class="sub">Routines <span data-name>Mirrin</span> runs on a schedule or when you ask. Yours, plus packs from the community.</p>
+<div id="problem" class="state err" role="alert" hidden><strong>Couldn’t load everything</strong><span id="problemText"></span><div><button type="button" id="problemRetry">Try again</button></div></div>
+<h2>Find more</h2>
+<form id="search" role="search"><label class="sr" for="q">Search community routines</label><input id="q" name="q" placeholder="Search community routines: travel, email, news…"><button class="primary" type="submit">Search</button></form>
+<form id="addurl"><label class="sr" for="packurl">A pack's web address</label><input id="packurl" name="url" placeholder="…or paste a pack's address (GitHub link)" autocapitalize="off" spellcheck="false"><button type="submit">Add</button></form>
+<span class="msg" id="findMsg" role="status"></span>
+<div id="results"></div>
+
+<h2>Installed</h2>
+<div id="installed"><div class="state loading">Loading your routines…</div></div>
+<div id="packTools" hidden><button type="button" id="checkUpdates">Check for updates</button><span class="msg" id="updMsg" role="status"></span></div>
+<div id="packs"></div>
+<p class="hint">Or ask your twin in chat to set up a routine for you (“every weekday at 8, tell me what's on”). To write one by hand, type <code>mirrin protocols new "name"</code> in Terminal; <code>mirrin protocols lint</code> then checks it.</p>
+<script>
+/* ---- shared by every settings page (keep the copies identical; pagetest checks) ---- */
+// Every request goes through api(), which puts each way a request can fail
+// into plain words, and shows "This device isn't paired" when that is why.
+const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function twinName(){try{const n=localStorage.getItem('antbot.name');if(n)return n}catch{}const m=document.querySelector('meta[name="mirrin-name"]');return (m&&m.content)||'Mirrin'}
+for(const el of document.querySelectorAll('[data-name]'))el.textContent=twinName();
+const PAGE_TITLE=document.title=twinName()+' · '+document.title;
+const FRIENDLY={not_paired:"This device isn't paired.",passkey_required:'This needs Face ID or Touch ID, which this device has not set up.',forbidden:"This device isn't allowed to do that."};
+async function problem(res){let raw='';try{raw=(await res.text()).trim()}catch{}let code='',hint='',msg='',pair='';
+  try{const j=JSON.parse(raw);if(j&&typeof j==='object'){code=String(j.error||'');hint=String(j.hint||j.fix||'').replace(/`/g,'');msg=String(j.message||'');pair=String(j.pair_url||'')}}catch{}
+  const plain=!code&&raw&&raw.length<300&&!raw.startsWith('<')?raw:'';
+  if(!/^\/[^/\\]/.test(pair))pair='';
+  return{status:res.status,code,hint,pair,text:(msg&&hint?msg+' '+hint:msg)||hint||FRIENDLY[code]||(res.status===401?FRIENDLY.not_paired:plain)||(code?code.replace(/_/g,' '):'')||'Something went wrong (error '+res.status+').'}}
+async function api(url,opts){
+  const o=Object.assign({},opts);o.headers=Object.assign({Accept:'application/json'},opts&&opts.headers);let res;
+  try{res=await fetch(url,o)}catch{throw Object.assign(new Error("Can't reach "+twinName()+". Check that it is running on this computer, then try again."),{offline:true})}
+  if(res.ok){if(document.querySelector('main').classList.contains('gated'))ungate();return res}
+  const p=await problem(res);
+  if(res.status===401){
+    // A page can be paired while one of its buttons isn't allowed yet; only a refused page load means the device is signed out.
+    if(p.code!=='not_paired'&&o.method&&o.method!=='GET'){const pr=await fetch(PROBE,{headers:{Accept:'application/json'}}).catch(()=>null);if(pr&&pr.ok)throw Object.assign(new Error(FRIENDLY.forbidden),{forbidden:true})}
+    gate(p);throw Object.assign(new Error(p.text),{unpaired:true})}
+  throw Object.assign(new Error(p.text),{status:res.status,code:p.code})}
+const getJSON=async u=>(await api(u)).json();
+const post=(u,b)=>api(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})});
+let retrying=false;
+function gate(p){$('#gateHint').textContent=(p&&p.hint)||'Open this page again from the menu bar icon on the computer '+twinName()+' runs on.';
+  // On this computer the twin sends where to pair (pair_url); elsewhere the hint names `mirrin pair --screen`.
+  $('#gatePair').hidden=!(p&&p.pair);if(p&&p.pair)$('#gatePair a').href=p.pair;
+  say($('#gateNote'),retrying?'Still not paired. Pair this device, then try again.':'','err');$('#gate').hidden=false;document.querySelector('main').classList.add('gated');document.title=twinName()+' · Not paired'}
+function ungate(){$('#gate').hidden=true;say($('#gateNote'),'');document.querySelector('main').classList.remove('gated');document.title=PAGE_TITLE}
+// failed says why the page (or part of it) didn't load, with a Try again; recovered clears it.
+function failed(e){if(e&&e.unpaired)return;$('#problemText').textContent=e.message;$('#problem').hidden=false;for(const l of document.querySelectorAll('.loading'))l.hidden=true}
+function recovered(){$('#problem').hidden=true;for(const l of document.querySelectorAll('.loading'))l.hidden=false}
+function say(el,text,kind){el.className='msg'+(kind?' '+kind:'');el.textContent=text||''}
+// A button that is busy (disabled) drops keyboard focus to the page; it gets it back when it is ready again.
+let lastFocus=null;document.addEventListener('focusin',e=>{lastFocus=e.target});
+new MutationObserver(ms=>{for(const m of ms){const b=m.target;if(b===lastFocus&&!b.disabled&&b.isConnected&&(!document.activeElement||document.activeElement===document.body))b.focus({preventScroll:true})}}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['disabled']});
+// Try again checks in place: a reload would show the API's bare refusal instead of this card.
+$('#gateRetry').onclick=async()=>{if(retrying)return;retrying=true;say($('#gateNote'),'Checking…');try{await loadAll()}finally{retrying=false}};$('#problemRetry').onclick=()=>loadAll();
+// One way round every page: back to the screen, then each settings page.
+(()=>{const m=document.querySelector('main');if(!m||document.body.dataset.nav==='off')return;
+  const P=[['/ui','← Screen'],['/memory','Memory'],['/channels','Channels'],['/accounts','Accounts'],['/devices/add','Add your phone'],['/devices/page','Devices'],['/reach','Reach'],['/backup','Backup'],['/trust','Trust'],['/spending','Spending'],['/protocols','Routines'],['/voice/setup','Voice'],['/health','Health']];
+  const n=document.createElement('nav');n.className='pagenav';n.setAttribute('aria-label','Pages');
+  n.innerHTML=P.map(([h,t],i)=>`<a href="${h}"${i===0?' class="home"':''}${location.pathname===h?' aria-current="page"':''}>${t}</a>`).join('');
+  m.prepend(n);const c=n.querySelector('[aria-current]');if(c&&n.scrollWidth>n.clientWidth)c.scrollIntoView({block:'nearest',inline:'nearest'});})();
+/* ---- end of shared ---- */
+const PROBE='/protocols/installed';
+function row(html){const el=document.createElement('div');el.className='row';el.innerHTML=html;return el}
+// The schedule in words ("weekdays at 8:30"), with times as the screen shows them: 8:30 AM where the clock is 12-hour.
+const clock=s=>String(s||'').replace(/\b(\d{1,2}):(\d{2})\b/g,(m,h,mi)=>new Date(2000,0,1,+h,+mi).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}));
+const cap=s=>s?s[0].toUpperCase()+s.slice(1):s;
+// timeOf is what the time field shows for a schedule: its time, and which days (keep: days the presets don't cover).
+function timeOf(cron){const f=String(cron||'').trim().split(/\s+/);if(f.length!==5||!/^\d+$/.test(f[0])||!/^\d+$/.test(f[1]))return null;
+  const days=f[2]==='*'&&f[3]==='*'&&{'*':'*','1-5':'1-5','mon-fri':'1-5','0,6':'0,6','6,0':'0,6','sat,sun':'0,6','sun,sat':'0,6'}[f[4].toLowerCase()];
+  return{hm:String(+f[1]).padStart(2,'0')+':'+String(+f[0]).padStart(2,'0'),days:days||'keep',rest:f.slice(2).join(' ')}}
+// routine wires a protocol's switch, Skip next and time field; each change shows the protocol as the twin now has it.
+function routine(el,p){
+  const msg=el.querySelector('.msg'),skip=el.querySelector('.skip'),sw=el.querySelector('.sw input'),form=el.querySelector('form.sched'),sel=form.querySelector('select'),time=form.querySelector('input');
+  let cur=p;
+  const show=q=>{cur=q;
+    el.querySelector('.when').textContent=cap(clock(q.when||q.schedule||'when you ask'));el.querySelector('.src').textContent=q.pack?'from the '+q.pack+' pack':'yours';
+    el.querySelector('.off').hidden=!!q.enabled;sw.checked=!!q.enabled;el.querySelector('.swt').textContent=q.enabled?'On':'Off';
+    skip.hidden=!(q.schedule&&q.enabled);skip.disabled=!!q.skipping;skip.firstChild.textContent=q.skipping?'Skipping the next one':'Skip next';
+    const t=timeOf(q.schedule);const keep=sel.querySelector('[value="keep"]');if(keep)keep.remove();
+    if(t&&t.days==='keep'){const o=document.createElement('option');o.value='keep';o.textContent='Same days as now';sel.append(o);form.dataset.rest=t.rest}
+    time.value=t?t.hm:'';sel.value=t?t.days:'*'};
+  show(p);
+  const path=a=>'/protocols/'+encodeURIComponent(cur.name)+'/'+a;
+  const done=(q,text)=>{const was=cur.pack;if(q&&q.name)show(q);
+    say(msg,text+(was&&q&&q.name&&!q.pack?` It's your own copy now, so it no longer gets updates from the “${was}” pack.`:''),'ok')};
+  sw.onchange=async()=>{const on=sw.checked;sw.disabled=true;say(msg,'');
+    try{done(await (await post(path('enabled'),{enabled:on})).json(),on?'On.':"Off. It won't run on its own until you turn it back on.")}
+    catch(e){sw.checked=!on;if(!e.unpaired)say(msg,"Couldn't change it: "+e.message,'err')}
+    finally{sw.disabled=false}};
+  skip.onclick=async()=>{skip.disabled=true;say(msg,'');
+    try{const q=await (await post(path('skip'))).json();show(q&&q.name?q:Object.assign({},cur,{skipping:true}))}
+    catch(e){skip.disabled=false;if(!e.unpaired)say(msg,"Couldn't skip it: "+e.message,'err')}};
+  form.onsubmit=async ev=>{ev.preventDefault();const [h,m]=time.value.split(':');if(!h||!m)return;
+    const cron=+m+' '+(+h)+' '+(sel.value==='keep'?form.dataset.rest:'* * '+sel.value),b=form.querySelector('button');b.disabled=true;say(msg,'');
+    try{const q=await (await post(path('schedule'),{schedule:cron})).json();done(q,q&&q.when?'It runs '+clock(q.when)+' now.':'Saved.')}
+    catch(e){if(!e.unpaired)say(msg,"Couldn't change the time: "+e.message,'err')}
+    finally{b.disabled=false}};
+}
+async function loadAll(){
+  try{
+    const d=await getJSON('/protocols/installed');recovered();
+    const box=$('#installed');box.innerHTML='';let i=0;
+    for(const p of d.protocols||[]){
+      const n=esc(p.name);i++;
+      const el=row(`<div class="b"><div class="n">${n} <span class="tag off">off</span></div><div class="d">${esc(p.description||'')}</div>
+        <div class="m"><span class="when"></span> · <span class="src"></span>${p.author?' · '+esc(p.author):''}${p.version?' · v'+esc(p.version):''} ${(p.tags||[]).map(t=>'<span class="tag">'+esc(t)+'</span>').join('')}
+        ${(p.missing||[]).length?`<div class="miss">needs: ${esc(p.missing.join(', '))}</div>`:''}</div><div class="msg" role="status"></div></div>
+        <div class="acts"><button type="button" class="run">Run now<span class="sr"> ${n}</span></button><button type="button" class="skip">Skip next<span class="sr"> ${n}</span></button></div>
+        <div class="ctl"><label class="sw"><input type="checkbox" role="switch" aria-label="${n}"><span class="swt" aria-hidden="true"></span></label>
+        <form class="sched"><label class="sr" for="time${i}">Time for ${n}</label><input type="time" id="time${i}" required><label class="sr" for="days${i}">Which days for ${n}</label><select id="days${i}"><option value="*">Every day</option><option value="1-5">Weekdays</option><option value="0,6">Weekends</option></select><button type="submit">Set time<span class="sr"> for ${n}</span></button></form></div>`);
+      routine(el,p);
+      const btn=el.querySelector('.run'),msg=el.querySelector('.msg');
+      btn.onclick=async()=>{
+        btn.disabled=true;btn.firstChild.textContent='Starting…';say(msg,'');
+        try{await post('/protocols/run',{name:p.name});say(msg,"Started. If there's anything to report, it comes to your chat.",'ok')}
+        catch(e){if(!e.unpaired)say(msg,e.forbidden?`This page can't start it yet. Ask ${twinName()} in chat: “run ${p.name}”.`:"Couldn't run it: "+e.message,'err')}
+        finally{setTimeout(()=>{btn.disabled=false;btn.firstChild.textContent='Run now'},1500)}
+      };
+      box.appendChild(el);
+    }
+    if(!(d.protocols||[]).length)box.innerHTML='<div class="state">No routines yet. Search the community ones above, or make your own (below).</div>';
+    renderPacks(d.packs||[]);
+  }catch(e){failed(e)}
+}
+// What the last update check found, by pack folder.
+let updates={};
+const short=c=>String(c||'').slice(0,7);
+function renderPacks(packs){
+    const pk=$('#packs');pk.innerHTML='';$('#packTools').hidden=!packs.length;
+    for(const p of packs){
+      const u=p.update||updates[p.dir||p.name];
+      const state=!u?'':u.error?`<div class="miss">Couldn't check: ${esc(u.error)}</div>`:u.note?`<div class="m">${esc(u.note)}</div>`:u.pending?`<div class="upd">Update ready${(u.changes||[]).length?': '+esc(u.changes.join(', ')):''}</div>`:'<div class="m">Up to date.</div>';
+      const el=row(`<div class="b"><div class="n">Pack: ${esc(p.name)}</div><div class="d">${esc(p.description||'')}</div><div class="m">${p.repo?'<a href="'+esc(p.repo)+'" target="_blank" rel="noopener">'+esc(p.repo)+'</a>':''}${p.commit?' · version <code>'+esc(short(p.commit))+'</code>':''}</div>${state}<div class="msg" role="status"></div></div>
+        <div class="acts">${u&&u.pending?`<button type="button" class="primary apply">Update<span class="sr"> pack ${esc(p.name)}</span></button>`:''}<button type="button" class="danger remove">Remove<span class="sr"> pack ${esc(p.name)}</span></button></div>`);
+      const btn=el.querySelector('.remove'),msg=el.querySelector('.msg');
+      const ap=el.querySelector('.apply');if(ap)ap.onclick=async()=>{
+        ap.disabled=true;say(msg,'Updating…');
+        try{await post('/protocols/apply-update',{dir:p.dir||p.name});delete updates[p.dir||p.name];say(msg,'Updated.','ok');loadAll()}
+        catch(e){ap.disabled=false;if(!e.unpaired)say(msg,"Couldn't update it: "+e.message,'err')}
+      };
+      btn.onclick=async()=>{
+        if(!confirm('Remove the '+p.name+' pack and its routines?'))return;btn.disabled=true;
+        try{await post('/protocols/remove',{name:p.dir||p.name});loadAll()}catch(e){btn.disabled=false;if(!e.unpaired)say(msg,"Couldn't remove it: "+e.message,'err')}
+      };
+      pk.appendChild(el);
+    }
+}
+$('#checkUpdates').onclick=async()=>{
+  const b=$('#checkUpdates');b.disabled=true;say($('#updMsg'),'Checking…');
+  try{const r=await (await post('/protocols/check-updates')).json();updates={};for(const p of r.packs||[])if(p.update)updates[p.dir||p.name]=p.update;
+    renderPacks(r.packs||[]);const n=(r.packs||[]).filter(p=>p.update&&p.update.pending).length;say($('#updMsg'),n?n+' update'+(n>1?'s':'')+' ready. Nothing changes until you press Update.':'Everything is up to date.','ok')}
+  catch(e){if(!e.unpaired)say($('#updMsg'),e.status===404?"This page can't check for updates. Type mirrin protocols update in Terminal instead.":"Couldn't check: "+e.message,'err')}
+  finally{b.disabled=false}
+};
+// preview shows what a pack would add, before it is installed; null when this twin can't preview.
+async function preview(name,box){
+  let pv;try{pv=await (await post('/protocols/preview',{name})).json()}catch(e){if(e.status===404)return null;throw e}
+  const ps=pv.protocols||[];
+  box.innerHTML=ps.length?'<div>It adds:</div><ul>'+ps.map(p=>`<li><strong>${esc(p.name)}</strong>: ${p.schedule?'runs '+esc(p.schedule):'runs when you ask'}${(p.requires||[]).length?' · needs '+esc(p.requires.join(', ')):''}<details><summary>Instructions it follows</summary><pre>${esc(p.prompt||'')}</pre></details></li>`).join('')+'</ul>':'<div>This pack has no routines in it.</div>';
+  box.hidden=false;return pv;
+}
+function renderResults(hits){
+  const r=$('#results');r.innerHTML='';
+  if(!hits.length){r.innerHTML='<div class="empty">Nothing matches. Try another word.</div>';return}
+  for(const p of hits){
+    const el=row(`<div class="b"><div class="n">${esc(p.name)}</div><div class="d">${esc(p.description||'')}</div><div class="m">${esc(p.author||'')} ${(p.tags||[]).map(t=>'<span class="tag">'+esc(t)+'</span>').join('')} ${p.repo?`<a href="${esc(p.repo)}" target="_blank" rel="noopener">source</a>`:''}</div><div class="msg" role="status"></div></div>
+      <button type="button" class="primary" ${p.installed?'disabled':''}>${p.installed?'Installed':'Preview'}</button>`);
+    const btn=el.querySelector('button'),msg=el.querySelector('.msg');
+    const box=document.createElement('div');box.className='preview';box.hidden=true;el.querySelector('.b').insertBefore(box,msg);
+    let seen=false;
+    btn.onclick=async()=>{
+      if(!seen){btn.disabled=true;btn.textContent='Looking…';say(msg,'');
+        try{seen=true;if(await preview(p.name,box))say(msg,'Nothing is installed yet. Press Install to add it.');btn.textContent='Install'}
+        catch(e){seen=false;btn.textContent='Preview';if(!e.unpaired)say(msg,"Couldn't look inside it: "+e.message,'err')}
+        finally{btn.disabled=false}
+        if(!seen||!box.hidden)return}
+      btn.disabled=true;btn.textContent='Installing…';say(msg,'');
+      try{await post('/protocols/install',{name:p.name});btn.textContent='Installed';loadAll()}
+      catch(e){btn.disabled=false;btn.textContent='Install';if(!e.unpaired)say(msg,"Couldn't install it: "+e.message,'err')}
+    };
+    r.appendChild(el);
+  }
+}
+$('#search').onsubmit=async ev=>{
+  ev.preventDefault();const q=new FormData(ev.target).get('q');say($('#findMsg'),'Searching…');
+  try{renderResults(await getJSON('/protocols/search?q='+encodeURIComponent(q)));say($('#findMsg'),'')}
+  catch(e){if(!e.unpaired)say($('#findMsg'),"Community routines can't be searched right now: "+e.message,'err')}
+};
+$('#addurl').onsubmit=async ev=>{
+  ev.preventDefault();const url=new FormData(ev.target).get('url');if(!String(url).trim())return;
+  const btn=ev.target.querySelector('button');btn.disabled=true;say($('#findMsg'),'Adding…');
+  try{const r=await (await post('/protocols/install',{name:url})).json();ev.target.url.value='';say($('#findMsg'),'Added '+(r.installed||'the pack')+'.','ok');loadAll()}
+  catch(e){if(!e.unpaired)say($('#findMsg'),"Couldn't add it: "+e.message,'err')}
+  finally{btn.disabled=false}
+};
+loadAll();
+</script></main></body></html>

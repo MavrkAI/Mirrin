@@ -1,0 +1,211 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      # Tests set their own MIRRIN_HOME; this keeps any that forget away from ~/.mirrin.
+      - name: Use a throwaway MIRRIN_HOME
+        shell: bash
+        run: echo "MIRRIN_HOME=$RUNNER_TEMP/mirrin-home" >> "$GITHUB_ENV"
+      - run: go vet ./...
+      # The race detector needs cgo, which Windows runners don't set up.
+      - name: Test with the race detector
+        if: runner.os != 'Windows'
+        run: go test -race ./...
+      - name: Test
+        if: runner.os == 'Windows'
+        run: go test ./...
+      # Any age opens a backup (docs/backup-format.md): check it with the
+      # stock age binary, not only the library the tests use.
+      - name: Stock age opens a backup
+        if: runner.os != 'Windows'
+        run: scripts/verify-backup-with-age.sh
+      # What ships for Macs: both architectures, with cgo, so the menu bar and
+      # orb are compiled and linked.
+      - name: Build the Mac binaries
+        if: runner.os == 'macOS'
+        run: make dist-darwin
+      - name: Build
+        if: runner.os != 'macOS'
+        run: go build ./cmd/mirrin
+        env:
+          CGO_ENABLED: "0"
+      - name: cloud module (the control plane runs on Linux)
+        if: matrix.os == 'ubuntu-latest'
+        working-directory: cloud
+        run: go vet ./... && go test ./...
+
+  # Daemon-held certificates (internal/tlsmgr/acme.go) issued by Let's
+  # Encrypt's Pebble through an in-process mirrin-relay by TLS-ALPN-01. The
+  # regular test job runs the same test against the in-process acmetest CA.
+  acme-pebble:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      # Pebble and its DNS server built from the same pinned tag as the
+      # config and the minica certificate they are read from.
+      - name: Start Pebble v2.10.1, with every name resolving to this runner
+        run: |
+          cd "$RUNNER_TEMP"
+          export GOBIN="$RUNNER_TEMP/bin"
+          go install github.com/letsencrypt/pebble/v2/cmd/pebble@v2.10.1 github.com/letsencrypt/pebble/v2/cmd/pebble-challtestsrv@v2.10.1
+          src=$(go mod download -json github.com/letsencrypt/pebble/v2@v2.10.1 | sed -n 's/.*"Dir": "\(.*\)",/\1/p')
+          cp "$src/test/certs/pebble.minica.pem" "$RUNNER_TEMP/pebble.minica.pem"
+          "$GOBIN/pebble-challtestsrv" -defaultIPv4 127.0.0.1 -defaultIPv6 "" -dnsserver 127.0.0.1:8053 \
+            -http01 "" -https01 "" -tlsalpn01 "" -doh "" -management 127.0.0.1:8055 > "$RUNNER_TEMP/challtestsrv.log" 2>&1 &
+          (cd "$src" && PEBBLE_VA_NOSLEEP=1 PEBBLE_WFE_NONCEREJECT=0 "$GOBIN/pebble" -config test/config/pebble-config.json \
+            -dnsserver 127.0.0.1:8053 > "$RUNNER_TEMP/pebble.log" 2>&1 &)
+          for _ in $(seq 30); do
+            if curl -fsS --cacert "$RUNNER_TEMP/pebble.minica.pem" https://localhost:14000/dir >/dev/null &&
+              curl -sS -o /dev/null http://127.0.0.1:8055/; then exit 0; fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/challtestsrv.log" "$RUNNER_TEMP/pebble.log"; exit 1
+      - name: Issue through the relay
+        run: go test -tags pebble -run Integration -v ./internal/tlsmgr/
+        env:
+          MIRRIN_HOME: ${{ runner.temp }}/mirrin-home
+          MIRRIN_PEBBLE_CA: ${{ runner.temp }}/pebble.minica.pem
+          MIRRIN_PEBBLE_TLS_PORT: "5001"
+      - name: Pebble's logs
+        if: failure()
+        run: cat "$RUNNER_TEMP/challtestsrv.log" "$RUNNER_TEMP/pebble.log"
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - name: gofmt
+        run: |
+          out=$(gofmt -l cmd internal scripts packaging)
+          if [ -n "$out" ]; then
+            echo "::error::These files need gofmt -w:"
+            echo "$out"
+            exit 1
+          fi
+      - name: go.mod and go.sum are tidy
+        run: go mod tidy -diff
+      # Every module the release builds link has a licence the project has
+      # agreed to, and THIRD_PARTY_NOTICES lists them all. Every program
+      # embeds a copy of it and of LICENSE (internal/notices). After a
+      # dependency change, `make notices` updates them (docs/licensing.md).
+      - name: Licences (THIRD_PARTY_NOTICES)
+        run: |
+          go run ./scripts/licenses -check THIRD_PARTY_NOTICES -copy internal/notices/THIRD_PARTY_NOTICES
+          cmp LICENSE internal/notices/LICENSE
+      # The build without WhatsApp compiles, works, and can be shared under
+      # MIT: it links no GPL code, and no MPL code but the modules the
+      # project has agreed to (KeptMPL in scripts/licenses), whose files
+      # keep their own licence.
+      - name: Build without WhatsApp (-tags nowhatsapp)
+        run: |
+          go vet -tags nowhatsapp ./...
+          go test -tags nowhatsapp ./internal/channels/whatsapp/ ./internal/daemon/ ./internal/api/ ./cmd/mirrin/
+          go run ./scripts/licenses -tags nowhatsapp -mit
+      - name: Shell scripts (shellcheck)
+        run: shellcheck install.sh scripts/*.sh packaging/docker/*.sh packaging/voice/*.sh
+      - name: Workflows (actionlint)
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+      # Pinned so a new govulncheck can't turn every PR red on its own. A
+      # finding in the standard library (stdlib, crypto/..., net/http) is fixed
+      # by raising the `go` line in go.mod to the patched Go release; a finding
+      # in a module by `go get module@fixed-version && go mod tidy`.
+      - name: Known vulnerabilities (govulncheck)
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
+      # Any finding fails CI, as it fails `make lint` (docs/maintainers-release.md, "Lint").
+      - name: staticcheck
+        run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.1 ./...
+
+  # The S3 backup target against a real S3-compatible store (MinIO on
+  # loopback, nothing outside the runner), including a 200 MiB multipart
+  # round trip: what the in-process fake can't show (If-None-Match,
+  # ListObjectsV2 with a delimiter, multipart ETags on a real server).
+  s3-minio:
+    name: backup to MinIO
+    runs-on: ubuntu-latest
+    env:
+      # Built from source: MinIO no longer publishes images. It runs as a
+      # separate program and is never linked into Mirrin.
+      MINIO_VERSION: RELEASE.2025-04-22T22-12-26Z
+      MIRRIN_S3_IT_ENDPOINT: http://127.0.0.1:9000
+      MIRRIN_S3_IT_BUCKET: mirrin-it
+      MIRRIN_S3_IT_ACCESS_KEY: mirrin-ci
+      MIRRIN_S3_IT_SECRET_KEY: mirrin-ci-secret
+      MIRRIN_S3_IT_REQUIRED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - name: Build MinIO
+        run: CGO_ENABLED=0 GOBIN="$RUNNER_TEMP/bin" go install "github.com/minio/minio@$MINIO_VERSION"
+      - name: Start MinIO and make the bucket
+        run: |
+          mkdir -p "$RUNNER_TEMP/minio-data"
+          MINIO_ROOT_USER="$MIRRIN_S3_IT_ACCESS_KEY" MINIO_ROOT_PASSWORD="$MIRRIN_S3_IT_SECRET_KEY" \
+            nohup "$RUNNER_TEMP/bin/minio" server --address 127.0.0.1:9000 --console-address 127.0.0.1:9001 \
+            "$RUNNER_TEMP/minio-data" > "$RUNNER_TEMP/minio.log" 2>&1 &
+          for _ in $(seq 60); do
+            curl -fsS "$MIRRIN_S3_IT_ENDPOINT/minio/health/live" && break
+            sleep 1
+          done
+          curl -fsS -X PUT --aws-sigv4 "aws:amz:us-east-1:s3" \
+            --user "$MIRRIN_S3_IT_ACCESS_KEY:$MIRRIN_S3_IT_SECRET_KEY" \
+            "$MIRRIN_S3_IT_ENDPOINT/$MIRRIN_S3_IT_BUCKET"
+      - name: S3 target conformance against MinIO
+        run: MIRRIN_HOME="$(mktemp -d)" go test -tags integration -run Integration -count=1 -timeout 20m ./internal/backup/
+      - name: MinIO log
+        if: failure()
+        run: cat "$RUNNER_TEMP/minio.log"
+
+  release-dry-run:
+    name: release dry run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      # Linux and Windows, amd64 and arm64, each checked against its name and
+      # listed in SHA256SUMS, as the release workflow does. The Mac builds are
+      # made by the macOS test job above.
+      - run: make release VERSION=v0.0.0-ci
+
+  # cloud/deploy: every host's files rendered as a maintainer would, and
+  # the shell scripts checked with shellcheck. The cloud module's Go tests
+  # (the test job) check the rendered configs, units and DNS files.
+  deploy-config:
+    name: cloud deploy config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Render every host
+        run: |
+          for h in r1 r2 cp probe-b probe-c dns; do
+            ALLOW_PLACEHOLDERS=1 cloud/deploy/render.sh "$RUNNER_TEMP/deploy/$h" cloud/deploy/hosts/common.env "cloud/deploy/hosts/$h.env"
+          done
+      - name: shellcheck
+        run: shellcheck --severity=error cloud/deploy/*.sh cloud/deploy/dns/*.sh "$RUNNER_TEMP"/deploy/*/*.sh

@@ -1,0 +1,4 @@
+[
+  {"issuer_ca_id": 185756, "issuer_name": "C=US, O=Rogue Trust, CN=Rogue DV CA", "common_name": "*.mirrin.test", "name_value": "*.mirrin.test", "id": 1005, "entry_timestamp": "2026-09-20T10:05:12.391", "not_before": "2026-09-20T10:00:00", "not_after": "2026-12-19T10:00:00", "serial_number": "0bad", "result_count": 1},
+  {"issuer_ca_id": 185756, "issuer_name": "C=US, O=Rogue Trust, CN=Rogue DV CA", "common_name": "other.mirrin.test", "name_value": "other.mirrin.test", "id": 1006, "entry_timestamp": "2026-09-20T10:05:12.391", "not_before": "2026-09-20T10:00:00", "not_after": "2026-12-19T10:00:00", "serial_number": "0bae", "result_count": 1}
+]

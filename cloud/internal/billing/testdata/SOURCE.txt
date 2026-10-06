@@ -1,0 +1,20 @@
+Paddle's own test data, stored verbatim (Apache-2.0, from Paddle's official Go
+SDK). paddle_test.go pins the SHA-256 of each file.
+
+Repository: https://github.com/PaddleHQ/paddle-go-sdk
+Commit:     7f86494988063c5e4fd595df4aed0879b9b697a1 (2026-03-30)
+
+paddle-go-sdk-webhook_verifier_test.go.txt
+  Source: https://github.com/PaddleHQ/paddle-go-sdk/blob/7f86494988063c5e4fd595df4aed0879b9b697a1/webhook_verifier_test.go
+  Git blob: 545bb45ff25563ca4e89ad98f8a27c61bcdd256f (matches the GitHub contents API)
+  SHA-256:  91d7352b8909de8c7d32ddcdae0e3ab9afe1fe3cabc303d4d1910e4f956346c4
+  The SDK's webhook verifier test, renamed .txt so it is not compiled. Its
+  testSignature, testPayload and testSecretKey constants are a real
+  Paddle-Signature over a real notification body.
+
+paddle-go-sdk-events.json
+  Source: https://github.com/PaddleHQ/paddle-go-sdk/blob/7f86494988063c5e4fd595df4aed0879b9b697a1/testdata/events.json
+  Git blob: d9b29f6478051784874562d71cad2db3e86a91f6 (matches the GitHub contents API)
+  SHA-256:  3f6e4f90b0360920d8691a0b1afe9c87b98b575f576c775e5eb7a0f5d91cbf91
+  A list-events answer holding transaction.completed, transaction.updated and
+  subscription.created events, in the shape webhooks carry them.

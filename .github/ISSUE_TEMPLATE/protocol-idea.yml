@@ -1,0 +1,52 @@
+name: Protocol idea
+description: A routine you wish your twin could run, or one you'd like to write
+title: "Protocol: "
+labels: [protocol]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A protocol is a routine your twin runs on a schedule or when you ask. Describe the one you have in mind as you'd brief a person.
+        Already written it? Share it as a pack instead and list it in the registry: see docs/protocols/packs.md and docs/protocols/registry.md.
+  - type: dropdown
+    id: who
+    attributes:
+      label: Who would write it?
+      options:
+        - I'd like someone to write it
+        - I'd like to write it myself, and want a second opinion first
+    validations: { required: true }
+  - type: textarea
+    id: what
+    attributes:
+      label: What should it do?
+      description: One paragraph, as you'd brief a person.
+    validations: { required: true }
+  - type: input
+    id: when
+    attributes:
+      label: When should it run?
+      description: When you ask, or a schedule, for example weekdays at 7:45.
+  - type: checkboxes
+    id: needs
+    attributes:
+      label: What does it need?
+      options:
+        - label: Calendar
+        - label: Email
+        - label: Web pages
+        - label: The browser, signed in to a website
+        - label: Files on this computer
+        - label: Reminders
+        - label: Phone calls or text messages
+        - label: An MCP server or a custom tool
+  - type: textarea
+    id: quiet
+    attributes:
+      label: What should it say when there's nothing to report?
+      description: Usually nothing at all.
+  - type: textarea
+    id: never
+    attributes:
+      label: Anything it must never do?
+      description: For example, send anything without showing you first.

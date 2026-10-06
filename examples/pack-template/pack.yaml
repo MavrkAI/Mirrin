@@ -1,0 +1,8 @@
+# Who made this pack and where it lives. Lint needs name, description and
+# repo. Keep name the same as the pack's registry entry, if it has one.
+name: my-pack                                        # lowercase; `mirrin protocols remove my-pack` uses it
+description: A short line about what these protocols are for.
+author: your name or handle
+repo: https://github.com/you/mirrin-pack-my-pack    # this repository's https address
+tags: [example]
+version: 0.1.0                                       # for people; bump it with each release

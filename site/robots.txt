@@ -1,0 +1,6 @@
+# mirrin.app: every page may be crawled. legal.html (drafts) asks not to be
+# indexed with its own robots meta tag, so it stays crawlable here.
+User-agent: *
+Allow: /
+
+Sitemap: https://mirrin.app/sitemap.xml

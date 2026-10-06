@@ -1,0 +1,14 @@
+name: commute check
+description: Before you leave, how long the drive is and whether to go now or wait.
+version: 0.1.0
+author: your name or handle
+tags: [travel, daily]
+requires: [web, calendar]
+schedule: "45 7 * * 1-5"
+vars:
+  origin: {description: "Where you leave from", required: true}
+  destination: {description: "Where you're going", required: true}
+prompt: |
+  Look at the first event on today's calendar. Estimate the drive from {{origin}} to {{destination}}
+  right now using a traffic or maps page you can fetch, and say in one spoken sentence whether to
+  leave now or how many minutes you can wait. If there is no event, reply NOTHING_TO_REPORT.

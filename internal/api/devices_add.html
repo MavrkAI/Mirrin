@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="referrer" content="no-referrer"><title>Add your phone</title><script>if(new URLSearchParams(location.search).get('view')==='reach')document.title='Reach from anywhere'</script>
+<style>
+/* ---- shared by every settings page (keep the copies identical; pagetest checks) ---- */
+:root{color-scheme:light dark;--bg:#0f1115;--fg:#e8e8ea;--muted:#8b8f98;--card:#171a21;--line:#262a33;--edge:#646a7a;--accent:#7aa2ff;--on-accent:#000;--ok:#3ddc84;--warn:#f5c542;--fail:#ff6b6b;--off:#5c6270}
+@media (prefers-color-scheme: light){:root{--bg:#f6f7f9;--fg:#14161a;--muted:#5f6470;--card:#fff;--line:#e3e6eb;--edge:#80868f;--accent:#2f5bd3;--on-accent:#fff;--ok:#137a43;--warn:#8a5a00;--fail:#c62828;--off:#9aa0aa}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,system-ui,sans-serif;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+[hidden]{display:none!important}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,textarea,select{font-size:16px}::placeholder{color:var(--muted);opacity:1}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+button{background:transparent;border:1px solid var(--edge);color:var(--fg);border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit;min-height:36px}
+button.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}button:disabled{opacity:.55;cursor:default}
+.gate{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 20px;margin:8px 0 20px}
+.gate h1{margin:0 0 6px}.gate p{color:var(--muted);margin:0 0 14px}
+main.gated>:not(#gate){display:none!important}#gateNote:empty{display:none}
+.state{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;color:var(--muted);margin-bottom:8px}
+.state.err{color:var(--fg);border-color:var(--fail);margin-bottom:16px}.state.err strong{display:block;color:var(--fail)}.state.err button{margin-top:10px}
+.msg{font-size:13px}.msg.err{color:var(--fail)}.msg.ok{color:var(--ok)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.pagenav{display:flex;gap:1.1rem;align-items:center;overflow-x:auto;scrollbar-width:none;white-space:nowrap;border-bottom:1px solid var(--line);margin:0 0 1.2rem;padding:.2rem 0 .6rem;-webkit-mask-image:linear-gradient(to right,#000 88%,transparent);mask-image:linear-gradient(to right,#000 88%,transparent)}
+.pagenav::-webkit-scrollbar{display:none}.pagenav a{text-decoration:none;color:var(--muted);font-size:.9rem;padding:.35rem 0;flex:0 0 auto}.pagenav a:hover{color:var(--fg)}
+@media (min-width:760px){.pagenav{flex-wrap:wrap;row-gap:.2rem;overflow:visible;-webkit-mask-image:none;mask-image:none}}
+.pagenav a[aria-current="page"]{color:var(--fg);font-weight:600;box-shadow:inset 0 -2px 0 var(--accent)}.pagenav .home{color:var(--accent);font-weight:600}
+/* ---- end of shared ---- */
+/* the device and safety pages */
+main{max-width:860px;margin:0 auto;padding:20px 16px 64px}h1{font-size:22px;margin:0 0 4px}.sub{color:var(--muted);margin:0 0 20px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:28px 0 10px}
+.tabs{display:flex;flex-wrap:wrap;gap:2px 18px;margin:0 0 18px;font-size:14px;border-bottom:1px solid var(--line)}.tabs a{text-decoration:none;padding:8px 0;border-bottom:2px solid transparent;margin-bottom:-1px}.tabs a[aria-current=page]{color:var(--fg);border-bottom-color:var(--accent);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.actions{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+button.danger{color:var(--fail)}
+a.btn{display:inline-flex;align-items:center;min-height:36px;border:1px solid var(--edge);border-radius:8px;padding:6px 12px;text-decoration:none}a.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+code{background:var(--bg);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere;font-size:.92em}
+.muted{color:var(--muted)}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 3px}
+input[type=text],input[type=password]{width:100%;background:var(--bg);border:1px solid var(--edge);color:var(--fg);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:16px}
+.help{font-size:13px;color:var(--muted);margin:4px 0 0}
+dl.facts{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:10px 0 0;font-size:14px}dl.facts dt{color:var(--muted)}dl.facts dd{margin:0;min-width:0;overflow-wrap:anywhere}
+@media(max-width:480px){dl.facts{grid-template-columns:1fr;gap:0}dl.facts dd{margin-bottom:8px}}
+.badge{display:inline-block;font-size:12px;border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--muted);white-space:nowrap}.badge.on{color:var(--ok);border-color:var(--ok)}.badge.warn{color:var(--warn);border-color:var(--warn)}.badge.err{color:var(--fail);border-color:var(--fail)}
+/* this page */
+[tabindex="-1"]:focus{outline:none}
+.offer{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
+.qr{flex:none;width:248px;height:248px;border-radius:12px;background:#fff;padding:0;overflow:hidden}.qr img{display:block;width:100%;height:100%}
+.side{flex:1 1 240px;min-width:0}.side p{margin:0 0 10px}
+.fixes{list-style:none;margin:0;padding:0}.fixes li{margin-bottom:10px}.fixes .what{font-weight:600}.fixes .fix{margin:6px 0 0}
+.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+.steps li{display:grid;grid-template-columns:28px 1fr;gap:2px 12px;padding:10px 0;border-top:1px solid var(--line)}.steps li:first-child{border-top:0}
+.tick{grid-row:span 2;width:24px;height:24px;border-radius:50%;border:2px solid var(--edge);display:grid;place-items:center;font-size:14px;line-height:1;color:var(--on-accent)}
+.steps li.lit .tick{background:var(--ok);border-color:var(--ok)}.steps li.lit .tick::after{content:"✓";color:var(--card);font-weight:700}
+.steps .t{font-weight:600}.steps .d{color:var(--muted);font-size:14px}.steps li.lit .t::after{content:" · done";font-weight:400;color:var(--ok);font-size:13px}
+.steps .d button{margin-top:8px}
+.who p{margin:0}#others p{margin:0 0 10px}
+.routes{list-style:none;margin:0;padding:0}.routes li{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--line)}.routes li:first-child{border-top:0;padding-top:0}.routes li:last-child{padding-bottom:0}.routes .rn{font-weight:600;min-width:8em}.routes .rd{flex:1 1 16em;min-width:0;color:var(--muted);font-size:14px;overflow-wrap:anywhere}
+.done{color:var(--fg);border-color:var(--ok)}
+</style></head><body><main>
+<section id="gate" class="gate" role="alert" hidden><h1>This device isn't paired</h1><p id="gateHint"></p><p id="gatePair" hidden><a href="/devices/add">Pair this device</a></p><p class="msg" id="gateNote"></p><button type="button" class="primary" id="gateRetry">Try again</button></section>
+<h1 id="title">Add your phone</h1><p class="sub" id="lead">Scan the code with your phone's camera. It pairs one phone, once; a fresh code appears while this page is open.</p>
+<div id="problem" class="state err" role="alert" hidden><strong>Couldn’t load everything</strong><span id="problemText"></span><div><button type="button" id="problemRetry">Try again</button></div></div>
+<p id="live" class="sr" aria-live="polite"></p>
+<section id="pairBox" aria-labelledby="pairH">
+<h2 id="pairH" class="sr">Pairing code</h2>
+<div class="state loading" id="loading">Making a code…</div>
+<div id="offer" class="card offer" hidden>
+<div class="qr"><img id="qrImg" alt="QR code that pairs your phone with your twin"></div>
+<div class="side">
+<p id="routeText"></p>
+<p class="muted" id="expiry"></p>
+<p class="muted" id="peerHint" hidden></p>
+<div class="actions"><button type="button" id="copy">Copy the link instead</button></div>
+<p class="msg" id="copyMsg" role="status"></p>
+</div>
+</div>
+<div id="empty" hidden>
+<div class="state" id="emptyLead">Your phone can't reach <span data-name></span> yet. Set up one of these on this computer, and a code appears here by itself.</div>
+<ol class="fixes" id="fixes"></ol>
+</div>
+</section>
+<section id="stepsBox" aria-labelledby="stepsH">
+<h2 id="stepsH">On your phone</h2>
+<div class="card">
+<ol class="steps" id="steps">
+<li data-step="scanned"><span class="tick" aria-hidden="true"></span><span class="t">Open the link</span><span class="d">Point the camera at the code and tap the link it shows.</span></li>
+<li data-step="claimed"><span class="tick" aria-hidden="true"></span><span class="t">Pair</span><span class="d">Check the name, then tap Pair this device.</span></li>
+<li data-step="installed"><span class="tick" aria-hidden="true"></span><span class="t">Add it to your Home Screen</span><span class="d">In Safari, tap Share (or the … menu), then Add to Home Screen. Open <span data-name></span> from there.</span></li>
+<li data-step="notifications"><span class="tick" aria-hidden="true"></span><span class="t">Turn on notifications</span><span class="d">In the app, tap App, then Enable notifications, and allow them.</span></li>
+<li data-step="passkey"><span class="tick" aria-hidden="true"></span><span class="t">Set up Face ID</span><span class="d">Tap App, then Set up Face ID for approvals. Payments and other big steps need it when you approve away from this computer.</span></li>
+<li data-step="test_received"><span class="tick" aria-hidden="true"></span><span class="t">Get a test notification</span><span class="d">It's sent by itself once notifications and Face ID are both on. <span id="testWrap" hidden><br><button type="button" id="sendTest">Send a test notification now</button><span class="msg" id="testMsg" role="status"></span></span></span></li>
+</ol>
+</div>
+<div id="who" class="card who" hidden>
+<p><strong id="devName"></strong> <span id="devWhat"></span></p>
+<div class="actions"><button type="button" class="danger" id="notMe">That wasn't me</button><a class="btn" href="/devices/page">See all devices</a></div>
+<p class="msg" id="whoMsg" role="status"></p>
+</div>
+<div id="others" class="card who" role="alert" hidden>
+<p><strong>Another device also paired with a code from this page.</strong> If it isn't yours, remove it.</p>
+<ul class="routes" id="otherList"></ul>
+</div>
+<div id="allSet" class="state done" hidden>All set. Your phone will buzz when <span data-name></span> needs you, and Face ID guards what matters.</div>
+</section>
+<section id="reach" aria-labelledby="reachH">
+<h2 id="reachH">How phones reach <span data-name></span></h2>
+<div class="card"><ul class="routes" id="routes"><li class="muted">Checking…</li></ul></div>
+<p class="help">Everything here is free and runs on your own computer and accounts.</p>
+</section>
+<script>
+/* ---- shared by every settings page (keep the copies identical; pagetest checks) ---- */
+// Every request goes through api(), which puts each way a request can fail
+// into plain words, and shows "This device isn't paired" when that is why.
+const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function twinName(){try{const n=localStorage.getItem('antbot.name');if(n)return n}catch{}const m=document.querySelector('meta[name="mirrin-name"]');return (m&&m.content)||'Mirrin'}
+for(const el of document.querySelectorAll('[data-name]'))el.textContent=twinName();
+const PAGE_TITLE=document.title=twinName()+' · '+document.title;
+const FRIENDLY={not_paired:"This device isn't paired.",passkey_required:'This needs Face ID or Touch ID, which this device has not set up.',forbidden:"This device isn't allowed to do that."};
+async function problem(res){let raw='';try{raw=(await res.text()).trim()}catch{}let code='',hint='',msg='',pair='';
+  try{const j=JSON.parse(raw);if(j&&typeof j==='object'){code=String(j.error||'');hint=String(j.hint||j.fix||'').replace(/`/g,'');msg=String(j.message||'');pair=String(j.pair_url||'')}}catch{}
+  const plain=!code&&raw&&raw.length<300&&!raw.startsWith('<')?raw:'';
+  if(!/^\/[^/\\]/.test(pair))pair='';
+  return{status:res.status,code,hint,pair,text:(msg&&hint?msg+' '+hint:msg)||hint||FRIENDLY[code]||(res.status===401?FRIENDLY.not_paired:plain)||(code?code.replace(/_/g,' '):'')||'Something went wrong (error '+res.status+').'}}
+async function api(url,opts){
+  const o=Object.assign({},opts);o.headers=Object.assign({Accept:'application/json'},opts&&opts.headers);let res;
+  try{res=await fetch(url,o)}catch{throw Object.assign(new Error("Can't reach "+twinName()+". Check that it is running on this computer, then try again."),{offline:true})}
+  if(res.ok){if(document.querySelector('main').classList.contains('gated'))ungate();return res}
+  const p=await problem(res);
+  if(res.status===401){
+    // A page can be paired while one of its buttons isn't allowed yet; only a refused page load means the device is signed out.
+    if(p.code!=='not_paired'&&o.method&&o.method!=='GET'){const pr=await fetch(PROBE,{headers:{Accept:'application/json'}}).catch(()=>null);if(pr&&pr.ok)throw Object.assign(new Error(FRIENDLY.forbidden),{forbidden:true})}
+    gate(p);throw Object.assign(new Error(p.text),{unpaired:true})}
+  throw Object.assign(new Error(p.text),{status:res.status,code:p.code})}
+const getJSON=async u=>(await api(u)).json();
+const post=(u,b)=>api(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})});
+let retrying=false;
+function gate(p){$('#gateHint').textContent=(p&&p.hint)||'Open this page again from the menu bar icon on the computer '+twinName()+' runs on.';
+  // On this computer the twin sends where to pair (pair_url); elsewhere the hint names `mirrin pair --screen`.
+  $('#gatePair').hidden=!(p&&p.pair);if(p&&p.pair)$('#gatePair a').href=p.pair;
+  say($('#gateNote'),retrying?'Still not paired. Pair this device, then try again.':'','err');$('#gate').hidden=false;document.querySelector('main').classList.add('gated');document.title=twinName()+' · Not paired'}
+function ungate(){$('#gate').hidden=true;say($('#gateNote'),'');document.querySelector('main').classList.remove('gated');document.title=PAGE_TITLE}
+// failed says why the page (or part of it) didn't load, with a Try again; recovered clears it.
+function failed(e){if(e&&e.unpaired)return;$('#problemText').textContent=e.message;$('#problem').hidden=false;for(const l of document.querySelectorAll('.loading'))l.hidden=true}
+function recovered(){$('#problem').hidden=true;for(const l of document.querySelectorAll('.loading'))l.hidden=false}
+function say(el,text,kind){el.className='msg'+(kind?' '+kind:'');el.textContent=text||''}
+// A button that is busy (disabled) drops keyboard focus to the page; it gets it back when it is ready again.
+let lastFocus=null;document.addEventListener('focusin',e=>{lastFocus=e.target});
+new MutationObserver(ms=>{for(const m of ms){const b=m.target;if(b===lastFocus&&!b.disabled&&b.isConnected&&(!document.activeElement||document.activeElement===document.body))b.focus({preventScroll:true})}}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['disabled']});
+// Try again checks in place: a reload would show the API's bare refusal instead of this card.
+$('#gateRetry').onclick=async()=>{if(retrying)return;retrying=true;say($('#gateNote'),'Checking…');try{await loadAll()}finally{retrying=false}};$('#problemRetry').onclick=()=>loadAll();
+// One way round every page: back to the screen, then each settings page.
+(()=>{const m=document.querySelector('main');if(!m||document.body.dataset.nav==='off')return;
+  const P=[['/ui','← Screen'],['/memory','Memory'],['/channels','Channels'],['/accounts','Accounts'],['/devices/add','Add your phone'],['/devices/page','Devices'],['/reach','Reach'],['/backup','Backup'],['/trust','Trust'],['/spending','Spending'],['/protocols','Routines'],['/voice/setup','Voice'],['/health','Health']];
+  const n=document.createElement('nav');n.className='pagenav';n.setAttribute('aria-label','Pages');
+  n.innerHTML=P.map(([h,t],i)=>`<a href="${h}"${i===0?' class="home"':''}${location.pathname===h?' aria-current="page"':''}>${t}</a>`).join('');
+  m.prepend(n);const c=n.querySelector('[aria-current]');if(c&&n.scrollWidth>n.clientWidth)c.scrollIntoView({block:'nearest',inline:'nearest'});})();
+/* ---- end of shared ---- */
+const PROBE='/devices';
+const VIEW=new URLSearchParams(location.search).get('view')==='reach'?'reach':'add';
+const NAMES={tailscale:'Tailscale',relay:'Your relay',files:'Your certificate',cloud:'Hosted'};
+const STEP_WORDS={scanned:'The link was opened',claimed:'Paired',installed:'Added to the Home Screen',notifications:'Notifications are on',passkey:'Face ID is set up',test_received:'The test notification arrived'};
+let es=null,device=null,recheckTimer=null,link='',expiresAt=null,expiryTimer=null;
+function setTwin(n){if(!n)return;try{localStorage.setItem('antbot.name',n)}catch{}for(const el of document.querySelectorAll('[data-name]'))el.textContent=n}
+function host(u){try{return new URL(u).host}catch{return u||''}}
+function routeLine(r){const h=esc(host(r.base_url));
+  if(r.kind==='tailscale')return 'Through your tailnet, at <code>'+h+'</code>. Your phone needs the Tailscale app, signed in to the same account.';
+  if(r.kind==='relay')return 'Through your own relay, at <code>'+h+'</code>. It works from any network.';
+  if(r.kind==='files')return 'At <code>'+h+'</code>, with your own certificate.';
+  return 'At <code>'+h+'</code>.'}
+function peersHint(r,peers){const el=$('#peerHint');el.hidden=true;if(!r||r.kind!=='tailscale')return;
+  const phones=(peers||[]).filter(p=>/ios|android/i.test(p.os||''));
+  if(phones.length){const on=phones.find(p=>p.online)||phones[0];el.textContent=(on.online?'':'Last seen on your tailnet: ')+on.name+(on.online?' is on your tailnet.':'. Open Tailscale on it before you scan.');}
+  else el.innerHTML='No phone is on your tailnet yet: install <a href="https://tailscale.com/download" target="_blank" rel="noopener">Tailscale ↗</a> on your phone and sign in with the same account first.';
+  el.hidden=false}
+function renderRoutes(routes){const ul=$('#routes');ul.innerHTML='';
+  const list=(routes||[]).filter(r=>r.kind!=='cloud');
+  if(!list.length){ul.innerHTML='<li class="muted">Nothing is set up yet.</li>';return}
+  for(const r of list){const li=document.createElement('li');
+    li.innerHTML='<span class="rn">'+esc(NAMES[r.kind]||r.kind)+'</span><span class="rd">'+(r.ready?'<span class="badge on">Working</span> '+esc(host(r.base_url)):'<span class="badge">Not yet</span> '+esc(r.problem||''))+'</span>';
+    ul.appendChild(li)}}
+function renderFixes(routes){const ol=$('#fixes');ol.innerHTML='';
+  for(const r of routes||[]){const li=document.createElement('li');li.className='card';
+    li.innerHTML='<div class="what">'+esc(NAMES[r.kind]||r.kind)+'</div><div class="muted">'+esc(r.problem||'')+'</div>'+(r.fix?'<p class="fix">'+esc(r.fix).replace(/`([^`]+)`/g,'<code>$1</code>')+(r.fix_url?' <a href="'+esc(r.fix_url)+'" target="_blank" rel="noopener">Open ↗</a>':'')+'</p>':'');
+    ol.appendChild(li)}
+  if(!ol.children.length)ol.innerHTML='<li class="card">Nothing to set up was found. Open Health from the menu to see why.</li>'}
+function showExpiry(){clearInterval(expiryTimer);const el=$('#expiry');if(!expiresAt){el.textContent='';return}
+  const tick=()=>{const m=Math.round((expiresAt-Date.now())/60000);el.textContent=m>0?'This code works until '+expiresAt.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})+'. A new one appears before then.':'Making a new code…'};
+  tick();expiryTimer=setInterval(tick,30000)}
+function light(step,announce){const li=document.querySelector('.steps li[data-step="'+step+'"]');if(!li||li.classList.contains('lit'))return;li.classList.add('lit');
+  li.setAttribute('aria-label',li.querySelector('.t').textContent+': done');if(announce)$('#live').textContent=STEP_WORDS[step]||''}
+function resetSteps(){for(const li of document.querySelectorAll('.steps li')){li.classList.remove('lit');li.removeAttribute('aria-label')}$('#who').hidden=true;$('#allSet').hidden=true;$('#testWrap').hidden=true;$('#others').hidden=true;$('#otherList').innerHTML='';device=null}
+function showOther(d){if(!d)return;const li=document.createElement('li');
+  li.innerHTML='<span class="rn"></span><span class="rd"><button type="button" class="danger">Remove it</button> <span class="msg" role="status"></span></span>';
+  li.querySelector('.rn').textContent=d.name||'A device';const b=li.querySelector('button'),m=li.querySelector('.msg');
+  b.onclick=async()=>{b.disabled=true;try{await post('/devices/'+encodeURIComponent(d.id)+'/revoke');say(m,(d.name||'It')+" can't reach "+twinName()+' any more.','ok');b.hidden=true}catch(e){say(m,e.message,'err')}finally{b.disabled=false}};
+  $('#otherList').appendChild(li);$('#others').hidden=false;$('#live').textContent='Another device paired'}
+function handle(ev){if(ev.twin)setTwin(ev.twin);
+  switch(ev.step){
+  case 'offer':$('#loading').hidden=true;$('#empty').hidden=true;$('#offer').hidden=!!device;$('#stepsBox').hidden=false;
+    $('#qrImg').src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(ev.qr);link=ev.link||'';
+    $('#routeText').innerHTML=routeLine(ev.route||{});expiresAt=ev.expires?new Date(ev.expires):null;showExpiry();peersHint(ev.route,ev.peers);renderRoutes(ev.routes);break;
+  case 'no_route':$('#loading').hidden=true;$('#offer').hidden=true;$('#empty').hidden=false;renderFixes(ev.routes);renderRoutes(ev.routes);
+    $('#stepsBox').hidden=true;break;
+  case 'claimed_other':showOther(ev.device);break;
+  case 'revoked':$('#whoMsg').className='msg ok';$('#whoMsg').textContent=(device?device.name:'That device')+" can't reach "+twinName()+' any more.';$('#notMe').hidden=true;
+    $('#live').textContent='Removed';break;
+  default:
+    if(ev.device&&ev.step==='claimed'){device=ev.device;$('#devName').textContent=device.name;$('#devWhat').textContent='just paired. Not you, or not your phone?';$('#who').hidden=false;$('#offer').hidden=true}
+    light(ev.step,true);
+    if(ev.step==='notifications')$('#testWrap').hidden=false;
+    if(document.querySelectorAll('.steps li.lit').length===6)$('#allSet').hidden=false;
+  }}
+function connect(){if(es)es.close();es=new EventSource('/devices/add/state');
+  es.onmessage=e=>{try{handle(JSON.parse(e.data))}catch{}};
+  es.onerror=async()=>{if(es.readyState!==EventSource.CLOSED)return;es=null;try{await api(PROBE);failed(new Error('Lost touch with '+twinName()+'. Check it is running on this computer, then try again.'))}catch(e){failed(e)}}}
+async function loadAll(){
+  try{
+    if(VIEW==='reach'){const r=await getJSON('/devices/routes');recovered();$('#loading').hidden=true;renderRoutes(r.routes);
+      if(!r.best){$('#empty').hidden=false;renderFixes(r.problems)}else{$('#empty').hidden=true}
+      clearTimeout(recheckTimer);recheckTimer=setTimeout(loadAll,15000);return}
+    await api(PROBE);recovered();resetSteps();$('#stepsBox').hidden=false;connect();
+  }catch(e){failed(e)}}
+$('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(link);say($('#copyMsg'),'Copied. Send it only to your own phone: it pairs whoever opens it first.','ok')}catch{say($('#copyMsg'),"Couldn't copy here. Scan the code instead.",'err')}};
+$('#notMe').onclick=async()=>{if(!device)return;const b=$('#notMe');b.disabled=true;
+  try{await post('/devices/'+encodeURIComponent(device.id)+'/revoke');say($('#whoMsg'),(device.name)+" can't reach "+twinName()+' any more.','ok');b.hidden=true}
+  catch(e){say($('#whoMsg'),e.message,'err')}finally{b.disabled=false}};
+$('#sendTest').onclick=async()=>{if(!device)return;const b=$('#sendTest');b.disabled=true;
+  try{await post('/devices/add/test',{device:device.id});say($('#testMsg'),' Sent. Watch your phone.','ok')}catch(e){say($('#testMsg'),' '+e.message,'err')}finally{b.disabled=false}};
+if(VIEW==='reach'){for(const a of document.querySelectorAll('.pagenav a[aria-current]'))a.removeAttribute('aria-current');const ra=document.querySelector('.pagenav a[href="/reach"]');if(ra)ra.setAttribute('aria-current','page');$('#emptyLead').lastChild.textContent=' yet. Set up one of these on this computer; this page checks again every 15 seconds.';$('#title').textContent='Reach from anywhere';$('#lead').textContent='How your phone and other devices can reach '+twinName()+' when you are away from this computer.';
+  $('#pairH').textContent='What to set up';$('#stepsBox').hidden=true;$('#offer').hidden=true;$('#loading').textContent='Checking…';
+  $('#reach').insertAdjacentHTML('beforeend','<div class="actions"><a class="btn primary" href="/devices/add">Add your phone</a></div>')}
+loadAll();
+</script></main></body></html>

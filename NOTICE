@@ -1,0 +1,25 @@
+Mirrin
+Copyright (c) 2026 Mirrin contributors
+
+The source code in this repository is licensed under the MIT licence; see
+LICENSE.
+
+The mirrin programs built from it also contain the Go standard library and
+third-party modules under their own licences. THIRD_PARTY_NOTICES lists every
+one with its licence text. Among them:
+
+- The WhatsApp channel links go.mau.fi/whatsmeow and go.mau.fi/util
+  (MPL-2.0) and go.mau.fi/libsignal (GPL-3.0), so the default programs, which
+  include it, are distributed as a whole under GPL-3.0.
+- A program built with -tags nowhatsapp leaves those out, and is distributed
+  under MIT.
+- Both builds of mirrin, and mirrin-relay, contain github.com/hashicorp/yamux
+  (MPL-2.0). Its own files stay under the MPL, a file-level copyleft, and
+  their source is in every release's source archive.
+
+docs/licensing.md explains what that means for the programs published with
+each release.
+
+Every mirrin program carries LICENSE and THIRD_PARTY_NOTICES with it:
+`mirrin licenses` prints them, Mirrin.app keeps them in Contents/Resources,
+and the Windows setup program installs them beside mirrin.exe.
