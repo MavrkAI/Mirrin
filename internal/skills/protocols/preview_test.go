@@ -52,7 +52,7 @@ func TestInstallPackPreviewInstallsNothing(t *testing.T) {
 	installed := 0
 	reg := &Registry{
 		Search: func(context.Context, string) ([]proto.Pack, error) {
-			return []proto.Pack{{Name: "news", Repo: "file://" + repo}}, nil
+			return []proto.Pack{{Name: "news", Repo: fileURL(repo)}}, nil
 		},
 		Install: func(context.Context, string) (string, error) { installed++; return "news", nil },
 	}
@@ -103,5 +103,20 @@ func TestInstallPackPreviewInstallsNothing(t *testing.T) {
 	}
 	if _, err := install.Run(context.Background(), tools.Call{Input: in}); err == nil {
 		t.Fatal("a local folder was previewed")
+	}
+}
+
+// On Windows a folder (C:\Users\me\pack) has no / in it, so previewing one
+// passed as a registry name and read the folder without asking.
+func TestPreviewingAWindowsFolderAsks(t *testing.T) {
+	for _, name := range []string{`C:\Users\me\pack`, `\\server\share\pack`, `C:pack`} {
+		in, _ := json.Marshal(map[string]any{"name": name, "preview": true})
+		if r := installRisk(context.Background(), tools.Call{Input: in}); r != tools.RiskWrite {
+			t.Errorf("%s: %v", name, r)
+		}
+	}
+	in, _ := json.Marshal(map[string]any{"name": "news", "preview": true})
+	if r := installRisk(context.Background(), tools.Call{Input: in}); r != tools.RiskRead {
+		t.Errorf("a registry name: %v", r)
 	}
 }

@@ -88,11 +88,15 @@ func TestHoldingLineNeverFollowsTheAnswer(t *testing.T) {
 func TestHoldingLineOnlyWhenItHelps(t *testing.T) {
 	quickHold(t)
 	td := newTestDaemon(t, func(string, llm.Request) llm.Response { return say("Done.") })
+	// A quick turn is one well inside the wait: 40ms is less than a turn
+	// takes on a slow machine (Windows' timers alone tick every 15ms).
+	holdAfter = 2 * time.Second
 	td.handleQueued(context.Background(), channels.Inbound{Channel: "telegram", ChatID: "owner", Text: "thanks", IsOwner: true})
-	time.Sleep(3 * holdAfter)
+	time.Sleep(100 * time.Millisecond)
 	if got := td.ch.messages(); len(got) != 1 || got[0] != "owner: Done." {
 		t.Fatalf("quick turn sent %q", got)
 	}
+	holdAfter = 40 * time.Millisecond
 
 	// Said something on the way (an approval request, a note): no holding line after it.
 	ctx, stop := td.holdOn(context.Background(), channels.Inbound{Channel: "telegram", ChatID: "owner", IsOwner: true})

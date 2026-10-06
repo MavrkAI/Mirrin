@@ -1011,6 +1011,9 @@ func TestUpdateLeavesAnOldAntBotApp(t *testing.T) {
 	theirs := filepath.Join(t.TempDir(), "Applications")
 	writeApp(t, filepath.Join(theirs, "AntBot.app"), "com.example.antbot")
 	ut.u.appDirs = []string{apps, theirs}
+	// A Mac's build, whatever this machine is (CI runs it on Linux and Windows).
+	ut.rel.files = map[string][]byte{"mirrin-darwin-" + runtime.GOARCH: program(newTag)}
+	ut.u.goarch = runtime.GOARCH
 	if err := ut.run(t, updateOptions{}); err != nil {
 		t.Fatalf("%v\n%s", err, ut.out)
 	}

@@ -36,7 +36,7 @@ func TestUpdatePacksFailsWhenAPackCant(t *testing.T) {
 		{"init", "-q"},
 		{"add", "-A"},
 		{"-c", "user.name=t", "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false", "commit", "-q", "-m", "one"},
-		{"remote", "add", "origin", "file://" + filepath.Join(t.TempDir(), "deleted")},
+		{"remote", "add", "origin", fileURL(filepath.Join(t.TempDir(), "deleted"))},
 	} {
 		if out, err := exec.Command("git", append([]string{"-C", pack}, args...)...).CombinedOutput(); err != nil {
 			t.Fatalf("git %v: %v\n%s", args, err, out)

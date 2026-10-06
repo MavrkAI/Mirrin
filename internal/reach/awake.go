@@ -2,9 +2,7 @@ package reach
 
 import (
 	"context"
-	"github.com/MavrkAI/Mirrin/internal/procenv"
 	"log/slog"
-	"os/exec"
 	"time"
 )
 
@@ -71,15 +69,6 @@ func stayAwake(ctx context.Context, power func() bool, hold func(context.Context
 		case <-ticks:
 		}
 	}
-}
-func runPowerCommand(ctx context.Context, name string, args ...string) error {
-	cmd := exec.CommandContext(ctx, name, args...)
-	cmd.Env = procenv.Base()
-	err := cmd.Run()
-	if ctx.Err() != nil {
-		return nil
-	}
-	return err
 }
 
 func startInhibitor(ctx context.Context, hold func(context.Context) error) (context.CancelFunc, chan error) {

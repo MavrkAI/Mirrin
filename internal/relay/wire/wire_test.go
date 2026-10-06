@@ -263,7 +263,7 @@ func TestReplyStrict(t *testing.T) {
 		`{"t":"welcome","hostnames":["h.test"],"gen":1,"keepalive":25,"max_streams":0}`,
 		`{"t":"welcome","hostnames":["h.test"],"gen":1.5,"keepalive":25,"max_streams":64}`,
 		`{"t":"error","code":"Bad-Code","message":""}`,
-		`{"t":"error","code":"denied","message":"a‮b"}`,
+		`{"t":"error","code":"denied","message":"a\u202eb"}`,
 		`{"t":"error","code":"denied","message":"ok","retry_after":-1}`,
 		`{"t":"error","code":"denied","message":"ok","retry_after":86401}`,
 		`{"t":"challenge"}`,

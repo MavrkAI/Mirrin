@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -425,7 +426,14 @@ func TestUninstallWontDeleteAFolderThatIsntATwin(t *testing.T) {
 		t.Fatalf("output:\n%s", ut.out)
 	}
 
-	u := &uninstaller{userHome: "/Users/me"}
+	// Full paths as this system writes them: C:\Users\me on Windows.
+	abs := func(p string) string {
+		if runtime.GOOS == "windows" && strings.HasPrefix(p, "/") {
+			return `C:` + filepath.FromSlash(p)
+		}
+		return p
+	}
+	u := &uninstaller{userHome: abs("/Users/me")}
 	for home, want := range map[string]string{
 		"/":                    "is a whole disk",
 		".mirrin":              "isn't a full path",
@@ -434,7 +442,7 @@ func TestUninstallWontDeleteAFolderThatIsntATwin(t *testing.T) {
 		"/Users/me/":           "holds your home folder",
 		"/Users/me/.mirrin/..": "holds your home folder",
 	} {
-		u.home = home
+		u.home = abs(home)
 		if got := u.twinFolderProblem(); got != want {
 			t.Errorf("home %q: %q, want %q", home, got, want)
 		}

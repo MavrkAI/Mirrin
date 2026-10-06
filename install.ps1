@@ -139,7 +139,11 @@
             if ($f.Count -eq 2 -and $f[1].TrimStart('*') -eq $asset) { $want = $f[0].ToLower(); break }
         }
         if (-not $want) { throw "the $version checksum list doesn't include $asset, so it can't be checked. Nothing was installed." }
-        $got = (Get-FileHash -Algorithm SHA256 -Path $download).Hash.ToLower()
+        # .NET's own SHA-256, not Get-FileHash: Windows PowerShell started from
+        # PowerShell 7 inherits 7's module path and can't load Get-FileHash.
+        $stream = [System.IO.File]::OpenRead($download)
+        try { $hash = [System.Security.Cryptography.SHA256]::Create().ComputeHash($stream) } finally { $stream.Dispose() }
+        $got = -join ($hash | ForEach-Object { $_.ToString('x2') })
         if ($got -ne $want) {
             throw "$asset doesn't match its published checksum, so it may be damaged or tampered with. Nothing was installed. Try again; if it keeps happening, please report it: $issues"
         }

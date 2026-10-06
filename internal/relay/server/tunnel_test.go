@@ -124,9 +124,9 @@ func TestDeniedMessage(t *testing.T) {
 	for _, why := range []string{
 		"",
 		"under review",           // no-break space
-		"zero​width",             // zero-width space
+		"zero\u200bwidth",        // zero-width space
 		"line separator",         // line separator
-		"right‮to left",          // bidi override
+		"right\u202eto left",     // bidi override
 		"tab\there",              // control
 		"del\x7f",                // control
 		"bad \xff utf-8",         // not UTF-8

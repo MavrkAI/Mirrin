@@ -99,6 +99,17 @@ func TestBackupStandbyKeepsTheLinkedServiceQuiet(t *testing.T) {
 			td.startBackup(ctx)
 			if !standby {
 				waitUntil(t, 10*time.Second, "the overdue refresh", func() bool { return refreshCount(f) > before })
+				// Let the loop save what it got before the folder is deleted.
+				run := td.cloudRun()
+				run.mu.Lock()
+				kept := run.kept
+				run.mu.Unlock()
+				cancel()
+				select {
+				case <-kept:
+				case <-time.After(10 * time.Second):
+					t.Fatal("the refresh loop didn't stop")
+				}
 				return
 			}
 			// The standby pauses the twin in the background; wait for it

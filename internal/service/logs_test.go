@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -43,7 +44,7 @@ func TestServiceLogsRotateWithOpenWriter(t *testing.T) {
 			t.Fatal("too many archives")
 		}
 		st, _ := os.Stat(path + ".1")
-		if st.Mode().Perm() != 0600 {
+		if runtime.GOOS != "windows" && st.Mode().Perm() != 0600 {
 			t.Fatal(st.Mode())
 		}
 	}

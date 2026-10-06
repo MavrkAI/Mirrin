@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -175,7 +176,11 @@ func TestRetireLegacySaysHowWhenItCant(t *testing.T) {
 		t.Fatalf("opened %v\n%s", f.opened, out.String())
 	}
 	// Stopping it isn't enough: its definition would start it again at the
-	// next login, so the advice deletes that too.
+	// next login, so the advice deletes that too. (Only Linux and macOS have
+	// these services; on Windows the home's path isn't one they'd write.)
+	if runtime.GOOS == "windows" {
+		return
+	}
 	if got := removeCommand("linux", "antbot"); !strings.HasPrefix(got, "systemctl --user disable --now antbot.service; rm '") || !strings.HasSuffix(got, "/.config/systemd/user/antbot.service'") {
 		t.Fatal(got)
 	}

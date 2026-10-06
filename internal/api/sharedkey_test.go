@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -92,7 +93,7 @@ func TestRevokingASharedKeyDeviceChangesTheMasterKey(t *testing.T) {
 	if newKey == master || len(newKey) < 32 {
 		t.Fatalf("key file %q", newKey)
 	}
-	if fi, _ := os.Stat(keyFile); fi.Mode().Perm() != 0o600 {
+	if fi, _ := os.Stat(keyFile); runtime.GOOS != "windows" && fi.Mode().Perm() != 0o600 {
 		t.Fatalf("key file mode %v", fi.Mode())
 	}
 	// The old key no longer works from another computer, in any form.

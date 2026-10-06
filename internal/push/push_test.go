@@ -17,6 +17,7 @@ import (
 	"net/netip"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -81,7 +82,7 @@ func TestVAPID(t *testing.T) {
 		t.Fatal("key did not persist", e)
 	}
 	fi, _ := os.Stat(path)
-	if fi.Mode().Perm() != 0600 {
+	if runtime.GOOS != "windows" && fi.Mode().Perm() != 0600 {
 		t.Fatal("key not private")
 	}
 	now := time.Unix(1700000000, 0)

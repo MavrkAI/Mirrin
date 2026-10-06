@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -120,6 +121,14 @@ func restoreWelcomeHome(ctx context.Context, cfg *config.Config, r api.WelcomeRe
 	if err != nil {
 		return backup.Report{}, err
 	}
+	opts := backup.RestoreOptions{Target: target, Phrase: phrase, Home: config.Home(), HostLabel: backup.HostLabel()}
+	if runtime.GOOS == "windows" {
+		// The claim is a file held open in the home, and Windows won't move
+		// a folder with an open file in it. Let go, and have the restore
+		// check just before it swaps, as `mirrin backup restore` does.
+		release()
+		release, opts.Running = func() {}, twinRunning
+	}
 	defer release()
-	return backup.Restore(ctx, backup.RestoreOptions{Target: target, Phrase: phrase, Home: config.Home(), HostLabel: backup.HostLabel()})
+	return backup.Restore(ctx, opts)
 }

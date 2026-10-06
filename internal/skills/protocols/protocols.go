@@ -185,7 +185,7 @@ func installRisk(_ context.Context, call tools.Call) tools.Risk {
 		Name    string
 		Preview bool
 	}
-	if tools.Decode(call, &in) == nil && in.Preview && (!strings.Contains(in.Name, "/") || strings.HasPrefix(in.Name, "https://")) {
+	if tools.Decode(call, &in) == nil && in.Preview && (!strings.ContainsAny(in.Name, `/\:`) || strings.HasPrefix(in.Name, "https://")) { // C:\x is a folder too
 		return tools.RiskRead
 	}
 	return tools.RiskWrite

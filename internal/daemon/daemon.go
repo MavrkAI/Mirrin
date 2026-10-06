@@ -542,7 +542,7 @@ func (d *Daemon) Send(ctx context.Context, chatKey, text string) error {
 	return err
 }
 
-var rePNG = regexp.MustCompile(`(/[^\s"']+\.png)`)
+var rePNG = regexp.MustCompile(`((?:/|[A-Za-z]:\\)[^\s"']+\.png)`) // /… or C:\…
 
 // screenshotPaths finds screenshot files under dataDir mentioned in a reply.
 var reApprovalAsk = regexp.MustCompile(`(?i)\byes\s*#?\d+\b`)
@@ -1310,6 +1310,7 @@ func (d *Daemon) Close() {
 		srv.Close()
 	}
 	_ = d.store.Close()
+	d.release() // instance.go: another twin may start from this home now
 }
 
 // Restart relaunches the daemon: under launchd it asks the service manager,

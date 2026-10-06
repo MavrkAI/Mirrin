@@ -320,7 +320,7 @@ func (d *dialError) Error() string {
 	switch {
 	case notFound(d.err):
 		return fmt.Sprintf("I couldn't find %s. Check the address", d.host)
-	case errors.Is(d.err, syscall.ECONNREFUSED):
+	case errors.Is(d.err, syscall.ECONNREFUSED) || strings.Contains(d.err.Error(), "actively refused"): // Windows: WSAECONNREFUSED
 		return fmt.Sprintf("%s refused the connection. The site may be down", d.host)
 	case errors.Is(d.err, context.DeadlineExceeded) || errors.As(d.err, &ne) && ne.Timeout():
 		return fmt.Sprintf("%s didn't answer in time. The site may be down, or try again", d.host)

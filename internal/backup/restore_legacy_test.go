@@ -108,7 +108,7 @@ func TestRelocateConfigMapsTildeHomesFromBeforeTheRename(t *testing.T) {
 	b, _ := os.ReadFile(path)
 	out := string(b)
 	for _, want := range []string{
-		"whisper_model: " + filepath.Join(home, "models") + "/ggml-base.en.bin",
+		"whisper_model: " + filepath.Join(home, "models", "ggml-base.en.bin"),
 		"kokoro_dir: " + filepath.Join(home, "tts"),
 		"~/.antbot-old/x",
 		"/Volumes/NAS/antbot-backups",

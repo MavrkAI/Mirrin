@@ -24,3 +24,13 @@ func onPower() bool {
 func inhibit(ctx context.Context) error {
 	return runPowerCommand(ctx, caffeinatePath, "-s", "-w", strconv.Itoa(os.Getpid()))
 }
+
+func runPowerCommand(ctx context.Context, name string, args ...string) error {
+	cmd := exec.CommandContext(ctx, name, args...)
+	cmd.Env = procenv.Base()
+	err := cmd.Run()
+	if ctx.Err() != nil {
+		return nil
+	}
+	return err
+}

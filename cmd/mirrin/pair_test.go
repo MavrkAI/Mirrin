@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"net"
 	"os"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -156,7 +157,7 @@ func TestConnectWithACodeThenRevoke(t *testing.T) {
 	if !ok || !devices.LooksLikeToken(r.Token) || r.Token == master || r.Device == "" {
 		t.Fatalf("remote.yaml %+v", r)
 	}
-	if fi, err := os.Stat(config.RemotePath()); err != nil || fi.Mode().Perm() != 0o600 {
+	if fi, err := os.Stat(config.RemotePath()); err != nil || runtime.GOOS != "windows" && fi.Mode().Perm() != 0o600 {
 		t.Fatalf("remote.yaml mode: %v %v", fi, err)
 	}
 	// The old loader still reads it.

@@ -161,7 +161,14 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Build MinIO
-        run: CGO_ENABLED=0 GOBIN="$RUNNER_TEMP/bin" go install "github.com/minio/minio@$MINIO_VERSION"
+        # Tried three times: a download from the module proxy now and then
+        # breaks off half-way ("stream error ... INTERNAL_ERROR").
+        run: |
+          for i in 1 2 3; do
+            CGO_ENABLED=0 GOBIN="$RUNNER_TEMP/bin" go install "github.com/minio/minio@$MINIO_VERSION" && exit 0
+            echo "go install failed (try $i of 3)"; sleep 10
+          done
+          exit 1
       - name: Start MinIO and make the bucket
         run: |
           mkdir -p "$RUNNER_TEMP/minio-data"

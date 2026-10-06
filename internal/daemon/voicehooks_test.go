@@ -44,7 +44,7 @@ func TestDangerousActionIsNotApprovedOutLoud(t *testing.T) {
 
 	for _, yes := range []string{"Yes.", "yes 1", "Go ahead."} {
 		reply := td.spoken(t, yes)
-		if !strings.Contains(reply, "too big to take a yes out loud") || !strings.Contains(reply, "Telegram") || !!strings.Contains(reply, "number 1") {
+		if !strings.Contains(reply, "too big to take a yes out loud") || !strings.Contains(reply, "Telegram") || strings.Contains(reply, "number 1") {
 			t.Fatalf("%q: reply %q", yes, reply)
 		}
 	}

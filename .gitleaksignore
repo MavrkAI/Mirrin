@@ -71,7 +71,7 @@ internal/sigv4/testdata/aws4_testsuite/post-sts-token/post-sts-header-before/pos
 
 # Fakes the tests plant to prove a report, log, snapshot or page never
 # shows them, and a local MinIO's throwaway login.
-cmd/mirrin/report_test.go:generic-api-key:198
+cmd/mirrin/report_test.go:generic-api-key:199
 internal/logs/report_test.go:generic-api-key:27
 internal/backup/helpers_test.go:generic-api-key:22
 internal/backup/helpers_test.go:generic-api-key:53

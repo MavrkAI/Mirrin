@@ -2,3 +2,9 @@
 # (scripts/source-archive.sh), as it stays out of release builds: its
 # training data isn't cleared for commercial use (docs/wake-word.md).
 internal/channels/voice/assets/hey_maverick.onnx export-ignore
+
+# Text is checked out with LF everywhere, Windows too: test vectors, signed
+# fixtures and the sources some tests read are compared byte for byte.
+* text=auto eol=lf
+# The font licence is kept byte for byte as its authors wrote it.
+site/assets/fonts/OFL-IBMPlex.txt -text

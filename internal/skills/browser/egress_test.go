@@ -658,3 +658,12 @@ func fakeResolve(ctx context.Context, host string) ([]netip.Addr, error) {
 // testStart is before anything: blockedSince(testStart) is every refusal of
 // that (per-test) guard.
 var testStart time.Time
+
+// Windows says a refused connection in its own words (WSAECONNREFUSED),
+// which read as "couldn't connect" rather than "refused the connection".
+func TestARefusalInWindowsWordsIsARefusal(t *testing.T) {
+	err := &dialError{host: "127.0.0.1", err: errors.New("connectex: No connection could be made because the target machine actively refused it.")}
+	if !strings.Contains(err.Error(), "refused the connection") {
+		t.Fatal(err.Error())
+	}
+}

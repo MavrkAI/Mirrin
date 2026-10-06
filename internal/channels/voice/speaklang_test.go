@@ -97,8 +97,10 @@ func TestSystemVoiceWithALongName(t *testing.T) {
 func TestHealthReportsTheVoiceThatSpeaks(t *testing.T) {
 	stubSayVoices(t, sayList)
 	dir, bin := fakeKokoro(t), t.TempDir()
-	if err := os.WriteFile(filepath.Join(bin, "sox"), []byte("#!/bin/sh\n"), 0o700); err != nil {
-		t.Fatal(err)
+	for _, name := range []string{"sox", "sox.exe"} { // Windows finds programs by .exe
+		if err := os.WriteFile(filepath.Join(bin, name), []byte("#!/bin/sh\n"), 0o700); err != nil {
+			t.Fatal(err)
+		}
 	}
 	t.Setenv("PATH", bin)
 	_, msg, _ := speakingState(config.Voice{Engine: "kokoro", KokoroDir: dir, Voice: "bm_george", Language: "fr"})

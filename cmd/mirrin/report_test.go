@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -236,7 +237,7 @@ func TestReportCommandWritesAPrivateFile(t *testing.T) {
 		t.Fatalf("want one report, got %v", files)
 	}
 	st, _ := os.Stat(files[0])
-	if st.Mode().Perm() != 0o600 {
+	if runtime.GOOS != "windows" && st.Mode().Perm() != 0o600 {
 		t.Fatalf("report is %v, want 0600", st.Mode().Perm())
 	}
 	for _, want := range []string{files[0], "read it", logs.IssuesURL, "nothing has been sent"} {
@@ -323,7 +324,7 @@ func TestLogsGoToTheFileInEveryMode(t *testing.T) {
 	}
 	real := os.Stderr
 	os.Stderr = errFile
-	t.Cleanup(func() { os.Stderr = real })
+	t.Cleanup(func() { os.Stderr = real; errFile.Close() })
 
 	// A double-clicked menu bar app: nobody reads its standard error.
 	t.Setenv(config.ServiceEnv, "")

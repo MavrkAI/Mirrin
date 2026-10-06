@@ -167,7 +167,7 @@ func RebasePaths(n *yaml.Node, from, to string) bool {
 			return false
 		}
 		if rest, ok := underPath(n.Value, from); ok {
-			n.Value, changed = to+rest, true
+			n.Value, changed = rebasedPath(foldSlashes, n.Value, to, rest), true
 		}
 	}
 	return changed
@@ -189,4 +189,21 @@ func underPath(p, from string) (string, bool) {
 		return "", false
 	}
 	return rest, true
+}
+
+// rebasedPath is to+rest, written with one separator. Where / and \ are
+// alike (foldSlashes: Windows), "~\.old\tts" moved as "~/.mirrin\tts": a
+// full path now takes Windows' own \, and a ~ path keeps the one it was
+// written with. Elsewhere \ is part of a name, so nothing changes.
+func rebasedPath(fold bool, orig, to, rest string) string {
+	if !fold {
+		return to + rest
+	}
+	sep := `\`
+	if !(len(to) > 1 && to[1] == ':') && !strings.HasPrefix(to, `\\`) {
+		if i := strings.IndexAny(orig, `/\`); i >= 0 {
+			sep = orig[i : i+1]
+		}
+	}
+	return strings.NewReplacer("/", sep, `\`, sep).Replace(to + rest)
 }

@@ -16,6 +16,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -69,12 +70,40 @@ func startLogging(cmd string) *slog.Logger {
 	if brand.Env("DEBUG") != "" {
 		o.Level, o.Console, o.ConsoleLevel = slog.LevelDebug, os.Stderr, slog.LevelDebug
 	}
-	log, _, err := logs.New(o)
+	log, closer, err := logs.New(o)
 	if err != nil && o.Console == nil {
 		// No log file: the important things go to the terminal rather than nowhere.
-		log, _, _ = logs.New(logs.Options{Home: home, Console: os.Stderr, ConsoleLevel: slog.LevelWarn})
+		log, closer, _ = logs.New(logs.Options{Home: home, Console: os.Stderr, ConsoleLevel: slog.LevelWarn})
 	}
+	keepLog(closer)
 	return log
+}
+
+// openLogs are the log files commands opened. They stay open until the
+// program ends; tests, which run many commands in one program, close them
+// (Windows can't delete an open file).
+var (
+	openLogsMu sync.Mutex
+	openLogs   []io.Closer
+)
+
+func keepLog(c io.Closer) {
+	if c == nil {
+		return
+	}
+	openLogsMu.Lock()
+	defer openLogsMu.Unlock()
+	openLogs = append(openLogs, c)
+}
+
+// closeLogs closes the log files opened so far.
+func closeLogs() {
+	openLogsMu.Lock()
+	defer openLogsMu.Unlock()
+	for _, c := range openLogs {
+		_ = c.Close()
+	}
+	openLogs = nil
 }
 
 // noteFatal records why mirrin is stopping, in the log file only: the
@@ -358,7 +387,9 @@ func zoneName(cfg *config.Config) string {
 	}
 	sys := config.LocalTimezone()
 	if sys == "" {
-		sys = time.Local.String()
+		// Windows has no IANA name to read, and time.Local only calls
+		// itself "Local": the zone's own abbreviation says more.
+		return name + " (following the system)"
 	}
 	return sys + " (" + name + ", following the system)"
 }

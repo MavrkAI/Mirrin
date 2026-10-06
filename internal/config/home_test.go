@@ -594,7 +594,7 @@ func TestRebasePathsFoldsLikeTheDisk(t *testing.T) {
 	if err := doc.Decode(&c); err != nil {
 		t.Fatal(err)
 	}
-	if c.DataDir != `C:\Users\me\.mirrin/data` || c.Other != `C:\Users\me\.antbot-old\x` {
+	if c.DataDir != `C:\Users\me\.mirrin\data` || c.Other != `C:\Users\me\.antbot-old\x` {
 		t.Fatalf("after: %+v", c)
 	}
 

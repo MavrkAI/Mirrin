@@ -3,6 +3,7 @@ package service
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -84,7 +85,7 @@ func TestRehomeUnitAfterTheMove(t *testing.T) {
 			if env := unitEnv(path); env["MIRRIN_HOME"] != home {
 				t.Errorf("MIRRIN_HOME = %q", env["MIRRIN_HOME"])
 			}
-			if st, _ := os.Stat(path); st.Mode().Perm() != 0o644 {
+			if st, _ := os.Stat(path); runtime.GOOS != "windows" && st.Mode().Perm() != 0o644 {
 				t.Errorf("mode changed to %v", st.Mode().Perm())
 			}
 			if changed, err := rehomeUnit(path, user, home); err != nil || changed {

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -94,7 +95,7 @@ func TestMigrationRescuesStuckReminders(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s.Close()
+	defer func() { s.Close() }() // the store opened last, below
 	due, err := s.DueReminders(ctx, time.Now())
 	if err != nil {
 		t.Fatal(err)
@@ -246,7 +247,11 @@ func TestPruneScratchKeepsOpenTasks(t *testing.T) {
 func TestOpenInAFolderWithAHashInItsName(t *testing.T) {
 	ctx := context.Background()
 	parent := t.TempDir()
-	dir := filepath.Join(parent, "Tony's #1 twin?100%")
+	name := "Tony's #1 twin?100%"
+	if runtime.GOOS == "windows" {
+		name = "Tony's #1 twin 100%" // Windows refuses ? in a name
+	}
+	dir := filepath.Join(parent, name)
 	s, err := Open(dir)
 	if err != nil {
 		t.Fatal(err)

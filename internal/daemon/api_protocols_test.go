@@ -77,7 +77,7 @@ func TestPackPreviewInstallsNothing(t *testing.T) {
 		if src != addr {
 			return "", nil, fmt.Errorf("unexpected source %q", src)
 		}
-		return oldPreview(ctx, "file://"+repo) // the same pack, without the network
+		return oldPreview(ctx, fileURL(repo)) // the same pack, without the network
 	}
 	pv, err := td.PreviewPack(context.Background(), addr)
 	if err != nil || len(pv.Protocols) != 1 {
@@ -102,7 +102,7 @@ func TestPackPreviewRefusesALocalFolder(t *testing.T) {
 		called = true
 		return "", nil, nil
 	}
-	for _, src := range []string{t.TempDir(), "file://" + t.TempDir(), "./packs/news", "../x/y"} {
+	for _, src := range []string{t.TempDir(), fileURL(t.TempDir()), "./packs/news", "../x/y"} {
 		if _, err := td.PreviewPack(context.Background(), src); err == nil {
 			t.Errorf("%s was previewed", src)
 		}

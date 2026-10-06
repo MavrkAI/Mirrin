@@ -130,7 +130,7 @@ grep -n 'BackupIfDue(ctx, 24' internal/heartbeat/heartbeat.go   # daily memory c
 grep -n 'listening{\|thinking{\|speaking{' internal/api/ui.html # state colours (Fig. 1, Fig. 11)
 grep -n 'function maverickSVG\|const kindFor' internal/api/characters.js   # the drawings; rerun draw.js if they changed
 grep -n '^checksum_ok()\|^verify_signature()' install.sh        # verified downloads (Install; Cloud page, Verify)
-grep -n 'Get-FileHash' install.ps1                              # the same check on Windows
+grep -n 'ComputeHash' install.ps1                               # the same check on Windows
 grep -n 'func (in installer) keepSecrets\|func waitUp' internal/service/service.go   # service install (Install)
 grep -n 'func startupScript' internal/service/startup.go         # Windows: service install is a per-user Startup entry for the tray (Install)
 grep -n 'mirrin service install' install.ps1                    # Windows: the installer suggests it (Install)
