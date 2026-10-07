@@ -680,9 +680,11 @@ func TestCloudLowerGenStandsBy(t *testing.T) {
 	if end != CloudStandby || at.IsZero() {
 		t.Fatalf("ended %v at %v", end, at)
 	}
-	if _, kind := r.client.State().Current(time.Now()); kind != cloud.Superseded {
-		t.Fatalf("state %v", kind)
-	}
+	// The state is saved as the endpoint stops, not before it.
+	waitFor(t, 10*time.Second, "the state to say superseded", func() bool {
+		_, kind := r.client.State().Current(time.Now())
+		return kind == cloud.Superseded
+	})
 	// The endpoint that stood by sends nothing more, though the other
 	// relay's refusal of the same takeover comes in meanwhile.
 	quiet := len(r.fake.Requests())
