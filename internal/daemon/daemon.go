@@ -1612,6 +1612,7 @@ func (d *Daemon) updateConfig(mutate func(c *config.Config)) error {
 		d.agent.SetProvider(provider)
 	}
 	allowChanged := !slices.Equal(d.cfg.Skills.Web.AllowHosts, next.Skills.Web.AllowHosts)
+	wasVoice := d.cfg.Channels.Voice
 	*d.cfg = next
 	d.agent.SetConfig(next)
 	if allowChanged {
@@ -1627,6 +1628,8 @@ func (d *Daemon) updateConfig(mutate func(c *config.Config)) error {
 		}
 	} else if !wantVoice && d.Listening() {
 		d.StopVoice()
+	} else if _, err := d.switchVoice(wasVoice, next.Channels.Voice); err != nil { // voiceswitch.go
+		return fmt.Errorf("saved, but could not switch to the new voice: %w", err)
 	}
 	d.store.Audit(context.Background(), "config.updated", "", fmt.Sprintf("model=%s effort=%s voice=%s/%s autonomy=%s/%s/%s",
 		next.LLM.Model, next.LLM.Effort, next.Channels.Voice.Engine, next.Channels.Voice.Voice, next.Autonomy.Read, next.Autonomy.Write, next.Autonomy.Dangerous))

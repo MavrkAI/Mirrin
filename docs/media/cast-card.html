@@ -1,0 +1,26 @@
+<!doctype html>
+<!-- Source for docs/media/cast.png (1200x440, drawn at 2x): the three
+     personas a fresh install comes with, for the README. The portraits are
+     site/assets/characters/*.svg, which draw.js makes from the presence
+     screen's own code. Re-render after a persona or a drawing changes (see
+     docs/media/README.md). -->
+<html lang="en-GB"><head><meta charset="utf-8"><title>Cast card</title>
+<link rel="stylesheet" href="../../site/site.css">
+<style>
+  /* #0a0c13 is the portraits' own backdrop, so they sit on the card without a box. */
+  html, body { margin: 0; width: 1200px; height: 440px; overflow: hidden; background: #0a0c13; }
+  .cc { display: grid; grid-template-columns: repeat(3, 1fr); height: 100%; }
+  .cc-p { display: grid; grid-template-rows: 262px auto; justify-items: center; padding: 30px 28px 0; text-align: center; }
+  .cc-p + .cc-p { border-left: 1px solid #1a1e2e; }
+  .cc-p img { width: 220px; height: 242px; object-fit: contain; align-self: end; margin-bottom: 20px; }
+  .cc-name { font: 450 40px/1 var(--serif); letter-spacing: -0.01em; color: #e7eaf7; margin: 0; }
+  .cc-line { font: 400 18px/1.4 var(--sans); color: #9aa1bd; margin: 10px 0 0; max-width: 22ch; }
+  .cc-def { font: 600 12px/1 var(--sans); letter-spacing: 0.14em; text-transform: uppercase; color: #a2a8ff; margin-top: 12px; }
+</style></head>
+<body>
+<div class="cc">
+  <div class="cc-p"><img src="../../site/assets/characters/mirrin.svg" alt=""><div><h2 class="cc-name">Mirrin</h2><p class="cc-line">A dry, loyal butler who's two steps ahead</p><div class="cc-def">The default</div></div></div>
+  <div class="cc-p"><img src="../../site/assets/characters/nyra.svg" alt=""><div><h2 class="cc-name">Nyra</h2><p class="cc-line">Warm and composed</p></div></div>
+  <div class="cc-p"><img src="../../site/assets/characters/penguin.svg" alt=""><div><h2 class="cc-name">Pickoo</h2><p class="cc-line">A cheerful penguin with a pitched-up voice</p></div></div>
+</div>
+</body></html>

@@ -15,7 +15,7 @@ Five static pages and a 404 page, one stylesheet, no build step and no JavaScrip
 | `site.css` | Everything visual for every page: tokens for dark (the default) and light, layout, the drawn presence screen, the mock-ups, diagrams. |
 | `assets/fonts/` | Newsreader and Colophon Sans (variable, weights 400–600) and Colophon Mono (400 and 500), as WOFF2 cut to English text plus Latin-1, with their SIL Open Font License files. Colophon Sans and Mono are IBM Plex Sans and Mono, cut down and renamed (see "Fonts" below). Served from the site itself. There is no italic. |
 | `assets/characters/` | The personas' portraits (`mirrin.svg`, `nyra.svg`, `penguin.svg`, about 23 KB), drawn by the presence screen's own `internal/api/characters.js` through `draw.js`, which also puts Mirrin's drawing into the home page's Fig. 1. Run `node site/assets/characters/draw.js` from the repository root after `characters.js` changes; the test fails until you do. `draw.js` is not linked from the site. |
-| `assets/demo.mp4` | The 16-second recording, copied unchanged from `docs/media/demo.mp4` (285 KB). |
+| `assets/demo.mp4` | The 16-second recording (285 KB). |
 | `assets/demo-poster.jpg` | Frame at 13 s of that recording (23 KB), used as the poster. |
 | `assets/og.png` | The social card (1200×630): the line, the mark, and the default persona as `assets/characters/mirrin.svg` draws him. |
 | `assets/og-card.html`, `assets/icon-card.html` | The sources for `og.png` and `apple-touch-icon.png`. Not linked and not published. |

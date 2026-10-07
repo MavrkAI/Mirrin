@@ -1,8 +1,16 @@
+<p align="center"><img src="docs/media/banner.png" alt="Mirrin: your own AI, on your own machine. Free, open source, no account." width="100%"></p>
+
 # Mirrin
 
 **A personal AI that lives on your computer, remembers you, and gets things done for you, asking first.**
 
-<p align="center"><img src="docs/media/demo.gif" alt="Mirrin answering on the presence screen" width="720"><br><sub>16 seconds with sound: <a href="docs/media/demo.mp4">docs/media/demo.mp4</a> (its name heard, a reminder set, the weather answered).</sub></p>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/media/presence-dark.png">
+    <img src="docs/media/presence-light.png" alt="The presence screen: Mirrin, drawn as a butler in a dinner jacket, beside the afternoon's conversation; on the right, an email waiting for Approve or Deny, a question from a task in the background, and the rest of the day." width="100%">
+  </picture>
+  <br><sub>The presence screen on a busy afternoon (sample data): a request waiting for your yes, a question from a job in the background, and the rest of the day.</sub>
+</p>
 
 Mirrin is a twin: one program on your own machine, in the menu bar or system tray, that knows who you are and works for you. Text it from your phone, talk to it out loud, or leave it to run your routines. It uses the model you choose, keeps what it learns about you in files you own, and asks before it sends, books, pays or changes anything.
 
@@ -27,6 +35,8 @@ Website: [mirrin.app](https://mirrin.app)
   - **Mirrin**, a dry, loyal butler who's two steps ahead (the default)
   - **Nyra**, warm and composed
   - **Pickoo**, a cheerful penguin with a pitched-up voice
+
+  <p><img src="docs/media/cast.png" alt="The three personas, drawn as on the presence screen: Mirrin, a butler in a dinner jacket; Nyra, in a blue blazer; Pickoo, a penguin in a bow tie." width="100%"></p>
 
   Pick one when you start, switch from the menu bar, or write your own: a persona is one short YAML file, and you can call your twin anything.
 - **A face for the room.** The presence screen (**Open screen…** in the menu) shows what it heard, what it's doing, what needs you and what's next, with big Approve and Deny buttons. After a minute of quiet it becomes a clock. Keep it in a laptop tab or on a screen on the wall.

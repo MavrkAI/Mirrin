@@ -15,6 +15,13 @@ import (
 func busyDay() map[string]any {
 	now := time.Now()
 	at := func(h int) string { return now.Add(time.Duration(h) * time.Hour).Format(time.RFC3339) }
+	// The day's events fall on the hour, and what the twin said names the
+	// same hours, so a screenshot's timeline and conversation agree.
+	top := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, now.Location())
+	on := func(h int) string { return top.Add(time.Duration(h) * time.Hour).Format(time.RFC3339) }
+	spoken := func(h int) string {
+		return []string{"twelve", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven"}[top.Add(time.Duration(h)*time.Hour).Hour()%12]
+	}
 	return screen(func(m map[string]any) {
 		m["weather"] = map[string]any{"temp_c": 18.4, "summary": "light rain"}
 		m["approvals"] = []any{map[string]any{"id": 12, "tool": "send_email", "summary": "Email Sam Chen the signed lease (lease-final.pdf)", "risk": "write", "status": "pending", "created_at": at(0), "chat": "whatsapp:owner"}}
@@ -23,13 +30,13 @@ func busyDay() map[string]any {
 			map[string]any{"id": "t2", "title": "Chase the Qantas refund", "status": "running", "steps": []any{map[string]any{"text": "Find booking", "done": true}, map[string]any{"text": "Submit claim", "done": false}}, "updated": at(0)},
 		}
 		m["events"] = []any{
-			map[string]any{"title": "Standup", "start": at(1), "end": at(2)},
-			map[string]any{"title": "Dentist", "start": at(4), "end": at(5), "location": "Collins St"},
+			map[string]any{"title": "Standup", "start": on(1), "end": on(2)},
+			map[string]any{"title": "Dentist", "start": on(3), "end": on(4), "location": "Collins St"},
 		}
-		m["reminders"] = []any{map[string]any{"text": "Call Mum", "due": at(3)}}
+		m["reminders"] = []any{map[string]any{"text": "Call Mum", "due": on(2)}}
 		m["recent"] = []any{
 			map[string]any{"kind": "heard", "text": "What's on this afternoon?", "at": at(0)},
-			map[string]any{"kind": "said", "text": "Standup at two, the dentist at five on Collins Street, and a reminder to call your mum at four. Light rain, eighteen degrees.", "at": at(0)},
+			map[string]any{"kind": "said", "text": "Standup at " + spoken(1) + ", a reminder to call your mum at " + spoken(2) + ", and the dentist at " + spoken(3) + " on Collins Street. Light rain, eighteen degrees.", "at": at(0)},
 		}
 	})
 }
