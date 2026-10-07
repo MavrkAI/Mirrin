@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"reflect"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -131,12 +132,14 @@ func (d *Daemon) ReloadVoice() error {
 	d.chmu.RLock()
 	always := d.voiceCancel != nil
 	d.chmu.RUnlock()
+	was := d.Config().Channels.Voice
 	if err := d.UpdateConfig(func(*config.Config) {}); err != nil {
 		return err // it starts listening when that's wanted and wasn't running
 	}
-	if !always {
-		return nil
+	if !always || !reflect.DeepEqual(was, d.Config().Channels.Voice) {
+		return nil // changed settings were switched to by UpdateConfig (voiceswitch.go)
 	}
+	// The same settings, with new files behind them: start again anyway.
 	d.StopVoice()
 	if v := d.Config().Channels.Voice; v.Enabled && v.Mode == "wake" {
 		return d.StartVoice()
