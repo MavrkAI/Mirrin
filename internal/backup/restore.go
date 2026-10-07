@@ -206,14 +206,14 @@ func Restore(ctx context.Context, o RestoreOptions) (Report, error) {
 		for i := 2; exists(r.Aside); i++ { // two restores within a second
 			r.Aside = fmt.Sprintf("%s.before-restore-%s-%d", home, ts, i)
 		}
-		if err := os.Rename(home, r.Aside); err != nil {
+		if err := renameFolder(home, r.Aside); err != nil {
 			r.Aside = ""
 			return r, fmt.Errorf("couldn't move the twin that's here out of the way (%v); nothing was changed", err)
 		}
 	}
-	if err := os.Rename(stage, home); err != nil {
+	if err := renameFolder(stage, home); err != nil {
 		if r.Aside != "" {
-			if back := os.Rename(r.Aside, home); back != nil {
+			if back := renameFolder(r.Aside, home); back != nil {
 				return r, fmt.Errorf("couldn't put the restored twin in place (%v); the twin that was here is in %s", err, r.Aside)
 			}
 			r.Aside = ""

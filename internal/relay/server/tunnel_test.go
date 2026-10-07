@@ -76,6 +76,9 @@ func TestLastSeenAfterSilentDrop(t *testing.T) {
 	}
 	p.stall()
 	asleep := clk.now()
+	// An answer already past the proxy is heard before the jump below; on a
+	// slow machine that takes a moment (less than the 250ms ping timeout).
+	time.Sleep(100 * time.Millisecond)
 	clk.advance(30 * time.Minute) // by the relay's clock, it notices much later
 
 	client := r.https()
@@ -124,9 +127,9 @@ func TestDeniedMessage(t *testing.T) {
 	for _, why := range []string{
 		"",
 		"under review",           // no-break space
-		"zero​width",             // zero-width space
+		"zero\u200bwidth",        // zero-width space
 		"line separator",         // line separator
-		"right‮to left",          // bidi override
+		"right\u202eto left",     // bidi override
 		"tab\there",              // control
 		"del\x7f",                // control
 		"bad \xff utf-8",         // not UTF-8

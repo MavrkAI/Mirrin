@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -148,6 +149,9 @@ func TestMonthlyRestoreDrill(t *testing.T) {
 // A name macOS and Linux allow but Windows refuses comes back under a
 // changed name there, and the restore report lists it.
 func TestRestoringWindowsRefusedNamesRenamesThem(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows can't make these names; the test makes them elsewhere and restores as Windows would")
+	}
 	tw := newTwin(t)
 	for _, n := range []string{"a?b.txt", "a_b.txt", `q"<*>|.md`} {
 		if err := os.WriteFile(filepath.Join(tw.home, "protocols", n), []byte(n), 0o600); err != nil {

@@ -8,6 +8,8 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"runtime"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"testing"
@@ -38,7 +40,7 @@ func TestWriterRollsOverAndKeepsAFewFiles(t *testing.T) {
 		if st.Size() > 1000 {
 			t.Fatalf("%s is %d bytes, over the cap", p, st.Size())
 		}
-		if st.Mode().Perm() != 0o600 {
+		if runtime.GOOS != "windows" && st.Mode().Perm() != 0o600 {
 			t.Fatalf("%s is %v, want 0600", p, st.Mode().Perm())
 		}
 		total += st.Size()
@@ -184,7 +186,9 @@ func TestCaptureCrashesMakesTheFile(t *testing.T) {
 	if err := CaptureCrashes(home); err != nil {
 		t.Fatal(err)
 	}
-	if st, err := os.Stat(CrashPath(home)); err != nil || st.Mode().Perm() != 0o600 {
+	// The runtime keeps the file open; Windows can't delete it until let go.
+	t.Cleanup(func() { _ = debug.SetCrashOutput(nil, debug.CrashOptions{}) })
+	if st, err := os.Stat(CrashPath(home)); err != nil || runtime.GOOS != "windows" && st.Mode().Perm() != 0o600 {
 		t.Fatalf("crash log: %v %v", st, err)
 	}
 }

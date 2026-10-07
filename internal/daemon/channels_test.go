@@ -131,7 +131,9 @@ func (f *fakeTransport) Sent() []string {
 
 func waitFor(t *testing.T, what string, cond func() bool) {
 	t.Helper()
-	deadline := time.Now().Add(3 * time.Second)
+	// Generous: it only bounds a failure, and a busy Windows runner takes
+	// seconds over what a laptop does in milliseconds.
+	deadline := time.Now().Add(15 * time.Second)
 	for !cond() {
 		if time.Now().After(deadline) {
 			t.Fatalf("timed out waiting: %s", what)

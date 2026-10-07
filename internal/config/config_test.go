@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"runtime"
 	"slices"
 	"testing"
 )
@@ -14,7 +15,7 @@ func TestSecretsRoundTripAndEnvironmentWins(t *testing.T) {
 		t.Fatal(err)
 	}
 	st, err := os.Stat(SecretsPath())
-	if err != nil || st.Mode().Perm() != 0o600 {
+	if err != nil || runtime.GOOS != "windows" && st.Mode().Perm() != 0o600 {
 		t.Fatalf("secrets file must be 0600: %v %v", st, err)
 	}
 	if got := Secret("OPENAI_API_KEY"); got != `sk-"quoted" key` {

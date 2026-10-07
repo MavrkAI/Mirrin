@@ -17,7 +17,7 @@ func (c Control) Marshal() ([]byte, error) {
 	if err := c.check(); err != nil {
 		return nil, err
 	}
-	b, err := json.Marshal(controlJSON{T: c.T, Gen: c.Gen, Message: c.Message, RetryAfter: c.RetryAfter, MaxStreams: c.MaxStreams, BPS: c.BPS})
+	b, err := json.Marshal(controlJSON(c))
 	if err == nil && len(b) > MaxControlLine {
 		return nil, fmt.Errorf("%w: control line too long", ErrMalformed)
 	}
@@ -33,7 +33,7 @@ func ParseControl(b []byte) (Control, error) {
 	if err := decode(b, &j); err != nil {
 		return Control{}, err
 	}
-	c := Control{T: j.T, Gen: j.Gen, Message: j.Message, RetryAfter: j.RetryAfter, MaxStreams: j.MaxStreams, BPS: j.BPS}
+	c := Control(j)
 	return c, c.check()
 }
 

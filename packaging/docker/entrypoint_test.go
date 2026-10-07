@@ -208,6 +208,10 @@ func TestEntrypointWritesAConfigThatLoads(t *testing.T) {
 				t.Fatalf("entrypoint failed: %v\n%s", err, out)
 			}
 			t.Setenv("MIRRIN_HOME", home)
+			// Loading saves a zone that is the machine's own as "Local"; on a
+			// runner set to UTC, "UTC" read back as "Local". The image's zone
+			// is what is checked here, not this machine's.
+			t.Setenv("TZ", "Australia/Sydney")
 			cfg, err := config.Load()
 			if err != nil {
 				b, _ := os.ReadFile(filepath.Join(home, "config.yaml"))

@@ -30,11 +30,11 @@ func (s *Server) WithPush(v *push.VAPID, store *push.Store, d *push.Dispatcher, 
 			return a.Public(func(w http.ResponseWriter, r *http.Request) {
 				p, ok := s.authenticate(w, r, listenerFrom(r.Context()))
 				if !ok || p.Device == nil {
-					http.Error(w, "Pair this device to enable notifications.", 401)
+					http.Error(w, "Pair this device to enable notifications.", http.StatusUnauthorized)
 					return
 				}
 				if !p.Has(devices.View) && !p.Has(devices.Approve) {
-					http.Error(w, "This device can't receive notifications. Pair it with screen access.", 403)
+					http.Error(w, "This device can't receive notifications. Pair it with screen access.", http.StatusForbidden)
 					return
 				}
 				// Authz.Require enforces the same origin and scoped context policy.
@@ -63,7 +63,7 @@ func (s *Server) WithPush(v *push.VAPID, store *push.Store, d *push.Dispatcher, 
 			}
 			if device, ok := s.Devices().Get(sub.DeviceID); !ok || device.Revoked() {
 				_ = store.Delete(sub.DeviceID, "")
-				http.Error(w, "Pair this device again.", 401)
+				http.Error(w, "Pair this device again.", http.StatusUnauthorized)
 				return
 			}
 			s.addProgress(sub.DeviceID, stepNotifications) // pages_add.go

@@ -193,13 +193,13 @@ func TestPackIsPinnedAndUpdateShowsWhatChanged(t *testing.T) {
 
 	dir := t.TempDir()
 	ctx := context.Background()
-	name, err := AddPack(ctx, dir, "file://"+src)
+	name, err := AddPack(ctx, dir, fileURL(src))
 	if err != nil {
 		t.Fatal(err)
 	}
 	root := filepath.Join(PacksDir(dir), name)
 	pv, ok := ReadProvenance(root)
-	if !ok || pv.Commit != first || pv.Source != "file://"+src {
+	if !ok || pv.Commit != first || pv.Source != fileURL(src) {
 		t.Fatalf("provenance %+v", pv)
 	}
 	if pks, _ := InstalledPacks(dir); len(pks) != 1 || pks[0].Commit != first {
@@ -248,7 +248,7 @@ func TestPackIsPinnedAndUpdateShowsWhatChanged(t *testing.T) {
 
 	// pinned to a commit: installs that commit and never moves
 	pinned := filepath.Join(t.TempDir(), "protocols")
-	name, err = AddPack(ctx, pinned, "file://"+src+"#"+first)
+	name, err = AddPack(ctx, pinned, fileURL(src)+"#"+first)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -259,7 +259,7 @@ func TestPackIsPinnedAndUpdateShowsWhatChanged(t *testing.T) {
 		t.Fatalf("pinned pack should say how to move it: %+v", ups[0])
 	}
 	// a ref that isn't there fails cleanly and leaves nothing behind
-	if _, err := AddPack(ctx, t.TempDir(), "file://"+src+"#no-such-tag"); err == nil || !strings.Contains(err.Error(), "isn't there") {
+	if _, err := AddPack(ctx, t.TempDir(), fileURL(src)+"#no-such-tag"); err == nil || !strings.Contains(err.Error(), "isn't there") {
 		t.Fatalf("missing ref: %v", err)
 	}
 }
@@ -269,7 +269,7 @@ func TestAddPackFromMissingRepoFailsInPlainWords(t *testing.T) {
 		t.Skip("git not installed")
 	}
 	dir := t.TempDir()
-	_, err := AddPack(context.Background(), dir, "file://"+filepath.Join(t.TempDir(), "nothing-here"))
+	_, err := AddPack(context.Background(), dir, fileURL(filepath.Join(t.TempDir(), "nothing-here")))
 	if err == nil || !strings.Contains(err.Error(), "couldn't download") {
 		t.Fatalf("got %v", err)
 	}
@@ -325,7 +325,7 @@ func TestRegistryPackFollowsTheIndex(t *testing.T) {
 		git("commit", "-q", "-am", prompt)
 		return git("rev-parse", "HEAD")
 	}
-	repo := "file://" + src
+	repo := fileURL(src)
 	entry := Pack{Name: "news", Description: "d", Repo: repo, Commit: first}
 	var index string // what the registry serves; "" answers 404
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -411,7 +411,7 @@ func TestProvenanceRefIsCheckedBeforeGit(t *testing.T) {
 	git("add", "-A")
 	git("commit", "-q", "-m", "one")
 	protos := t.TempDir()
-	name, err := AddPack(context.Background(), protos, "file://"+src)
+	name, err := AddPack(context.Background(), protos, fileURL(src))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -443,7 +443,7 @@ func TestDamagedPackNeverReachesAnOuterRepo(t *testing.T) {
 	write(t, filepath.Join(outer, "README"), "the user's own repository\n")
 	git("add", "-A")
 	git("commit", "-q", "-m", "mine")
-	git("remote", "add", "origin", "file://"+outer)
+	git("remote", "add", "origin", fileURL(outer))
 	protos := filepath.Join(outer, "protocols")
 	if err := os.MkdirAll(filepath.Join(PacksDir(protos), "broken", ".git"), 0o700); err != nil {
 		t.Fatal(err)

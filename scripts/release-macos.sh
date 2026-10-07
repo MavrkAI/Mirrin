@@ -107,7 +107,10 @@ fi
 
 DMG=dist/Mirrin-$VERSION-macos.dmg
 rm -f "$DMG"
-hdiutil create -volname Mirrin -srcfolder dist/Mirrin.app -ov -format UDZO "$DMG"
+# An explicit size with room to spare: hdiutil's own guess is sometimes
+# short, and the copy then fails with "No space left on device".
+APP_MB=$(du -sm dist/Mirrin.app | awk '{print $1}')
+hdiutil create -volname Mirrin -srcfolder dist/Mirrin.app -size "$((APP_MB + APP_MB / 4 + 20))m" -ov -format UDZO "$DMG"
 if [ -n "$APPLE_SIGN_ID" ]; then
   codesign --force --timestamp -s "$APPLE_SIGN_ID" "$DMG"
 fi

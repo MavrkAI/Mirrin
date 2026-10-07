@@ -62,7 +62,7 @@ func TestImportReconnectsCopiedPacks(t *testing.T) {
 		if pv.Source != source {
 			return errors.New("unexpected source " + pv.Source)
 		}
-		pv.Source = "file://" + repo // the same repository, reachable offline
+		pv.Source = fileURL(repo) // the same repository, reachable offline
 		return protocols.ReconnectPack(ctx, dir, name, pv, commit)
 	}
 	oldIndex := fetchIndex

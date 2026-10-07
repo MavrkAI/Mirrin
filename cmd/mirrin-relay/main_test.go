@@ -8,6 +8,7 @@ import (
 	"encoding/pem"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -43,7 +44,7 @@ func TestKeygen(t *testing.T) {
 		t.Fatalf("%d %s", code, errs)
 	}
 	fi, err := os.Stat(p)
-	if err != nil || fi.Mode().Perm() != 0o600 {
+	if err != nil || runtime.GOOS != "windows" && fi.Mode().Perm() != 0o600 {
 		t.Fatalf("key file: %v %v", fi, err)
 	}
 	b, _ := os.ReadFile(p)
@@ -80,12 +81,13 @@ func TestCheckConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	notify := filepath.Join(dir, "relay-abuse-mail") // a full path on this system
 	os.WriteFile(good, []byte("id: r1\ncontrol_hostname: relay.example.org\nstate_dir: "+dir+
 		"\nallow:\n  - {hostname: twin.example.org, key: "+entitle.EncodeKey(pub)+"}\n"+
-		"abuse: {notify_command: /usr/local/bin/relay-abuse-mail}\n"), 0o600)
+		"abuse: {notify_command: '"+notify+"'}\n"), 0o600)
 	code, out, errs := runCmd("check-config", "--config", good)
 	if code != 0 || !strings.Contains(out, "self-host") || !strings.Contains(out, "contacts no MavrkAI host") ||
-		!strings.Contains(out, "suspensions run /usr/local/bin/relay-abuse-mail") {
+		!strings.Contains(out, "suspensions run "+notify) {
 		t.Fatalf("%d %q %q", code, out, errs)
 	}
 	example, _ := filepath.Abs("../../packaging/relay/relay.example.yaml")

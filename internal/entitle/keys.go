@@ -20,11 +20,3 @@ var EntitlementKeys = map[string]ed25519.PublicKey{}
 // DenyListKeys verify deny lists. Only dl-* kids belong here, and never a key
 // that is also in EntitlementKeys.
 var DenyListKeys = map[string]ed25519.PublicKey{}
-
-func mustKey(s string) ed25519.PublicKey {
-	k, err := ParseKey(s)
-	if err != nil {
-		panic("entitle: bad compiled-in key " + s)
-	}
-	return k
-}

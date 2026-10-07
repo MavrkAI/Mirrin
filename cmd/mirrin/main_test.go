@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"testing"
 
@@ -18,6 +19,13 @@ import (
 func home(t *testing.T) {
 	t.Helper()
 	t.Setenv("MIRRIN_HOME", t.TempDir())
+	// Logging hands logs/crash.log to the runtime, which keeps it open for
+	// good; Windows then can't delete the test's folder. Let go of it first
+	// (cleanups run last-registered first, so this runs before the delete).
+	t.Cleanup(func() {
+		_ = debug.SetCrashOutput(nil, debug.CrashOptions{})
+		closeLogs() // and the log files the commands opened
+	})
 	t.Setenv("ANTHROPIC_CONFIG_DIR", t.TempDir()) // no `ant auth login` profile
 	for _, k := range []string{"ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "ANTHROPIC_AUTH_TOKEN"} {
 		t.Setenv(k, "")

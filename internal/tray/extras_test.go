@@ -161,10 +161,11 @@ func TestExtrasOpenThePages(t *testing.T) {
 	wireExtras(ctx, extraClicks{devices: devices, backup: backup, addPhone: add, reach: reach, review: review}, extraActions{
 		terminal: func(args ...string) { events <- "terminal " + strings.Join(args, " ") },
 		page: func(path string) bool {
-			if pagesOn.Load() {
+			on := pagesOn.Load() // once: the test flips it for the next click
+			if on {
 				events <- "page " + path
 			}
-			return pagesOn.Load()
+			return on
 		},
 	})
 	for _, c := range []struct {

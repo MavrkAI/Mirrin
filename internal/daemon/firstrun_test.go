@@ -108,7 +108,7 @@ func runFirstRun(t *testing.T, d *Daemon) (context.CancelFunc, <-chan error) {
 
 func waitFirstRun(t *testing.T, what string, ok func() bool) {
 	t.Helper()
-	for deadline := time.Now().Add(5 * time.Second); !ok(); {
+	for deadline := time.Now().Add(15 * time.Second); !ok(); {
 		if time.Now().After(deadline) {
 			t.Fatalf("timed out waiting: %s", what)
 		}
@@ -255,7 +255,7 @@ func TestOneTwinPerHome(t *testing.T) {
 		if !errors.Is(err, ErrAlreadyRunning) {
 			t.Fatalf("second copy: %v", err)
 		}
-	case <-time.After(3 * time.Second):
+	case <-time.After(15 * time.Second):
 		t.Fatal("a second twin started from the same home")
 	}
 

@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -123,7 +124,7 @@ func TestInstallKeepsSecretsStartsAndWaits(t *testing.T) {
 		}
 	}
 	st, err := os.Stat(config.SecretsPath())
-	if err != nil || st.Mode().Perm() != 0o600 {
+	if err != nil || runtime.GOOS != "windows" && st.Mode().Perm() != 0o600 {
 		t.Fatalf("secrets file: %v %v", st, err)
 	}
 	got, _ := config.ReadSecrets()
@@ -289,7 +290,7 @@ func TestTidyUnitMovesKeysOutOfAnOldUnit(t *testing.T) {
 			if env["HOME"] == "" || env["MIRRIN_HOME"] != home || env[config.ServiceEnv] != "1" {
 				t.Errorf("env after = %v", env)
 			}
-			if st, _ := os.Stat(path); st.Mode().Perm() != 0o644 {
+			if st, _ := os.Stat(path); runtime.GOOS != "windows" && st.Mode().Perm() != 0o644 {
 				t.Errorf("mode changed to %v", st.Mode().Perm())
 			}
 			if !strings.Contains(out.String(), "Moved") || strings.Contains(out.String(), "sk-ant") {

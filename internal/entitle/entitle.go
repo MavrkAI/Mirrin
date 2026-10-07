@@ -144,7 +144,7 @@ func Inspect(tok string, keys map[string]ed25519.PublicKey) (Claims, error) {
 		}
 	}
 	for _, r := range w.Relays {
-		c.Relays = append(c.Relays, Relay{ID: r.ID, URL: r.URL, IPs: r.IPs})
+		c.Relays = append(c.Relays, Relay(r))
 	}
 	if err := c.check(); err != nil {
 		return Claims{}, err

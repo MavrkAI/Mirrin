@@ -22,7 +22,7 @@ func TestCopiedPackWithProvenanceReconnects(t *testing.T) {
 
 	dir := t.TempDir()
 	ctx := context.Background()
-	name, err := AddPack(ctx, dir, "file://"+src)
+	name, err := AddPack(ctx, dir, fileURL(src))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func TestCopiedPackWithProvenanceReconnects(t *testing.T) {
 		t.Fatalf("check: %v %+v", err, ups)
 	}
 	u := ups[0]
-	if !u.Pending() || !u.Reconnect || u.From != first || u.To != second || u.Source != "file://"+src {
+	if !u.Pending() || !u.Reconnect || u.From != first || u.To != second || u.Source != fileURL(src) {
 		t.Fatalf("a copy with a source should offer to reconnect: %+v", u)
 	}
 	if _, err := os.Stat(filepath.Join(root, ".git")); err == nil {
@@ -56,7 +56,7 @@ func TestCopiedPackWithProvenanceReconnects(t *testing.T) {
 	if b, _ := os.ReadFile(filepath.Join(root, "protocols", "news.yaml")); !strings.Contains(string(b), "TWO") {
 		t.Fatalf("files not updated:\n%s", b)
 	}
-	if pv, _ := ReadProvenance(root); pv.Commit != second || pv.Source != "file://"+src || pv.Updated.IsZero() {
+	if pv, _ := ReadProvenance(root); pv.Commit != second || pv.Source != fileURL(src) || pv.Updated.IsZero() {
 		t.Fatalf("provenance %+v", pv)
 	}
 	if entries, _ := os.ReadDir(PacksDir(dir)); len(entries) != 1 {
@@ -72,7 +72,7 @@ func TestCopiedPackWithProvenanceReconnects(t *testing.T) {
 func TestReconnectPackKeepsTheCopyOnFailure(t *testing.T) {
 	dir := t.TempDir()
 	write(t, filepath.Join(PacksDir(dir), "news", "protocols", "a.yaml"), "name: a\nprompt: x\n")
-	missing := "file://" + filepath.Join(t.TempDir(), "gone")
+	missing := fileURL(filepath.Join(t.TempDir(), "gone"))
 	if err := ReconnectPack(context.Background(), dir, "news", Provenance{Source: missing}, ""); err == nil {
 		t.Fatal("a missing repository should fail")
 	}

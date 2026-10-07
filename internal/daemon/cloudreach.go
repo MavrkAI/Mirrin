@@ -33,6 +33,7 @@ type cloudRun struct {
 	ctx      context.Context    // the link's life here: standby ends it
 	cancel   context.CancelFunc // ends the refresh loop and the endpoint
 	keeping  bool               // the refresh loop is running
+	kept     chan struct{}      // closed once the refresh loop has returned
 	reaching bool               // the endpoint loop is running
 	endpoint *reach.Endpoint
 	failure  string    // why the endpoint didn't start, for the self-check
@@ -85,13 +86,15 @@ func (d *Daemon) startCloud(ctx context.Context) {
 	}
 	parent := ctx
 	ctx, cancel := context.WithCancel(parent)
-	run.client, run.ctx, run.cancel, run.keeping = c, ctx, cancel, true
+	kept := make(chan struct{})
+	run.client, run.ctx, run.cancel, run.keeping, run.kept = c, ctx, cancel, true, kept
 	run.mu.Unlock()
 	// A standby ends ctx but is remembered until the twin stops.
 	context.AfterFunc(parent, func() { cloudRuns.CompareAndDelete(d, run) })
 	if st, err := backup.LoadState(cfg.DataDir); err == nil && st.Standby != nil {
 		d.log.Info("linked service: standing by after a handover; sending nothing")
 		cancel()
+		close(kept)
 		return
 	}
 	if _, kind := c.State().Current(time.Now()); kind == cloud.Superseded {
@@ -101,9 +104,13 @@ func (d *Daemon) startCloud(ctx context.Context) {
 			at = info.Superseded.At
 		}
 		d.cloudStandby(at, false)
+		close(kept)
 		return
 	}
-	go c.Keep(ctx, d.log)
+	go func() {
+		defer close(kept)
+		c.Keep(ctx, d.log)
+	}()
 }
 
 // openLinked opens the link with the keys this build trusts (tests' fake).

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -432,6 +433,23 @@ func TestRestoreSurvivesATwinStartingHalfWay(t *testing.T) {
 			t.Cleanup(func() { restoreStep = prev })
 
 			res, err := Restore(dir, RestoreOptions{Anyway: !c.damaged})
+			if err != nil && runtime.GOOS == "windows" && strings.Contains(err.Error(), "nothing was changed") {
+				// Windows can't move a file a twin holds open: the restore
+				// stops before changing anything, and the memory stays whole.
+				for _, s := range twins {
+					s.Close()
+				}
+				twins = nil
+				s, err := Open(dir)
+				if err != nil {
+					t.Fatalf("memory doesn't open after a refused restore: %v", err)
+				}
+				defer s.Close()
+				if facts, err := s.AllFacts(ctx, 100); err != nil || len(facts) < 26 {
+					t.Fatalf("a refused restore lost memory: %d facts (%v)", len(facts), err)
+				}
+				return
+			}
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -266,7 +266,7 @@ func TestImportDropsThePersonaVoiceRecord(t *testing.T) {
 // A home whose path has '#', '?' or '%' in it (which memory itself opens
 // fine) moves too, conversations and all.
 func TestConversationsMoveFromAnOddlyNamedHome(t *testing.T) {
-	base := filepath.Join(t.TempDir(), "odd#name?100%")
+	base := filepath.Join(t.TempDir(), oddName)
 	src := filepath.Join(base, "src")
 	t.Setenv("MIRRIN_HOME", src)
 	c := config.Default()
@@ -369,3 +369,7 @@ func TestForgettingReachesWhatAnImportReplaced(t *testing.T) {
 		})
 	}
 }
+
+// oddName is a folder name with characters that trip up URLs and globs;
+// Windows refuses ? in a name, so it goes without there.
+var oddName = map[bool]string{true: "odd#name 100%", false: "odd#name?100%"}[runtime.GOOS == "windows"]

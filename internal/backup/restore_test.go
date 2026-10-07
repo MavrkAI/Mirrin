@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -43,7 +44,7 @@ func TestRestoreOnANewMachine(t *testing.T) {
 			t.Errorf("%s wasn't restored", f)
 		}
 	}
-	if st, err := os.Stat(filepath.Join(newHome, "tools", "shout", "run.sh")); err != nil || st.Mode()&0o100 == 0 {
+	if st, err := os.Stat(filepath.Join(newHome, "tools", "shout", "run.sh")); err != nil || runtime.GOOS != "windows" && st.Mode()&0o100 == 0 {
 		t.Errorf("a tool's script lost its execute bit: %v", err)
 	}
 	tok, err := os.ReadFile(filepath.Join(newHome, "data", "api.token"))

@@ -123,6 +123,9 @@ func (d *Daemon) introduce(ctx context.Context, name string) bool {
 		d.log.Info("first hello not sent yet", "channel", name, "err", err)
 		return false
 	}
+	// It was said: record it even if the channel is stopping right now, or
+	// the channel reconnected says it all over again.
+	ctx = context.WithoutCancel(ctx)
 	d.store.Audit(ctx, "message.out", name+":"+to, text)
 	if err := d.store.Set(ctx, firstHelloKey, name+" "+time.Now().UTC().Format(time.RFC3339)); err != nil {
 		d.log.Warn("first hello: save", "err", err)

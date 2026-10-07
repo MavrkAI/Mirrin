@@ -217,7 +217,7 @@ func payer(td *testDaemon, started chan struct{}, ended chan error) {
 		case <-ctx.Done():
 			ended <- ctx.Err()
 			return "", ctx.Err()
-		case <-time.After(3 * time.Second):
+		case <-time.After(15 * time.Second):
 			ended <- nil
 			return "paid", nil
 		}

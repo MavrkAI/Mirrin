@@ -48,7 +48,7 @@ func StartDev(t testing.TB, configYAML string) *DevServer {
 	if _, err := os.Stat(filepath.Join(modDir, "go.mod")); err != nil {
 		t.Skip("no cloud/ module here")
 	}
-	bin := filepath.Join(t.TempDir(), "mirrin-cloud")
+	bin := filepath.Join(t.TempDir(), "mirrin-cloud"+exeSuffix())
 	build := exec.Command(goBin, "build", "-o", bin, "./cmd/mirrin-cloud")
 	build.Dir = modDir
 	if out, err := build.CombinedOutput(); err != nil {
@@ -168,4 +168,12 @@ func (d *DevServer) DenyList(t testing.TB) entitle.DenyList {
 		t.Fatal(err)
 	}
 	return l
+}
+
+// exeSuffix is what Windows needs at the end of a program's name to run it.
+func exeSuffix() string {
+	if runtime.GOOS == "windows" {
+		return ".exe"
+	}
+	return ""
 }

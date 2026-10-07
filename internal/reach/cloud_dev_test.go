@@ -17,6 +17,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -55,7 +56,7 @@ func TestCloudReachAgainstTheDevControlPlane(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(modDir, "go.mod")); err != nil {
 		t.Skip("no cloud/ module here")
 	}
-	bin := filepath.Join(t.TempDir(), "mirrin-cloud")
+	bin := filepath.Join(t.TempDir(), "mirrin-cloud"+exeSuffix())
 	build := exec.Command(goBin, "build", "-o", bin, "./cmd/mirrin-cloud")
 	build.Dir = modDir
 	if out, err := build.CombinedOutput(); err != nil {
@@ -248,4 +249,12 @@ func TestCloudReachAgainstTheDevControlPlane(t *testing.T) {
 		}
 		conn.Close()
 	}
+}
+
+// exeSuffix is what Windows needs at the end of a program's name to run it.
+func exeSuffix() string {
+	if runtime.GOOS == "windows" {
+		return ".exe"
+	}
+	return ""
 }

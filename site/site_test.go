@@ -156,7 +156,7 @@ func TestNumbersMatchTheCode(t *testing.T) {
 		{"internal/agent/asking.go", "maxApprovalValue = 10_000", index, "shows you the whole command, script or message"},
 		{"install.sh", "checksum_ok() {", index, "both installers check every download"},
 		{"install.sh", "verify_signature() {", index, "also checks the Sigstore signature"},
-		{"install.ps1", "Get-FileHash -Algorithm SHA256", index, "both installers check every download"},
+		{"install.ps1", "SHA256]::Create().ComputeHash", index, "both installers check every download"},
 		{"internal/service/service.go", "func (in installer) keepSecrets() error", index, "Keys you've exported in your shell go into <code>~/.mirrin/secrets.env</code>"},
 		{"internal/service/service.go", "func waitUp(", index, "starts your twin straight away"},
 		{"cmd/mirrin/selfcare.go", `if goos == "darwin" && wantTray && trayAvailable`, index, "<code>service install</code> runs your twin headless, with no app indicator"},
