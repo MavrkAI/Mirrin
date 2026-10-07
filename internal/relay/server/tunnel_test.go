@@ -76,6 +76,9 @@ func TestLastSeenAfterSilentDrop(t *testing.T) {
 	}
 	p.stall()
 	asleep := clk.now()
+	// An answer already past the proxy is heard before the jump below; on a
+	// slow machine that takes a moment (less than the 250ms ping timeout).
+	time.Sleep(100 * time.Millisecond)
 	clk.advance(30 * time.Minute) // by the relay's clock, it notices much later
 
 	client := r.https()
