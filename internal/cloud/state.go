@@ -495,7 +495,8 @@ func createKey(dataDir string) (ed25519.PrivateKey, error) {
 
 // readFileMax reads a file of at most max bytes.
 func readFileMax(p string, max int64) ([]byte, error) {
-	f, err := os.Open(p)
+	var f *os.File
+	err := whileHeld(func() (err error) { f, err = os.Open(p); return err })
 	if err != nil {
 		return nil, err
 	}
@@ -516,7 +517,7 @@ func writeFileAtomic(p string, b []byte) error {
 	if err != nil {
 		return err
 	}
-	if err := os.Rename(tmp, p); err != nil {
+	if err := whileHeld(func() error { return os.Rename(tmp, p) }); err != nil {
 		os.Remove(tmp)
 		return err
 	}
