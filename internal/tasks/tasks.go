@@ -78,6 +78,9 @@ type Task struct {
 	// PausedLapsed. Only a budget pause carries on by itself; the others
 	// wait for the owner to try again.
 	PausedBy string `json:"paused_by,omitempty"`
+	// Shots are the last screenshots the task took, noted when it finished
+	// (shots.go), so the chat it reports to knows it has them to send.
+	Shots []string `json:"shots,omitempty"`
 }
 
 // ErrOverBudget pauses a task because the monthly model budget is used up.
@@ -101,6 +104,13 @@ type Deps struct {
 	// after a problem (Failed), as the owner is told. It runs after the
 	// manager lets go of its lock.
 	OnOutcome func(t Task, status Status)
+
+	// Shots, if set, lists the twin's own screenshots that a task's
+	// conversation took and that are still on disk, oldest first.
+	Shots func(ctx context.Context, key string) []string
+	// NotifyKept, if set, is Notify for a message whose conversation keeps
+	// more than is said (record): a finished task's screenshot paths.
+	NotifyKept func(ctx context.Context, chatKey, text, record string) error
 }
 
 // Manager owns the tasks.
@@ -349,8 +359,9 @@ func (m *Manager) leg(ctx context.Context, t *Task, l *legs, step func(context.C
 		then = m.outcome(t)
 		return
 	case t.Status == Done:
+		m.keepShots(t)
 		m.persist()
-		m.say(t.Owner, fmt.Sprintf("%s: done. %s", t.Title, t.Result), t.source())
+		m.sayDone(t, fmt.Sprintf("%s: done. %s", t.Title, t.Result))
 		then = m.outcome(t)
 		return
 	case t.Status == WaitingUser:
@@ -391,8 +402,9 @@ func (m *Manager) leg(ctx context.Context, t *Task, l *legs, step func(context.C
 	if t.Result == "" {
 		t.Result = "Finished."
 	}
+	m.keepShots(t)
 	m.persist()
-	m.say(t.Owner, fmt.Sprintf("%s: %s", t.Title, t.Result), t.source())
+	m.sayDone(t, fmt.Sprintf("%s: %s", t.Title, t.Result))
 	then = m.outcome(t)
 }
 
@@ -700,6 +712,9 @@ func (t Task) Board() string {
 	}
 	if t.Error != "" {
 		fmt.Fprintf(&b, "  error: %s\n", t.Error)
+	}
+	for _, p := range t.Shots {
+		fmt.Fprintf(&b, "  screenshot: %s\n", p)
 	}
 	return b.String()
 }

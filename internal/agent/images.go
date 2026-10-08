@@ -47,6 +47,10 @@ func liftImage(text, dataDir string) (string, []byte, string) {
 	return text, nil, ""
 }
 
+// OwnScreenshot is ownScreenshot, for the daemon: a finished task's
+// screenshots and the one send_to_owner passes on are held to it.
+func OwnScreenshot(path, dataDir string) (string, bool) { return ownScreenshot(path, dataDir) }
+
 // ownScreenshot cleans path and reports whether it names one of the twin's
 // own screenshots in dataDir.
 func ownScreenshot(path, dataDir string) (string, bool) {

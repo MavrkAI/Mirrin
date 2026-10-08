@@ -54,6 +54,14 @@ func TestALongVoiceAnswerOpensTheScreenAtIt(t *testing.T) {
 		t.Fatal("no show event")
 	}
 
+	// A screen here in a background tab shows nothing: one is opened.
+	hidden := td.bus.ScreenHere(false)
+	if !show(longDraft) || len(*opened) != 2 {
+		t.Fatalf("with a background tab: opened %q", *opened)
+	}
+	hidden.Close()
+	*opened = (*opened)[:1]
+
 	// A screen open here shows it itself: no second one.
 	closed := td.bus.ScreenOpen()
 	defer closed()

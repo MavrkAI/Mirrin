@@ -59,6 +59,8 @@ All notable changes are listed here. The format follows Keep a Changelog; versio
 - Google sign-in: each Connect is its own single-use, expiring flow with PKCE.
 
 ### Fixed
+- Typing on a page handed to you on the presence screen arrives in order, so a fast-typed email or code no longer comes out jumbled, and pasting (a password from your password manager) works there.
+- Google's sign-in, and Gmail or another Google page that needs you to sign in, opens in an ordinary Chrome window on your computer, which Google accepts, when the twin hands it to you from voice or the terminal. Your login is kept for the twin. If the screen isn't working for you, say so and the twin opens a window instead.
 - Voice: the other spellings a persona answers to wake it after "Hey," too, as transcription often writes it: "Hey, Picku" wakes Pickoo, as "Hey, Pickoo" already did.
 - Partial configuration files no longer enable WhatsApp implicitly or require an owner number. WhatsApp stays on when explicitly enabled in your settings or setup.
 - After `mirrin backup resume` and the restart it asks for, the twin is no longer still paused. A pause you set yourself before the standby is kept.

@@ -2236,19 +2236,25 @@ async function load(){
   if (wasUnpaired) connect();
   return 'ok';
 }
-let es = null, esRetry = null, esDelay = 1000;
+let es = null, esRetry = null, esDelay = 1000, screenID = '';
+// Whether this screen is in sight, for the twin: a page handed over by voice
+// opens a screen unless one on this computer is (screen_seen.go).
+function reportSeen(){
+  if (!screenID) return;
+  fetch('/events/seen', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({screen: screenID, visible: !document.hidden})}).catch(() => {});
+}
 function connect(){
   clearTimeout(esRetry); esRetry = null;
   if (es) es.close();
-  es = null;
+  es = null; screenID = '';
   if (unpaired) return;
-  const src = es = new EventSource(ORB ? '/events?view=orb' : '/events'); // the orb isn't a screen: a page handed over opens one (browserlive.go)
+  const src = es = new EventSource(ORB ? '/events?view=orb' : '/events' + (document.hidden ? '?hidden=1' : '')); // the orb isn't a screen: a page handed over opens one (browserlive.go)
   src.onopen = () => { esDelay = 1000; setOnline(true); };
   src.onmessage = (m) => {
     let ev; try { ev = JSON.parse(m.data); } catch { return; }
     if (mine(ev) && (ev.kind === 'heard' || ev.kind === 'said' || ev.kind === 'note')) return; // shown already, as it was typed
     switch (ev.kind) {
-      case 'state': setState(ev.text); if (ev.text === 'idle') { orbBrowsing = false; clearTimeout(captionTimer); captionTimer = setTimeout(fadeCaption, $('#caption').classList.contains('note') ? 1500 : 12000); } break;
+      case 'state': if (ev.screen && ev.screen !== screenID) { screenID = ev.screen; reportSeen(); } setState(ev.text); if (ev.text === 'idle') { orbBrowsing = false; clearTimeout(captionTimer); captionTimer = setTimeout(fadeCaption, $('#caption').classList.contains('note') ? 1500 : 12000); } break;
       case 'heard': showCaption('“' + ev.text + '”', 'heard'); pushLine('heard', ev.text, ev.at);
         if (ev.data && ev.data.origin) confirmOnly(); // another screen talks in this chat too: those words took the twin's check
         if (aloud(ev)) turnAt = Date.now();
@@ -2368,7 +2374,7 @@ document.addEventListener('keydown', e => {
     const m = sheet.mode;
     if ((m === 'handover' || m === 'driving') && bHeld && ON_THIS_COMPUTER) {
       e.preventDefault();
-      if (sheet.armed) { sheet.used = true; $('#bView').focus(); bSend({type: 'text', text: e.key}); }
+      if (sheet.armed) { sheet.used = true; $('#bView').focus(); bSendInOrder({type: 'text', text: e.key}); }
       else bFlash(CLICK_TO_TYPE, 6000);
     } else if (m === 'watch' && !bHeld && may('chat') && e.key !== ' ' && !unpaired) {
       e.preventDefault(); closeSheet('close'); showComposer(e.key);
@@ -2386,7 +2392,7 @@ document.addEventListener('keydown', e => {
   if (e.key.length !== 1 || e.key === ' ') return;
   e.preventDefault(); showComposer(e.key);
 });
-document.addEventListener('visibilitychange', () => { if (!document.hidden) { load(); if (!es && !unpaired) connect(); } });
+document.addEventListener('visibilitychange', () => { reportSeen(); if (!document.hidden) { load(); if (!es && !unpaired) connect(); } });
 // A page handed over: the screen brings it up (on this computer), or offers
 // it (elsewhere); the floating character says so, and a click on it opens
 // the screen there.
@@ -2913,8 +2919,11 @@ function bSend(ev){
     if (r.status === 409) { bFlash(`${nm()} has the browser again.`, 8000); browserPoll(); }
   }).catch(() => {});
 }
-// Press and release go separately, in order, so a button can be held down
-// ("press and hold" checks) or dragged. Only on this computer: elsewhere it is a view.
+// Everything goes to the page one at a time, in order: press and release
+// separately, so a button can be held down ("press and hold" checks) or
+// dragged, and keys as typed, so a fast typist's letters don't arrive
+// jumbled and a click lands before what's typed after it. Only on this
+// computer: elsewhere it is a view.
 let bQueue = Promise.resolve(), bDown = false, bMoveAt = 0;
 function bSendInOrder(ev){ bQueue = bQueue.then(() => bSend(ev)); }
 const bImgEl = $('#bImg');
@@ -2948,11 +2957,21 @@ $('#bView').addEventListener('keydown', e => {
     if (Date.now() - bEscAt < 700) { e.preventDefault(); bEscAt = 0; $('#bTake').focus(); return; }
     bEscAt = Date.now();
   }
-  if (B_KEYS.has(e.key)) bSend({type: 'key', key: e.key, shift: e.shiftKey});
-  else if (e.key.length === 1) bSend({type: 'text', text: e.key});
+  if (B_KEYS.has(e.key)) bSendInOrder({type: 'key', key: e.key, shift: e.shiftKey});
+  else if (e.key.length === 1) bSendInOrder({type: 'text', text: e.key});
   else return;
   sheet.used = true;
   e.preventDefault(); // the page gets it, not the screen's "type to talk"
+});
+// Pasting (a password from a password manager, a code from a message) types
+// the text on the page.
+$('#bView').addEventListener('paste', e => {
+  if (!ON_THIS_COMPUTER || !bHeld) return;
+  const text = (e.clipboardData && e.clipboardData.getData('text/plain')) || '';
+  e.preventDefault();
+  if (!text) return;
+  sheet.used = true; bArmed();
+  bSendInOrder({type: 'text', text: text.slice(0, 4000)});
 });
 browserPoll().finally(pollIn);
 /* ---------- the theme: automatic (the OS decides), light or dark ---------- */

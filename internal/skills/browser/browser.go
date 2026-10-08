@@ -83,7 +83,8 @@ type Session struct {
 	done     chan struct{}
 	// forceHeadless keeps teach/sign-in windows hidden (tests).
 	forceHeadless bool
-	live          liveHub // the live view and take-over (live.go)
+	live          liveHub      // the live view and take-over (live.go)
+	plain         *plainWindow // the sign-in window nobody drives (signinwindow.go)
 	// OnHandOver hears that a page was handed to the owner on the screen
 	// (the daemon shows the orb and tells their phone), and says whether a
 	// phone was told. ScreenURL is the screen's address for the chat that
@@ -93,8 +94,8 @@ type Session struct {
 	ScreenURL  func(chatKey string) string
 	// ShowScreen brings the presence screen up at the page on this
 	// computer for a chat here (a voice chat has nothing on screen to
-	// click), and says whether it did.
-	ShowScreen func(chatKey string) bool
+	// click), and says how that went (showscreen.go).
+	ShowScreen func(chatKey string) ScreenShow
 	// OnActive hears that the twin started using its browser after a while
 	// idle (a new run), so the screen can offer to watch it.
 	OnActive func()
@@ -149,6 +150,7 @@ func (s *Session) Close() {
 	}
 	s.stopLocked()
 	s.mu.Unlock()
+	s.closePlain()
 	s.guard.close()
 }
 
@@ -211,6 +213,7 @@ func (s *Session) tab(headed bool) (context.Context, error) {
 	s.stopLocked()
 	want := headed || !s.cfg.Headless
 	s.mu.Unlock()
+	s.closePlain() // the owner's sign-in window, if open: they're done with it
 
 	ctx, cancel, err := s.launch(want)
 	s.mu.Lock()
@@ -572,11 +575,11 @@ func (s *Session) Tools() []tools.Tool {
 				return "[[image:" + path + "]]", nil
 			}),
 		tools.New("browser_signin",
-			"Hand the page to the user when they must do something themselves: log in, enter a code, fill in card details, solve a CAPTCHA or pick between options you've shown them. By default it stays in your own browser and the user does it on the presence screen (\"In the browser\", already under their control) or by clicking the orb. Say in ONE short message what they need to do there and that they should tell you when it's done; don't ask them to relay details you could read yourself afterwards. When they say done, carry on with browse_page / browser_act: that takes the page back. With no URL it hands over the page that is open now, as it is. Set window only if the page can't be used on the screen (a passkey or system prompt, or it keeps failing there): that opens a separate Chrome window instead.",
+			"Hand the page to the user when they must do something themselves: log in, enter a code, fill in card details, solve a CAPTCHA or pick between options you've shown them. By default it stays in your own browser and the user does it on the presence screen (\"In the browser\", already under their control) or by clicking the orb. Say in ONE short message what they need to do there and that they should tell you when it's done; don't ask them to relay details you could read yourself afterwards. When they say done, carry on with browse_page / browser_act: that takes the page back. With no URL it hands over the page that is open now, as it is. If they say they can't see it, call open_screen. If they say the screen isn't working or they can't use the page, call browser_signin again with window set to true: that opens a Chrome window on this computer instead (also for a passkey or system prompt). Google's pages (Gmail, Google's sign-in), which turn away a browser you drive, open in a window by themselves for a chat at this computer. Never type their password for them.",
 			tools.Schema(map[string]tools.Prop{
 				"url":    {Type: "string", Description: "The site's login or start page; leave it empty to hand over the page that is open now"},
 				"ask":    {Type: "string", Description: "What the user needs to do there, in a few words, shown beside the page (\"Tap Search, and solve the check if one appears\")"},
-				"window": {Type: "boolean", Description: "Open a separate Chrome window instead of the screen; only when the screen can't do it"},
+				"window": {Type: "boolean", Description: "Open a Chrome window on this computer instead of the screen: when the user says the screen isn't working or they can't see it, or the page can't be used there"},
 			}), tools.RiskRead, s.runSignin),
 	)
 }
@@ -592,8 +595,11 @@ func (s *Session) runSignin(parent context.Context, call tools.Call) (string, er
 	if err := tools.Decode(call, &in); err != nil {
 		return "", err
 	}
+	if plain := s.plainURL(call.ChatKey, in.URL, in.Window); plain != "" {
+		return s.windowWhere(call.ChatKey)(s.signinPlain(parent, plain)) // signinwindow.go
+	}
 	if in.Window || s.cfg.HandOver == "window" {
-		return s.signinWindow(parent, in.URL)
+		return s.windowWhere(call.ChatKey)(s.signinWindow(parent, in.URL))
 	}
 	return s.signinScreen(parent, call.ChatKey, in.URL, strings.TrimSpace(in.Ask))
 }
@@ -644,8 +650,15 @@ func (s *Session) handedOver(chatKey, here, ask string) string {
 		screen = s.ScreenURL(chatKey)
 	}
 	const next = " When they say done, carry on with browse_page / browser_act."
-	if screen != "" && s.ShowScreen != nil && s.ShowScreen(chatKey) {
+	show := ScreenNotTried
+	if screen != "" && s.ShowScreen != nil {
+		show = s.ShowScreen(chatKey)
+	}
+	switch show {
+	case ScreenInSight:
 		return "The page " + here + " is open in front of the user now, on the presence screen (" + screen + "), under their control. Tell them in one short message what to do there and to say when it's done." + next
+	case ScreenNotShown:
+		return notShown(here, screen) + next
 	}
 	if screen != "" {
 		return "The page " + here + " is on the presence screen (" + screen + "), under the user's control, and the orb is showing. Tell them in one short message what to do there and to say when it's done; they can also click the orb to get there." + next

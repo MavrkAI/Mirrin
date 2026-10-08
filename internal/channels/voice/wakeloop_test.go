@@ -179,7 +179,7 @@ func (r *rig) listens() int {
 	defer r.mu.Unlock()
 	n := 0
 	for _, s := range r.sent {
-		if s == "listen" {
+		if s == "listen" || strings.HasPrefix(s, "listen ") {
 			n++
 		}
 	}

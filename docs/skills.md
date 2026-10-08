@@ -28,7 +28,7 @@ channels:
     engine: auto              # auto | kokoro | elevenlabs | system | command
     voice: bm_george          # Kokoro voice, or a macOS / ElevenLabs voice name
     speed: 1.0
-    followup_seconds: 6
+    followup_seconds: 8
     vocabulary: [Priya, Nguyen, RMIT]   # names whisper should expect
 ```
 
@@ -138,7 +138,7 @@ Only mail that arrives while the channel runs is read, and only mail the twin an
 
 `skills.browser` needs Chrome or Chromium on the machine. It runs one real Chrome that stays open between calls and keeps its own profile under `~/.mirrin/data/chrome-profile`, so anything you log into stays logged in. Every page comes back as text, a numbered list of clickable elements, and a screenshot the model actually looks at, so it works on sites with no API: banks, bookings, government portals, shops.
 
-When a site needs you (a password, a code, a CAPTCHA), the twin calls `browser_signin`, a visible window opens at that page, you do the human part, say "done", and it carries on in the same window. The window stays up 20 minutes for that. Set `headless: false` if you'd rather always watch it work. Anything irreversible still goes through approvals, and the approval message carries the screenshot of the page as it is.
+When a site needs you (a password, a code, a CAPTCHA), the twin calls `browser_signin` and hands you the page on the presence screen: click and type on it there, say "done", and it carries on. If the screen isn't working for you, say so and it opens a Chrome window on your computer instead (`handover: window` always does). Google's sign-in turns away a browser that something drives, so for a chat at your computer a Google page (Gmail, Drive, the sign-in itself) always opens in ordinary Chrome, with the twin's own profile and nothing driving it; when you say "done" the twin closes that window and carries on signed in. A window stays up 20 minutes. Set `headless: false` if you'd rather always watch it work. Anything irreversible still goes through approvals, and the approval message carries the screenshot of the page as it is.
 
 ```yaml
 skills:
@@ -366,7 +366,7 @@ Every turn sees your facts: all of them while they fit, past that the ones relat
 
 - **Acknowledgement.** On wake a soft chime plays (replace it with any file via `channels.voice.chime_sound`, e.g. `/System/Library/Sounds/Tink.aiff`). The moment you stop talking it says a short word: "Hello." / "Yes?" / "I'm here." for the first exchange after ten quiet minutes, otherwise "Right." / "On it." / "Let me see." Clips come from the persona's `acks` and are synthesised once with the active voice. Turn off with `channels.voice.acknowledge: false`.
 - **Approving out loud.** A spoken yes approves writes as usual, but never a dangerous request (a payment, a shell command, a call): anyone in the room can say "yes". The twin sends that request to your own chat with its number and says where; approve it there with `yes N`, or on the presence screen. A no is always taken.
-- **Conversation.** After each reply it listens for a follow-up (`followup_seconds`, default 6) without the wake word. Speech in that window is always treated as your reply, even if the wake model twitches on it. While it is still talking, **saying its name always interrupts it**. Simply talking over it can too: the helper compares the microphone level with what its own playback measures at the mic and treats sustained speech clearly above that as an interruption, then whisper confirms it was real speech (and not the twin's own echo) before the reply is cut. On a laptop the microphone sits next to the speakers, so this is a judgement call: `talk_over: off | low | normal | high` (menu: Voice → Interrupt by talking over it). `normal` never interrupts itself but needs you to speak up; `high` is for a headset or a close microphone; `off` leaves interruption to the name.
+- **Conversation.** After each reply it listens for a follow-up (`followup_seconds`, default 8) without the wake word, and at least 12 seconds when it has just asked you something. Speech in that window is always treated as your reply, even if the wake model twitches on it. While it is still talking, **saying its name always interrupts it**. Simply talking over it can too: the helper compares the microphone level with what its own playback measures at the mic and treats sustained speech clearly above that as an interruption, then whisper confirms it was real speech (and not the twin's own echo) before the reply is cut. On a laptop the microphone sits next to the speakers, so this is a judgement call: `talk_over: off | low | normal | high` (menu: Voice → Interrupt by talking over it). `normal` never interrupts itself but needs you to speak up; `high` is for a headset or a close microphone; `off` leaves interruption to the name.
 
 Microphone level matters more than any setting. If replies are missed, raise the input volume in System Settings → Sound → Input to around 70; the speech detector adapts to the room's noise floor but cannot invent signal.
 - **Narration.** Every slow tool call gets a spoken caption ("Reading your email.") on voice, an indented note in the terminal, and a `note` event over the streaming API. Instant tools (reminders, memory) are silent.

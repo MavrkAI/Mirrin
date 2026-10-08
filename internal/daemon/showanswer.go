@@ -71,7 +71,7 @@ func (d *Daemon) showAnswer(chatKey, text string) bool {
 	d.shown.ans = api.ShownAnswer{Text: text, At: now}
 	d.shown.mu.Unlock()
 	d.bus.Publish(events.Event{Kind: "show", Text: text, At: now})
-	if d.bus.ScreensOpen() > 0 {
+	if d.bus.ScreensInSight() > 0 { // a background tab shows nothing (events screens.go)
 		return true
 	}
 	if err := d.openScreenAt("#show"); err != nil {

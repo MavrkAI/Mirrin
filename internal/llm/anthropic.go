@@ -20,10 +20,17 @@ type Anthropic struct {
 
 // NewAnthropic builds a Claude-backed provider. An empty apiKey falls back to
 // ANTHROPIC_API_KEY or an `ant auth login` profile.
-func NewAnthropic(apiKey, model string) *Anthropic {
+func NewAnthropic(apiKey, model string) *Anthropic { return NewAnthropicAt(apiKey, model, "") }
+
+// NewAnthropicAt is NewAnthropic speaking to baseURL instead of Anthropic's
+// own address when one is set (llm.base_url: a proxy, or a test server).
+func NewAnthropicAt(apiKey, model, baseURL string) *Anthropic {
 	opts := []option.RequestOption{}
 	if apiKey != "" {
 		opts = append(opts, option.WithAPIKey(apiKey))
+	}
+	if baseURL != "" {
+		opts = append(opts, option.WithBaseURL(baseURL))
 	}
 	if model == "" {
 		model = "claude-opus-5"

@@ -180,6 +180,39 @@ func TestAWakeThresholdTheOwnerChoseIsKept(t *testing.T) {
 	}
 }
 
+// Six seconds was too short to answer a question the twin had just asked,
+// so the default became eight. A full dump from before wrote 6 for
+// everyone and gets eight; a 6 the owner saved in a layered file is theirs.
+func TestTheFollowupWindowDefaultReachesExistingInstalls(t *testing.T) {
+	home(t)
+	if got := Default().Channels.Voice.FollowupSeconds; got != 8 {
+		t.Fatalf("default %d", got)
+	}
+	old := start()
+	old.Channels.Voice.FollowupSeconds = 6
+	writeLegacy(t, old)
+	if c, err := Load(); err != nil || c.Channels.Voice.FollowupSeconds != 8 {
+		t.Fatalf("full dump: %v %+v", err, c)
+	}
+	old.Channels.Voice.FollowupSeconds = 10
+	writeLegacy(t, old)
+	if c, err := Load(); err != nil || c.Channels.Voice.FollowupSeconds != 10 {
+		t.Fatalf("a full dump's own choice must stay: %v %+v", err, c)
+	}
+	if err := os.WriteFile(Path(), []byte("config_version: 2\nchannels:\n  whatsapp:\n    enabled: false\n  voice:\n    followup_seconds: 6\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if c, err := Load(); err != nil || c.Channels.Voice.FollowupSeconds != 6 {
+		t.Fatalf("an explicit setting must stay: %v %+v", err, c)
+	}
+	if err := os.WriteFile(Path(), []byte("config_version: 2\nchannels:\n  whatsapp:\n    enabled: false\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if c, err := Load(); err != nil || c.Channels.Voice.FollowupSeconds != 8 {
+		t.Fatalf("never set: %v %+v", err, c)
+	}
+}
+
 func TestSettingsTheOwnerNamedStayNamed(t *testing.T) {
 	home(t)
 	if err := os.WriteFile(Path(), []byte("config_version: 2\nllm:\n  effort: high\n  model: claude-opus-5\nchannels:\n  whatsapp:\n    enabled: false\n"), 0o600); err != nil {

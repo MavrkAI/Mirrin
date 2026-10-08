@@ -19,7 +19,8 @@ is captured to a WAV and its path is printed. Protocol on stdout, one line each:
   err <message>
 
 Commands on stdin:
-  listen                  capture the next utterance now, without a wake word
+  listen [seconds]        capture the next utterance now, without a wake word,
+                          waiting up to seconds (default FOLLOWUP_SECONDS) for it
   pause / resume          ignore / honour the wake word
   speaking / idle         the host started / stopped talking
   reject / confirm        the last interruption was / wasn't the host's own voice
@@ -48,7 +49,7 @@ THRESHOLD_SPEAKING = float(os.environ.get("WAKE_THRESHOLD_SPEAKING") or str(min(
 OUT = os.environ.get("WAKE_OUT") or "/tmp/mirrin-utterance.wav"
 CLIP = os.environ.get("WAKE_CLIP") or (os.path.splitext(OUT)[0] + "-wake.wav")
 MAX_SECONDS = float(os.environ.get("MAX_SECONDS") or "30")
-FOLLOWUP_SECONDS = float(os.environ.get("FOLLOWUP_SECONDS") or "6")
+FOLLOWUP_SECONDS = float(os.environ.get("FOLLOWUP_SECONDS") or "8")
 # Seconds of pure digital silence before the host is told the microphone gives nothing.
 MUTE_SECONDS = float(os.environ.get("MUTE_SECONDS") or "30")
 COOLDOWN = 1.5
@@ -56,7 +57,7 @@ COOLDOWN = 1.5
 # (0 disables energy-based interruption; the wake word always works).
 TALKOVER_RATIO = float(os.environ.get("TALKOVER_RATIO") or "1.6")
 
-state = {"paused": False, "listen": False, "speaking": False}
+state = {"paused": False, "listen": False, "speaking": False, "window": None}
 own = {"peak": 0.0, "candidate": 0.0}  # how loud our own playback gets at the mic (learned)
 
 
@@ -68,7 +69,8 @@ def log(line):
 def stdin_loop():
     for line in sys.stdin:
         cmd = line.strip()
-        if cmd == "listen":
+        if cmd == "listen" or cmd.startswith("listen "):
+            state["window"] = listen_window(cmd)
             state["listen"] = True
         elif cmd == "pause":
             state["paused"] = True
@@ -87,6 +89,20 @@ def stdin_loop():
             pass
     # stdin closed: the host is gone. Never outlive it holding the microphone.
     os._exit(0)
+
+
+def listen_window(cmd):
+    """How long a "listen" command waits for speech to start: "listen 12"
+    names it; a plain "listen" (or a bad number) leaves FOLLOWUP_SECONDS."""
+    parts = cmd.split()
+    if len(parts) == 2:
+        try:
+            seconds = float(parts[1])
+        except ValueError:
+            return None
+        if seconds > 0:
+            return seconds
+    return None
 
 
 def read_exact(stream, n):
@@ -166,17 +182,20 @@ def capture(mic, first_chunks, wait_for_speech, window=None):
     "bare" if only the wake phrase (the pre-roll) was, else "".
     window overrides how long to wait for speech to start (follow-ups)."""
     noise = 0.004
+    window = window if window is not None else FOLLOWUP_SECONDS
     frames = list(first_chunks)
     speech_seen = False  # wait for the command after the wake phrase (or the follow-up)
     talking_frames = 0
     silence_run = 0.0
     waited = 0.0
+    heard = 0.0  # seconds of audio read, the clock the window is kept by
     t0 = time.time()
     while time.time() - t0 < MAX_SECONDS:
         buf = mic.read()
         if not buf:
             break
         chunk = np.frombuffer(buf, dtype=np.int16)
+        heard += CHUNK / RATE
         if wait_for_speech and state["speaking"]:
             sys.stderr.write("follow-up capture aborted: host is speaking\n"); sys.stderr.flush()
             return ""  # the host started talking; a follow-up capture would only hear it
@@ -189,7 +208,7 @@ def capture(mic, first_chunks, wait_for_speech, window=None):
                 speech_seen = True
             else:
                 noise = 0.9 * noise + 0.1 * level
-                limit = (window if window is not None else FOLLOWUP_SECONDS) if wait_for_speech else 1.2
+                limit = window if wait_for_speech else 1.2
                 if waited > limit:
                     # Wake phrase alone ("Hey Mirrin" ... nothing): still hand it over if we have pre-roll.
                     return "bare" if len(first_chunks) > 0 and _write(frames) else ""
@@ -210,7 +229,7 @@ def capture(mic, first_chunks, wait_for_speech, window=None):
         return ""
     if not first_chunks and talking_frames * CHUNK / RATE < 0.3:
         # a click or a breath, not speech: keep the window open for what's left of it
-        remaining = FOLLOWUP_SECONDS - (time.time() - t0)
+        remaining = window - heard
         if wait_for_speech and remaining > 0.5:
             return capture(mic, [], wait_for_speech=True, window=remaining)
         return ""
@@ -272,8 +291,9 @@ def main():
             model.reset()
             dropped = mic.drain()
             t0 = time.time()
-            ok = capture(mic, [], wait_for_speech=True)
-            sys.stderr.write(f"follow-up window: {'captured' if ok else 'nothing'} after {time.time()-t0:.1f}s (dropped {dropped} bytes, speaking={state['speaking']})\n"); sys.stderr.flush()
+            window = state["window"] or FOLLOWUP_SECONDS
+            ok = capture(mic, [], wait_for_speech=True, window=window)
+            sys.stderr.write(f"follow-up window ({window:g}s): {'captured' if ok else 'nothing'} after {time.time()-t0:.1f}s (dropped {dropped} bytes, speaking={state['speaking']})\n"); sys.stderr.flush()
             log(f"utterance {OUT} (followup {time.time()-t0:.1f}s)" if ok else "silence - (followup)")
             recent.clear()
             continue

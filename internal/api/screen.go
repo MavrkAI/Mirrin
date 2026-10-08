@@ -78,6 +78,7 @@ func (s *Server) screenRoutes(mux *http.ServeMux, a authz) {
 	s.portraitAckRoutes(mux, a)  // screen_memory.go: the portrait's "That's you"
 
 	s.browserRememberRoutes(mux, a) // browser_remember.go: "Remember this page"
+	s.screenSeenRoutes(mux, a)      // screen_seen.go: a screen in sight or not
 	mux.HandleFunc("GET /events", a.Require(devices.View, func(w http.ResponseWriter, r *http.Request) {
 		fl, ok := w.(http.Flusher)
 		if !ok {
@@ -91,12 +92,12 @@ func (s *Server) screenRoutes(mux *http.ServeMux, a authz) {
 		look := viewOnly(PeerFrom(r.Context())) // screen_private.go
 		ch, stop := bus.Subscribe()
 		defer stop()
-		if p := PeerFrom(r.Context()); p.Loopback && r.URL.Query().Get("view") != "orb" {
-			defer bus.ScreenOpen()() // a screen on this computer, not the orb
+		sc := localScreen(bus, r) // screen_seen.go: a screen on this computer, not the orb
+		if sc != nil {
+			defer sc.Close()
 		}
 		// current state first
-		b, _ := json.Marshal(map[string]any{"kind": "state", "text": bus.State(), "at": time.Now()})
-		fmt.Fprintf(w, "data: %s\n\n", b)
+		fmt.Fprintf(w, "data: %s\n\n", stateEvent(bus.State(), sc, time.Now()))
 		fl.Flush()
 		keep := time.NewTicker(eventsKeepalive)
 		defer keep.Stop()

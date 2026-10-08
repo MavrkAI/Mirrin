@@ -448,6 +448,9 @@ func (s *Session) Input(ctx context.Context, ev InputEvent) error {
 // Brief says, in a line for the twin's prompt, what the browser has open and
 // who is driving it, or "" when no page is open.
 func (s *Session) Brief(ctx context.Context) string {
+	if s.plainOpen() { // signinwindow.go
+		return "handed to the user in a Chrome window on this computer, for them to sign in themselves. Wait until they say done: your next browser tool closes that window and carries on signed in."
+	}
 	st := s.Live(ctx)
 	if !st.Open || st.URL == "about:blank" {
 		return ""

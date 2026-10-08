@@ -302,8 +302,10 @@ func New(cfg *config.Config, opts Options) (*Daemon, error) {
 		Run: func(ctx context.Context, t *tasks.Task, input string) (string, error) {
 			return d.budgetTask(ctx, t.Key, input)
 		},
-		Notify:    d.notifyTaskWithPush,
-		OnOutcome: d.taskOutcome, // react.go: a nod for one done, a tilt for one that failed
+		Notify:     d.notifyTaskWithPush,
+		NotifyKept: d.notify,      // a finished task's screenshots are kept in the chat it reaches
+		Shots:      d.taskShots,   // taskshots.go
+		OnOutcome:  d.taskOutcome, // react.go: a nod for one done, a tilt for one that failed
 		Pending: func(ctx context.Context, chatKey string) (int, string) {
 			ps, err := store.PendingApprovals(ctx, chatKey)
 			if err != nil || len(ps) == 0 {

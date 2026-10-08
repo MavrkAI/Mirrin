@@ -59,7 +59,9 @@ func (d *Daemon) answerTools() []tools.Tool {
 				"answer": {Type: "string", Description: "Their answer as you understand it, if their message says more than that"},
 			}), tools.RiskRead, d.answerTaskTool), d},
 		ownersOnly{d.askBeforeTool(), d},
-		ownersOnly{d.setAddressTool(), d}, // address.go
+		ownersOnly{d.setAddressTool(), d},  // address.go
+		ownersOnly{d.sendToOwnerTool(), d}, // taskshots.go
+		ownersOnly{d.openScreenTool(), d},  // openscreen.go
 	}
 }
 

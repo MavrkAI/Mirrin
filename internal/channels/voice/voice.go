@@ -205,7 +205,7 @@ func New(cfg config.Voice, agentName, dataDir string) *Channel {
 		cfg.MaxSeconds = 30
 	}
 	if cfg.FollowupSeconds <= 0 {
-		cfg.FollowupSeconds = 6
+		cfg.FollowupSeconds = DefaultFollowupSeconds
 	}
 	c := &Channel{cfg: cfg, name: agentName, dataDir: dataDir, out: os.Stdout, in: os.Stdin, speakMu: make(chan struct{}, 1), listenNow: make(chan struct{}, 1)}
 	if !serverDisabled() && cfg.WhisperModel != "" {
@@ -465,7 +465,7 @@ func (c *Channel) pushLoop(ctx context.Context, handler channels.Handler) error 
 			continue
 		}
 		c.converse(ctx, handler, text, func() string {
-			t, err := c.listen(ctx, c.cfg.FollowupSeconds)
+			t, err := c.listen(ctx, c.followupSeconds())
 			if err != nil {
 				return ""
 			}
@@ -706,7 +706,7 @@ func (c *Channel) transcribeLoop(ctx context.Context, handler channels.Handler) 
 		}
 		followup := func() string {
 			c.waitTillQuiet(ctx)
-			t, err := c.listen(ctx, c.cfg.FollowupSeconds)
+			t, err := c.listen(ctx, c.followupSeconds())
 			if err != nil {
 				return ""
 			}

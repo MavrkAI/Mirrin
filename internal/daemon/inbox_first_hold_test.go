@@ -125,3 +125,41 @@ func TestFirstInboxLookHoldAndDailyOffer(t *testing.T) {
 		t.Fatal("offered every morning after a later")
 	}
 }
+
+// The hello is said and its offer raised as one step, as far as the first
+// look at the inbox can tell: watched all through the hello, the look is
+// held at every moment until the offer is answered.
+func TestFirstInboxLookIsHeldAllThroughTheHello(t *testing.T) {
+	td, _ := inboxDaemon(t, time.Millisecond, func(last string, req llm.Request) llm.Response {
+		return say("Afternoon, Akshay. Type to me whenever you like.")
+	})
+	ctx := context.Background()
+	td.stampInstall(ctx)
+	stop := make(chan struct{})
+	gap := make(chan bool, 1)
+	go func() {
+		defer close(gap)
+		for {
+			select {
+			case <-stop:
+				return
+			default:
+			}
+			if !td.inboxFirstHeld(ctx) {
+				gap <- true
+				return
+			}
+		}
+	}()
+	reply, err := td.Hello(ctx, func(string) {}, nil)
+	close(stop)
+	if err != nil || reply.Offer == nil {
+		t.Fatalf("hello: %+v %v", reply, err)
+	}
+	if <-gap {
+		t.Fatal("the first look was let go between the hello and its briefing offer")
+	}
+	if !td.inboxFirstHeld(ctx) {
+		t.Fatal("not held with the briefing offer waiting")
+	}
+}

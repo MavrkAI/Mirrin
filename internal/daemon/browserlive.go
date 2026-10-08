@@ -134,25 +134,24 @@ func (d *Daemon) browserHandedOver(url, ask string) bool {
 }
 
 // showScreen opens the presence screen at the twin's browser when a page
-// is handed over in a chat at this computer with no screen open here: by
-// voice, or in the terminal, there is nothing on screen to click, and
-// "it's on the presence screen" left the owner looking for it. A screen
-// already open shows the page itself; a messaging chat's owner may be
-// anywhere, so nothing opens on an empty desk.
-func (d *Daemon) showScreen(chatKey string) bool {
-	if isCall(chatKey) || d.bus.ScreensOpen() > 0 {
-		return false
+// is handed over in a chat at this computer with no screen here in sight:
+// by voice, or in the terminal, there is nothing on screen to click, and
+// "it's on the presence screen" left the owner looking for it. A screen in
+// sight here shows the page itself; one in a background tab, the orb, a
+// phone or a wall screen doesn't count (events screens.go). A messaging
+// chat's owner may be anywhere, so nothing opens on an empty desk.
+func (d *Daemon) showScreen(chatKey string) browser.ScreenShow {
+	if !atThisDesk(chatKey) {
+		return browser.ScreenNotTried
 	}
-	switch channelOf(homeKey(chatKey)) {
-	case "voice", "cli":
-	default:
-		return false
+	if d.bus.ScreensInSight() > 0 {
+		return browser.ScreenInSight
 	}
 	if err := d.OpenScreen(context.Background()); err != nil {
 		d.log.Warn("browser: open the screen for a hand-over", "err", err)
-		return false
+		return browser.ScreenNotShown
 	}
-	return true
+	return browser.ScreenInSight
 }
 
 // screenAddress is the presence screen's address on this computer, without

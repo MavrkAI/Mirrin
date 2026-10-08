@@ -3,9 +3,13 @@ package daemon
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -115,6 +119,26 @@ type testDaemon struct {
 	ch   *fakeChannel
 	mu   sync.Mutex
 	sent []string // what the send tool actually sent
+	// modelCalls counts requests that reached the stand-in model server: a
+	// model rebuilt from the config (healModel) goes there, never to a real
+	// provider.
+	modelCalls *atomic.Int64
+}
+
+// standInModel is a local server in place of the provider's API, refusing
+// every request the way a bad key is refused. Tests never reach the real
+// one, even when a failed model is rebuilt from the config.
+func standInModel(t *testing.T) (string, *atomic.Int64) {
+	t.Helper()
+	calls := new(atomic.Int64)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte(`{"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"}}`))
+	}))
+	t.Cleanup(srv.Close)
+	return srv.URL, calls
 }
 
 const ownerKey = "telegram:owner"
@@ -129,6 +153,10 @@ func newTestDaemon(t *testing.T, brain func(last string, req llm.Request) llm.Re
 	cfg.DataDir = filepath.Join(home, "data")
 	cfg.ProtocolsDir = filepath.Join(home, "protocols")
 	cfg.LLM.APIKey = "test-key"
+	modelURL, modelCalls := standInModel(t)
+	if os.Getenv("ANTHROPIC_BASE_URL") == "" { // a test with a server of its own keeps it
+		cfg.LLM.BaseURL = modelURL
+	}
 	cfg.Autonomy = config.Autonomy{Read: "auto", Write: "ask", Dangerous: "ask"}
 	// Nothing is held for quiet hours (held.go) unless a test asks for them:
 	// a run at night sees what a run by day does.
@@ -145,7 +173,7 @@ func newTestDaemon(t *testing.T, brain func(last string, req llm.Request) llm.Re
 	run, stop := context.WithCancel(context.Background()) // as Run sets it
 	d.runCtx = run
 	t.Cleanup(stop)
-	td := &testDaemon{Daemon: d, llm: &fakeLLM{brain: brain}, ch: &fakeChannel{name: "telegram", owner: "owner", out: make(chan string, 64)}}
+	td := &testDaemon{Daemon: d, modelCalls: modelCalls, llm: &fakeLLM{brain: brain}, ch: &fakeChannel{name: "telegram", owner: "owner", out: make(chan string, 64)}}
 	d.agent.SetProvider(td.llm)
 	d.channels["telegram"] = td.ch
 	d.agent.Tools().Register(tools.New("send", "send a message", tools.Schema(map[string]tools.Prop{"to": {Type: "string"}}), tools.RiskWrite,

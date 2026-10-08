@@ -87,7 +87,7 @@ func New(s ProviderSettings) (Provider, error) {
 	}
 	switch provider {
 	case "anthropic":
-		return NewAnthropic(key, model), nil
+		return NewAnthropicAt(key, model, s.BaseURL), nil // only an explicit base_url
 	case "openai", "gemini", "ollama":
 		if key == "" && provider != "ollama" {
 			return nil, &KeyMissingError{Provider: provider, Env: DefaultKeyEnv(provider)}

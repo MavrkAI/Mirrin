@@ -194,3 +194,27 @@ func TestCheckAcceptsAKeyThatCantListModels(t *testing.T) {
 		})
 	}
 }
+
+// An explicit base_url reaches the Anthropic client too, as it does the
+// others: a proxy works, and a test's stand-in server is the only one asked.
+func TestAnthropicHonoursBaseURL(t *testing.T) {
+	hits := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(401)
+		_, _ = w.Write([]byte(`{"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"}}`))
+	}))
+	defer srv.Close()
+	t.Setenv("ANTHROPIC_BASE_URL", "")
+	p, err := New(ProviderSettings{Provider: "anthropic", Model: "claude-opus-5", APIKey: "k", BaseURL: srv.URL})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := p.Complete(context.Background(), Request{Messages: []Message{Text(RoleUser, "hi")}, MaxTokens: 5}); err == nil {
+		t.Fatal("the stand-in refused, yet the call succeeded")
+	}
+	if hits == 0 {
+		t.Fatal("base_url was ignored: the request went elsewhere")
+	}
+}

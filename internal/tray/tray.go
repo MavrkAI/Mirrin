@@ -632,7 +632,7 @@ func buildSettings(ctx context.Context, name string, backend Backend) {
 		func(c *config.Config, v string) { c.Channels.Voice.TalkOver = v }, backend, name)
 
 	followMenu := vm.AddSubMenuItem("Follow-up window", "How long it keeps listening after replying")
-	radio(ctx, followMenu, []choice{{"Off", "0"}, {"4 seconds", "4"}, {"6 seconds", "6"}, {"10 seconds", "10"}},
+	radio(ctx, followMenu, []choice{{"Off", "0"}, {"4 seconds", "4"}, {"6 seconds", "6"}, {"8 seconds", "8"}, {"10 seconds", "10"}},
 		func(c config.Config) string { return fmt.Sprint(c.Channels.Voice.FollowupSeconds) },
 		func(c *config.Config, v string) { fmt.Sscan(v, &c.Channels.Voice.FollowupSeconds) }, backend, name)
 

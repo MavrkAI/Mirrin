@@ -227,14 +227,18 @@ func (d *Daemon) Hello(ctx context.Context, onDelta, onStatus func(string)) (api
 	if out == "" {
 		return api.HelloReply{}, &api.HumanError{Sentence: "I didn't get a reply from that model.", Fix: "Try hello again, or choose another model."}
 	}
-	if err := d.store.Set(ctx, "first_look_at", time.Now().Format(time.RFC3339)); err != nil {
-		return api.HelloReply{}, err
-	}
 	// The screen's conversation starts with it, so "what did you mean?"
 	// there has context. Typed on this Mac, it stays off view-only screens.
 	d.noticed(ctx, screenChat, out, out)
 	d.bus.Publish(events.Event{Kind: "said", Text: out, Data: map[string]string{"channel": "screen"}})
-	return api.HelloReply{Text: out, Note: note, Offer: d.offerBriefing(ctx)}, nil // briefing_offer.go
+	// The offer is raised before the hello counts as said, so the first
+	// look at the inbox, waiting on both (inbox_first_hold.go), never sees
+	// a hello said with no offer yet.
+	offer := d.offerBriefing(ctx) // briefing_offer.go
+	if err := d.store.Set(ctx, "first_look_at", time.Now().Format(time.RFC3339)); err != nil {
+		return api.HelloReply{}, err
+	}
+	return api.HelloReply{Text: out, Note: note, Offer: offer}, nil
 }
 
 // helloAsk is what the first hello's system prompt asks for, after the

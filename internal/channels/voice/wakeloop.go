@@ -53,8 +53,9 @@ func (c *Channel) wakeLoop(ctx context.Context, handler channels.Handler) error 
 		for len(followups) > 0 { // drop stale results from an earlier window
 			<-followups
 		}
-		c.wake.send("listen")
-		timeout := time.NewTimer(time.Duration(c.cfg.FollowupSeconds+c.cfg.MaxSeconds+5) * time.Second)
+		window := c.followupSeconds()
+		c.wake.send(c.listenCommand(window))
+		timeout := time.NewTimer(c.followupWait(window))
 		defer timeout.Stop()
 		select {
 		case <-ctx.Done():
@@ -63,7 +64,7 @@ func (c *Channel) wakeLoop(ctx context.Context, handler channels.Handler) error 
 			return ""
 		case t := <-followups:
 			if t == "" {
-				fmt.Fprintf(c.out, "(follow-up: nothing heard)\n")
+				fmt.Fprintf(c.out, "(follow-up: nothing heard in %ds)\n", window)
 			}
 			return t
 		case t := <-confirmed: // the user said the wake word instead; treat it as the follow-up

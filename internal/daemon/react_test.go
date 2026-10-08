@@ -127,6 +127,10 @@ func TestOnlyTheOwnersFailedReplyIsSorry(t *testing.T) {
 	}
 	if got := reactionsIn(seen()); len(got) != 2 || got[1] != "sorry: a reply failed" {
 		t.Fatalf("the screen's error: %q", got)
+	} // The failed model was rebuilt from the config after the first error;
+	// it went to the local stand-in, never to the real provider.
+	if td.modelCalls.Load() == 0 {
+		t.Fatal("the rebuilt model didn't go to the stand-in server")
 	}
 }
 

@@ -434,7 +434,8 @@ type Voice struct {
 	ChimeSound string `yaml:"chime_sound"`
 	// Acknowledge plays a tiny spoken "Mm-hm?" the instant the wake word is heard (default on).
 	Acknowledge *bool `yaml:"acknowledge"`
-	// FollowupSeconds is how long the twin keeps listening after replying, so you can talk back.
+	// FollowupSeconds is how long the twin keeps listening after replying, so you can talk back
+	// (default 8). After it asks you something it waits at least 12.
 	FollowupSeconds int `yaml:"followup_seconds"`
 	// ElevenLabsAPIKey (or ELEVENLABS_API_KEY) enables natural cloud speech; ElevenLabsModel defaults to eleven_flash_v2_5.
 	ElevenLabsAPIKey string `yaml:"elevenlabs_api_key"`
@@ -703,7 +704,7 @@ func Default() *Config {
 				WhisperBin:      "whisper-cli",
 				WhisperModel:    filepath.Join(home, "models", "ggml-base.en.bin"),
 				MaxSeconds:      30,
-				FollowupSeconds: 6,
+				FollowupSeconds: 8,
 				Engine:          "auto",
 				WakeEngine:      "auto",
 				WakeThreshold:   0.25,

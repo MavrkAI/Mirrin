@@ -28,7 +28,7 @@ func taskState(ts []tasks.Task, now time.Time) string {
 			if r == "" {
 				r = "no result recorded"
 			}
-			ended = append(ended, fmt.Sprintf("%q finished: %s", t.Title, r))
+			ended = append(ended, fmt.Sprintf("%q finished: %s%s", t.Title, r, shotsNote(t.Shots)))
 		case t.Status == tasks.Failed && now.Sub(t.Updated) < 48*time.Hour:
 			ended = append(ended, fmt.Sprintf("%q failed", t.Title))
 		case t.Status == tasks.Paused:

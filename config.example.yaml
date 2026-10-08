@@ -36,7 +36,7 @@ channels:
     whisper_model: ~/.mirrin/models/ggml-small.en.bin
     engine: auto              # auto | kokoro | elevenlabs | system | command
     voice: bm_george          # run `mirrin voice setup` to install Kokoro
-    followup_seconds: 6
+    followup_seconds: 8
     chime_sound: ""           # optional file for the wake chime, e.g. /System/Library/Sounds/Tink.aiff
     talk_over: normal         # off | low | normal | high — interrupt by talking over it (its name always works)
 

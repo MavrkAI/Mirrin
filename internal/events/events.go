@@ -73,7 +73,7 @@ type Bus struct {
 	shown   string // the state last published
 	maxHold time.Duration
 	last    []Event
-	screens int // presence screens open on this computer (screens.go)
+	screens map[string]bool // presence screens open here, and whether each is in sight (screens.go)
 }
 
 // New builds a bus.

@@ -73,7 +73,8 @@ func isGuarded(path string) bool {
 // default, since improved. In a full dump they were never the owner's
 // choice, so they give way to today's default.
 var staleDefaults = map[string][]any{
-	"channels.voice.wake_threshold": {0.5, 0.35}, // retuned for the bundled wake model
+	"channels.voice.wake_threshold":   {0.5, 0.35}, // retuned for the bundled wake model
+	"channels.voice.followup_seconds": {6},         // too short to answer a question
 	// the default persona, before he was Mirrin (persona.Find knows him by both)
 	"name":                     {"MAVRK"},
 	"persona":                  {"mavrk"},
