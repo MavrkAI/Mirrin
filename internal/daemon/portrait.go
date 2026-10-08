@@ -22,6 +22,7 @@ import (
 // the memory page can say why it's gone. With no portrait there is nothing
 // to set aside, and the page says nothing about it.
 func (d *Daemon) setPortraitAside(ctx context.Context) {
+	defer d.draft.forgot()() // firstdraft.go: a draft being written isn't kept
 	had, _ := d.store.Get(ctx, "portrait")
 	if err := d.store.DeletePortrait(ctx); err != nil {
 		d.log.Warn("portrait: couldn't set it aside after a forget", "err", err)
@@ -46,8 +47,10 @@ func portraitAside(ctx context.Context, store *memory.Store) bool {
 // been guarding Friday afternoons"). The screen's "How Mirrin sees you" shows
 // the portrait in full, the line for a week, and asks whether it's right:
 // "That's you" puts the question away until the next portrait, and "Not
-// quite" opens the text box. None of it is read aloud or sent anywhere, and
-// a wall screen that only looks never gets it (api/screen_private.go). The
+// quite" opens the text box. The line is also said once with the owner's
+// next hello on this computer (portrait_noticed.go); none of it is sent
+// anywhere else, and a wall screen that only looks never gets it
+// (api/screen_private.go). The
 // first portrait is written at the end of the first week, so the last tip
 // can point to it.
 
@@ -106,7 +109,9 @@ func (d *Daemon) sundayPortrait(ctx context.Context) {
 // first portrait when there isn't one, and reports whether there is one to
 // point to. One set aside after a forget isn't rewritten here (see above).
 func (d *Daemon) weekOnePortrait(ctx context.Context) bool {
-	if p, err := d.store.GetPortrait(ctx); err != nil || p.Text != "" {
+	p, err := d.store.GetPortrait(ctx)
+	draft := err == nil && d.portraitIsDraft(ctx, p) // firstdraft.go: the regular one takes over
+	if err != nil || (p.Text != "" && !draft) {
 		return err == nil
 	}
 	if portraitAside(ctx, d.store) {
@@ -116,7 +121,10 @@ func (d *Daemon) weekOnePortrait(ctx context.Context) bool {
 	if err != nil {
 		d.log.Warn("portrait: the first one wasn't written", "err", err)
 	}
-	return text != ""
+	// When the rewrite fails, the draft stays up, still labelled "First
+	// draft", until the Sunday job replaces it: there is still one to
+	// point to, and no draft is rewritten after the first week.
+	return text != "" || draft
 }
 
 // screenPortrait puts the portrait on the screen, with its line on what's
@@ -128,6 +136,7 @@ func (d *Daemon) screenPortrait(ctx context.Context, sd *ScreenData) {
 		return
 	}
 	sd.Portrait, sd.PortraitAt = p.Text, portraitStamp(p)
+	sd.PortraitDraft = d.portraitIsDraft(ctx, p) // firstdraft.go
 	var n portraitNews
 	if raw, _ := d.store.Get(ctx, keyPortraitNew); raw != "" && json.Unmarshal([]byte(raw), &n) == nil &&
 		n.At.Equal(p.UpdatedAt) && time.Since(n.At) < 7*24*time.Hour {

@@ -9,14 +9,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/MavrkAI/Mirrin/internal/brand"
 	"github.com/MavrkAI/Mirrin/internal/config"
 	"github.com/MavrkAI/Mirrin/internal/procenv"
 )
 
-// The variables a service passes on, written under the current names and
-// read under AntBot's too (brand.Getenv): its systemd units, and a
-// supervisor that started before an update, still use those.
+// The variables a service passes on to the processes it starts.
 const (
 	desktopServiceEnv = "MIRRIN_DESKTOP_SERVICE"
 	supervisedLogsEnv = "MIRRIN_LOGS_SUPERVISED"
@@ -43,7 +40,7 @@ func installEnvironment(goos string, wantTray bool) map[string]string {
 
 // wantsDesktop reports whether the installed unit asks for the tray when a
 // desktop session is there.
-func wantsDesktop() bool { return brand.Getenv(desktopServiceEnv) == "1" }
+func wantsDesktop() bool { return os.Getenv(desktopServiceEnv) == "1" }
 
 func withDesktopSession(headless Run) Run {
 	if runtime.GOOS != "linux" || !wantsDesktop() {

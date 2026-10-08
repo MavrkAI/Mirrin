@@ -37,6 +37,8 @@ type Client struct {
 	upcoming []Event
 	upN      int
 	upAt     time.Time
+
+	spans map[string][2]time.Time // event id → times, from the last Snapshot (span.go)
 }
 
 // New builds a client (lazy; nothing is contacted until a tool runs).
@@ -315,6 +317,12 @@ type Event struct {
 	End      time.Time `json:"end"`
 	AllDay   bool      `json:"all_day"`
 	Location string    `json:"location,omitempty"`
+	// The rest is filled by Soon only (soon.go): screens never carry who a
+	// meeting is with or what its invite says.
+	ID          string     `json:"id,omitempty"`
+	Attendees   []Attendee `json:"attendees,omitempty"`
+	Description string     `json:"description,omitempty"` // the invite's notes: someone else's words
+	Link        string     `json:"link,omitempty"`        // the video call, if any
 }
 
 // Upcoming returns the next n events from now. Screens ask every few
@@ -385,7 +393,9 @@ func (c *Client) Snapshot(ctx context.Context) (map[string]string, error) {
 		return nil, c.auth.Explain("calendar", err)
 	}
 	out := map[string]string{}
+	spans := map[string][2]time.Time{}
 	for _, e := range evs.Items {
+		addSpan(spans, e)
 		desc := fmt.Sprintf("%s | %s", c.when(e), e.Summary)
 		if e.Location != "" {
 			desc += " @ " + e.Location
@@ -395,6 +405,7 @@ func (c *Client) Snapshot(ctx context.Context) (map[string]string, error) {
 		}
 		out[e.Id] = desc
 	}
+	c.keepSpans(spans)
 	return out, nil
 }
 

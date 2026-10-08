@@ -52,15 +52,11 @@ type Registry struct {
 // DefaultRegistryURL is where `mirrin protocols search` looks.
 const DefaultRegistryURL = "https://raw.githubusercontent.com/MavrkAI/Mirrin/main/registry/index.json"
 
-// legacyRegistryURL was the default before the rename. Configs, installed
-// packs and identity archives that name it mean the default.
-const legacyRegistryURL = "https://raw.githubusercontent.com/MavrkAI/AntBot/main/registry/index.json" // rename:keep
-
-// IsDefaultRegistry reports whether url names the default index: "", its
-// address, or its address from before the rename. The default index is the
+// IsDefaultRegistry reports whether url names the default index: "" or its
+// address. The default index is the
 // signed one, with the copy built into this version to fall back on.
 func IsDefaultRegistry(url string) bool {
-	return url == "" || url == DefaultRegistryURL || url == legacyRegistryURL
+	return url == "" || url == DefaultRegistryURL
 }
 
 // registryURL is DefaultRegistryURL; tests point it elsewhere.
@@ -237,7 +233,7 @@ func packName(src string) string {
 // ProvenanceFile, at the root of an installed pack, records where it came
 // from and the commit it is pinned to. It travels with identity exports,
 // which leave .git behind.
-const ProvenanceFile = ".antbot-pack.json"
+const ProvenanceFile = ".mirrin-pack.json"
 
 // Provenance is what ProvenanceFile holds. Identity exports and imports read
 // and write it through this type, so there is one reader.

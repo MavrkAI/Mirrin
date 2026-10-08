@@ -520,7 +520,7 @@ func TestHomeInUseSeesAClaim(t *testing.T) {
 	if HomeInUse(d.cfg.DataDir) {
 		t.Fatal("in use before anything claimed it")
 	}
-	if _, err := os.Stat(filepath.Join(d.cfg.DataDir, "antbot.lock")); err == nil {
+	if _, err := os.Stat(filepath.Join(d.cfg.DataDir, "mirrin.lock")); err == nil {
 		t.Fatal("the probe created the lock file")
 	}
 	if err := d.Claim(context.Background()); err != nil {

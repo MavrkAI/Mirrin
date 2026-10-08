@@ -265,8 +265,7 @@ func TestMoveTwinToAnotherMachine(t *testing.T) {
 	if strings.Contains(cfgOut, src) || !strings.Contains(cfgOut, "max_tokens: 32000") {
 		t.Fatalf("exported config keeps machine paths or loses max_tokens:\n%s", cfgOut)
 	}
-	// The token keeps AntBot's spelling: older builds import these archives.
-	if !strings.Contains(cfgOut, "$ANTBOT_HOME/sounds/blip.aiff") || (user != "" && !strings.Contains(cfgOut, "~/Projects")) {
+	if !strings.Contains(cfgOut, "$MIRRIN_HOME/sounds/blip.aiff") || (user != "" && !strings.Contains(cfgOut, "~/Projects")) {
 		t.Fatalf("exported paths are not portable:\n%s", cfgOut)
 	}
 	for _, want := range []string{"llm.providers.openai.api_key", "mcp.servers.github.env.AWS_SECRET_ACCESS_KEY", "mcp.servers.github.args[2]", "llm.base_url", "skills.email.password",
@@ -545,7 +544,7 @@ func TestImportOnlyTakesTwinFiles(t *testing.T) {
 		{name: "pack protocols folder", file: tarFile{name: "protocols/packs/p/protocols/a.yaml", body: "name: a\nprompt: b\n"}, lands: "protocols/packs/p/protocols/a.yaml"},
 		{name: "pack persona", file: tarFile{name: "protocols/packs/p/personas/a.yml", body: "name: A\ncharacter: c\n"}, lands: "protocols/packs/p/personas/a.yml"},
 		{name: "pack script", file: tarFile{name: "protocols/packs/p/scripts/run.sh", body: "#!/bin/sh\n"}, skipped: true},
-		{name: "pack provenance", file: tarFile{name: "protocols/packs/p/.antbot-pack.json", body: "{}"}, skipped: true},
+		{name: "pack provenance", file: tarFile{name: "protocols/packs/p/.mirrin-pack.json", body: "{}"}, skipped: true},
 		{name: "pack being installed", file: tarFile{name: "protocols/packs/.p.installing/a.yaml", body: "name: a\n"}, skipped: true},
 		{name: "text file", file: tarFile{name: "protocols/notes.txt", body: "x"}, skipped: true},
 		{name: "deep folder", file: tarFile{name: "protocols/sub/dir/a.yaml", body: "name: a\n"}, skipped: true},
@@ -647,7 +646,7 @@ func TestImportRejectsBadArchives(t *testing.T) {
 // source machine's absolute paths.
 func TestImportLegacyArchive(t *testing.T) {
 	user, _ := os.UserHomeDir()
-	old := "/Users/someone/.antbot"
+	old := "/Users/someone/.mirrin"
 	legacy := "name: Jeeves\npersona: mavrk\nllm:\n  provider: anthropic\n  model: claude-opus-5\n  max_tokens: \"\"\n  api_key: \"\"\n" +
 		"autonomy:\n  read: auto\n  write: ask\n  dangerous: ask\n" +
 		"data_dir: " + old + "/data\nprotocols_dir: " + old + "/protocols\n" +
@@ -685,15 +684,12 @@ func TestImportLegacyArchive(t *testing.T) {
 	}
 }
 
-// An archive from before the rename, or from AntBot's or openHuman's home,
-// or one a later version writes with $MIRRIN_HOME, lands in this home.
+// An archive's paths in the home, as the token or (format 1) as the source
+// machine's absolute paths, land in this home.
 func TestImportReadsEveryHomeToken(t *testing.T) {
 	for _, c := range []struct{ name, chime, dataDir string }{
-		{"AntBot's token", "$ANTBOT_HOME/sounds/x.aiff", ""},
-		{"a later token", "$MIRRIN_HOME/sounds/x.aiff", ""},
+		{"the token", "$MIRRIN_HOME/sounds/x.aiff", ""},
 		{"format 1 from ~/.mirrin", "/Users/someone/.mirrin/sounds/x.aiff", "/Users/someone/.mirrin/data"},
-		{"format 1 from ~/.antbot", "/Users/someone/.antbot/sounds/x.aiff", "/Users/someone/.antbot/data"},
-		{"format 1 from ~/.openhuman", "/Users/someone/.openhuman/sounds/x.aiff", "/Users/someone/.openhuman/data"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			format := 2
@@ -840,7 +836,7 @@ func TestSecretFieldsAreKnown(t *testing.T) {
 	want := []string{
 		"channels.discord.token", "channels.irc.password", "channels.matrix.access_token", "channels.mattermost.token",
 		"channels.slack.app_token", "channels.slack.bot_token", "channels.telegram.token", "channels.voice.elevenlabs_api_key",
-		"channels.zulip.api_key", "llm.api_key", "llm.providers.*.api_key", "phone.auth_token", "skills.email.password",
+		"channels.zulip.api_key", "jev.typesafe_api_key", "llm.api_key", "llm.providers.*.api_key", "phone.auth_token", "skills.email.password",
 	}
 	var got []string
 	var walk func(tp reflect.Type, prefix string)

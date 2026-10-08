@@ -150,31 +150,6 @@ limits would count all of them together. The image runs as an unprivileged
 user that may bind ports 80 and 443. `--stop-timeout 40` gives the drain its
 30 seconds on `docker stop` and `docker restart`; Docker's default is 10.
 
-### A relay set up before the rename
-
-A relay installed before the rename to Mirrin runs as `antbot-relay`. Move
-it over, keeping its settings and its state (the ACME account, the control
-name's certificate and any suspensions):
-
-```sh
-sudo systemctl disable --now antbot-relay
-sudo mv /etc/antbot-relay /etc/mirrin-relay
-sudo mv /var/lib/private/antbot-relay /var/lib/private/mirrin-relay
-sudo rm -f /var/lib/antbot-relay /etc/systemd/system/antbot-relay.service /usr/local/bin/antbot-relay
-```
-
-Set `state_dir` in `/etc/mirrin-relay/relay.yaml` to `/var/lib/mirrin-relay`
-(the unit lets the relay write nowhere else), then install `mirrin-relay`
-and its unit as above.
-
-Under Docker, move the config folder and set `state_dir` the same way, then
-`docker rm -f antbot-relay` and start the new container with the old
-volume: the `docker run` above with `-v antbot-relay:/var/lib/mirrin-relay`.
-
-Its metrics are now named `mirrin_relay_*` (they were `antbot_relay_*`):
-update dashboards and alert rules, such as those on the deny list's age and
-the control certificate's expiry, or they stop matching without a word.
-
 ## 6. Connect your twin
 
 On your twin's machine, restart Mirrin (or run `mirrin reach use relay …`

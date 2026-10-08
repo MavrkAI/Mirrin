@@ -79,7 +79,7 @@ table { width:100%; border-collapse:collapse; font-size:13px } td { padding:6px 
 // Every request goes through api(), which puts each way a request can fail
 // into plain words, and shows "This device isn't paired" when that is why.
 const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function twinName(){try{const n=localStorage.getItem('antbot.name');if(n)return n}catch{}const m=document.querySelector('meta[name="mirrin-name"]');return (m&&m.content)||'Mirrin'}
+function twinName(){try{const n=localStorage.getItem('mirrin.name');if(n)return n}catch{}const m=document.querySelector('meta[name="mirrin-name"]');return (m&&m.content)||'Mirrin'}
 for(const el of document.querySelectorAll('[data-name]'))el.textContent=twinName();
 const PAGE_TITLE=document.title=twinName()+' · '+document.title;
 const FRIENDLY={not_paired:"This device isn't paired.",passkey_required:'This needs Face ID or Touch ID, which this device has not set up.',forbidden:"This device isn't allowed to do that."};
@@ -157,7 +157,7 @@ async function loadAudit(){
 }
 async function loadTwin(){
   const t=await getJSON('/memory/twin');
-  if(t.name){NAME=t.name;try{localStorage.setItem('antbot.name',t.name)}catch{}}
+  if(t.name){NAME=t.name;try{localStorage.setItem('mirrin.name',t.name)}catch{}}
   $('#title').textContent=NAME+(t.spoken&&t.spoken!==t.name?' (“'+t.spoken+'”)':'');document.title=NAME+' · Your twin';
   $('#subtitle').textContent=(t.user?t.user+'’s twin. ':'')+'Who it is, and everything it knows about you.';
   $('#twin-persona').textContent='persona: '+(t.persona||'')+(t.tagline?' — '+t.tagline:'');

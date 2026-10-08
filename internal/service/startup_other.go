@@ -17,5 +17,3 @@ func controlStartup(*config.Config, string, func() bool, io.Writer) error {
 }
 
 func stateStartup() (installed, running bool) { return false, false }
-
-func tidyStartup(io.Writer) {}

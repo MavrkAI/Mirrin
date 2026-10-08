@@ -104,14 +104,11 @@ func (g guard) ownFile(p string) bool {
 	return false
 }
 
-// mentionsOwn reports whether a shell command names Mirrin's own home, or
-// one from before the rename (~/.antbot, ~/.openhuman) left beside it.
+// mentionsOwn reports whether a shell command names Mirrin's own home.
 func (g guard) mentionsOwn(command string) bool {
 	c := strings.ToLower(command)
-	for _, name := range append([]string{brand.HomeDirName}, brand.LegacyHomeDirs...) {
-		if strings.Contains(c, name) {
-			return true
-		}
+	if strings.Contains(c, brand.HomeDirName) {
+		return true
 	}
 	for _, d := range g.own {
 		if d != "" && strings.Contains(c, strings.ToLower(d)) {
@@ -147,12 +144,10 @@ func newGuard(private []string) guard {
 
 // homeCopies are the folders beside a home that hold a copy of a twin's
 // settings, memory and keys: what a restore set aside (<home>.before-
-// restore-…) or left half done (.<home>.restore-…), and, beside the
-// default home, the homes from before the rename (~/.antbot, ~/.openhuman)
-// with their own copies.
+// restore-…) or left half done (.<home>.restore-…).
 type homeCopies struct {
 	parent string
-	names  []string // the home's own name first
+	name   string // the home's own name
 }
 
 func newHomeCopies(home string) homeCopies {
@@ -160,12 +155,7 @@ func newHomeCopies(home string) homeCopies {
 	if err != nil || home == "" {
 		return homeCopies{}
 	}
-	c := homeCopies{parent: filepath.Dir(abs), names: []string{filepath.Base(abs)}}
-	if config.IsDefaultHome(abs) {
-		c.names = append(c.names, brand.HomeDirName)
-		c.names = append(c.names, brand.LegacyHomeDirs...)
-	}
-	return c
+	return homeCopies{parent: filepath.Dir(abs), name: filepath.Base(abs)}
 }
 
 // holds reports whether p is in one of those folders.
@@ -178,13 +168,8 @@ func (c homeCopies) holds(p string) bool {
 		return false
 	}
 	first := strings.ToLower(strings.SplitN(filepath.ToSlash(rel), "/", 2)[0])
-	for i, name := range c.names {
-		name = strings.ToLower(name)
-		if (i > 0 && first == name) || strings.HasPrefix(first, name+".before-restore-") || strings.HasPrefix(first, "."+name+".restore-") {
-			return true
-		}
-	}
-	return false
+	name := strings.ToLower(c.name)
+	return strings.HasPrefix(first, name+".before-restore-") || strings.HasPrefix(first, "."+name+".restore-")
 }
 
 // reason is why p is sensitive, or "" when it isn't. Both the path as

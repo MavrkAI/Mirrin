@@ -23,7 +23,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -143,11 +142,11 @@ func newUpdater(out io.Writer) (*updater, error) {
 	if r, err := filepath.EvalSymlinks(exe); err == nil {
 		exe = r
 	}
-	repo := brand.Env("REPO")
+	repo := os.Getenv("MIRRIN_REPO")
 	if repo == "" {
 		repo = defaultRepo
 	}
-	releases := strings.TrimRight(brand.Env("DOWNLOAD_URL"), "/")
+	releases := strings.TrimRight(os.Getenv("MIRRIN_DOWNLOAD_URL"), "/")
 	if releases == "" {
 		releases = "https://github.com/" + repo + "/releases"
 	}
@@ -297,7 +296,6 @@ func (u *updater) run(ctx context.Context, o updateOptions) error {
 	}
 	u.say("Mirrin is now %s. What's new: %s", tag, notes)
 	u.restartTwin(tag)
-	u.noteOldApps()
 	return nil
 }
 
@@ -317,15 +315,12 @@ func (u *updater) versionOf(ctx context.Context, bin string) string {
 }
 
 // ourName reports whether name, the first word a program's `version`
-// prints, is Mirrin's, or one of its names from before the rename.
-func ourName(name string) bool {
-	return name == brand.Name || slices.Contains(brand.LegacyNames, name)
-}
+// prints, is Mirrin's.
+func ourName(name string) bool { return name == brand.Name }
 
 // reportedVersion runs `bin version` and returns the first two words it
-// prints: the program's name and version for Mirrin ("mirrin v0.3.0", or
-// "antbot v0.3.0" and "openhuman v0.2.0" from before the rename). Both are
-// "" when it doesn't start, fails, or prints less.
+// prints: the program's name and version for Mirrin ("mirrin v0.3.0").
+// Both are "" when it doesn't start, fails, or prints less.
 func reportedVersion(ctx context.Context, command func(ctx context.Context, name string, args ...string) (string, error), bin string, wait time.Duration) (name, v string) {
 	if !fileExists(bin) {
 		return "", ""
@@ -646,20 +641,6 @@ func (u *updater) targets() (cli, app string) {
 }
 
 func (u *updater) appDirWritable(app string) bool { return writable(filepath.Dir(app)) == nil }
-
-// noteOldApps points out apps from before the rename, which an update
-// leaves alone: a service from then may still run one. `mirrin service
-// install` moves the service to Mirrin, and `mirrin uninstall` would remove
-// them along with Mirrin.
-func (u *updater) noteOldApps() {
-	for _, d := range u.appDirs {
-		for _, a := range appNames[1:] {
-			if p := filepath.Join(d, a.name); isDir(p) && bundleID(u.command, p) == a.id {
-				u.say("%s is %s, which Mirrin doesn't use. Once `mirrin service install` has moved the background service to Mirrin, you can move it to the Trash.", p, a.label)
-			}
-		}
-	}
-}
 
 // assetName is the release file for this machine's CLI. A build without
 // WhatsApp takes the matching -nowhatsapp program, so an update never adds it.

@@ -208,11 +208,11 @@ func Kids(m map[string]ed25519.PublicKey) []string {
 	return slices.Sorted(maps.Keys(m))
 }
 
-// DevKey is the public development key for kid: SHA-256("antbot dev key " +
+// DevKey is the public development key for kid: SHA-256("mirrin dev key " +
 // kid) as the seed. Anyone can derive it, so it proves nothing; builds tagged
 // mirrin_devkeys trust it and nothing that ships does.
 func DevKey(kid string) ed25519.PrivateKey {
-	seed := sha256.Sum256([]byte("antbot dev key " + kid))
+	seed := sha256.Sum256([]byte("mirrin dev key " + kid))
 	return ed25519.NewKeyFromSeed(seed[:])
 }
 

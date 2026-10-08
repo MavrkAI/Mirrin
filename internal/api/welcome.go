@@ -40,8 +40,34 @@ type WelcomeBackend interface {
 }
 
 // HelloReply is the twin's first words, and the small print the welcome
-// page shows under them ("" for none): where the weather came from.
-type HelloReply struct{ Text, Note string }
+// page shows under them ("" for none): where the weather came from. Offer
+// is the morning briefing the hello offers after them, nil for none.
+type HelloReply struct {
+	Text, Note string
+	Offer      *BriefingOffer
+}
+
+// BriefingOffer is the first hello's "Want me to brief you at seven
+// tomorrow?": the request it raised, the words, and the time it suggests.
+type BriefingOffer struct {
+	ID   int64  `json:"id"`
+	Text string `json:"text"`
+	Time string `json:"time"`
+}
+
+// WelcomeBriefing is a WelcomeBackend that answers the briefing offer from
+// the welcome page's card: yes at a time ("07:30"), or later. It returns
+// what the card says next.
+type WelcomeBriefing interface {
+	AnswerBriefing(ctx context.Context, yes bool, at string) (string, error)
+}
+
+// WelcomeCalendar is a WelcomeBackend that says whether a calendar is
+// connected: until one is, the welcome page offers to connect it before
+// the first hello, and the step can be skipped.
+type WelcomeCalendar interface {
+	CalendarConnected(ctx context.Context) bool
+}
 
 // WelcomeSpeaker is a WelcomeBackend that can say the first words out loud
 // in the twin's own voice. It reports whether it spoke: it doesn't until
@@ -303,6 +329,9 @@ func (s *Server) WithWelcome(b WelcomeBackend) *Server {
 				send("note", out.Note)
 			}
 			send("done", out.Text)
+			if out.Offer != nil {
+				send("offer", out.Offer)
+			}
 			if s, ok := b.(WelcomeSpeaker); ok && v.Speak {
 				sctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 				defer cancel()
@@ -312,6 +341,29 @@ func (s *Server) WithWelcome(b WelcomeBackend) *Server {
 			}
 			return nil
 		})
+		if cal, ok := b.(WelcomeCalendar); ok {
+			add("GET /welcome/calendar", func(w http.ResponseWriter, r *http.Request) error {
+				writeJSON(w, map[string]bool{"connected": cal.CalendarConnected(r.Context())})
+				return nil
+			})
+		}
+		if br, ok := b.(WelcomeBriefing); ok {
+			add("POST /welcome/briefing", func(w http.ResponseWriter, r *http.Request) error {
+				var v struct {
+					Yes  bool
+					Time string
+				}
+				if err := decode(w, r, &v); err != nil {
+					return err
+				}
+				said, err := br.AnswerBriefing(r.Context(), v.Yes, v.Time)
+				if err != nil {
+					return err
+				}
+				writeJSON(w, map[string]string{"text": said})
+				return nil
+			})
+		}
 		if report, ok := b.(interface {
 			WelcomeRestoreReport(context.Context) RestoreWelcomeInfo
 			DismissWelcomeRestore(context.Context) error

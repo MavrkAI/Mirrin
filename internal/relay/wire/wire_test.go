@@ -45,7 +45,7 @@ func signedHello(t testing.TB) Hello {
 
 func TestHelloSigInputLayout(t *testing.T) {
 	got := HelloSigInput("r1", []byte{0xAA, 0xBB}, []byte{0xCC})
-	want := []byte("antbot-relay-tunnel-v1\x00r1\x00\xAA\xBB\x00\xCC")
+	want := []byte("mirrin-relay-tunnel-v1\x00r1\x00\xAA\xBB\x00\xCC")
 	if !bytes.Equal(got, want) {
 		t.Fatalf("got %q, want %q", got, want)
 	}
@@ -56,7 +56,7 @@ func TestHelloSigInputLayout(t *testing.T) {
 // status key 32×0x33. Ed25519 is deterministic, so any correct
 // implementation produces exactly this frame.
 const helloKAT = `{"t":"hello","v":1,"key":"iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w",` +
-	`"sig":"KlBxrfYKXmCKM4VLmZbTMG-Y_EBkH1_5G8Tg7TSNxijTFGspTxH_mvoqEXcNI-sTQ88kmVv4qO54YPBSTWykDg",` +
+	`"sig":"JHW_KsJMf0dIlWMSfMpfx5k3SE39ulKh5lpYaGtY0Rfu8XD16nQR-6dxbnhj0HMQaTb5NJDe1qxYAKo8lYUTDA",` +
 	`"ent":null,"status_key_hash":"3rDjjO0eQd5vkucOgMQY0tNWr6qpnib1k528fT70dyo","client":"mirrin/0.4.0 darwin/arm64"}`
 
 func TestHelloKnownAnswer(t *testing.T) {
@@ -79,7 +79,7 @@ func TestHelloKnownAnswer(t *testing.T) {
 	if _, err := VerifyHello(parsed, "r1", testNonce, testExporter); err != nil {
 		t.Fatal(err)
 	}
-	wantInput := "616e74626f742d72656c61792d74756e6e656c2d763100723100" + strings.Repeat("11", 32) + "00" + strings.Repeat("22", 32)
+	wantInput := "6d697272696e2d72656c61792d74756e6e656c2d763100723100" + strings.Repeat("11", 32) + "00" + strings.Repeat("22", 32)
 	if got := hex.EncodeToString(HelloSigInput("r1", testNonce, testExporter)); got != wantInput {
 		t.Fatalf("signed input %s", got)
 	}
@@ -409,8 +409,8 @@ func TestExporter(t *testing.T) {
 	}
 	// The label and length as docs/relay-protocol.md §3.3 gives them,
 	// spelled out so that an edit to the constant breaks this test.
-	if want, err := c1.ExportKeyingMaterial("EXPORTER-antbot-tunnel", nil, 32); err != nil || !bytes.Equal(ec, want) {
-		t.Fatalf("exporter is not EXPORTER-antbot-tunnel, 32 bytes: %x, want %x (%v)", ec, want, err)
+	if want, err := c1.ExportKeyingMaterial("EXPORTER-mirrin-tunnel", nil, 32); err != nil || !bytes.Equal(ec, want) {
+		t.Fatalf("exporter is not EXPORTER-mirrin-tunnel, 32 bytes: %x, want %x (%v)", ec, want, err)
 	}
 	c2, _, err := pair(tls.VersionTLS13)
 	if err != nil {

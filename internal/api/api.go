@@ -106,12 +106,10 @@ type Server struct {
 	remoteIdentities map[string]func() Base // live certificate identities
 	remoteLeaves     map[string]remoteLeaf  // pages_trust.go: the certificate each one presents
 
-	live       liveSet
-	limiter    *ipLimiter
-	migMu      sync.Mutex
-	migrations map[string]migration
-	legacyLog  atomic.Int64 // unix time the old shared key was last logged
-	alarm      Alarm        // alarm.go
+	live      liveSet
+	limiter   *ipLimiter
+	legacyLog atomic.Int64 // unix time the old shared key was last logged
+	alarm     Alarm        // alarm.go
 
 	pages LocalPages // pages.go: Add your phone, Devices, Backup, Trust
 	// statusURLs are the relays' status endpoints for this twin (pwa.go).
@@ -284,9 +282,6 @@ func (s *Server) ResetMasterKey() error {
 	}
 	s.token = tok
 	s.kmu.Unlock()
-	s.migMu.Lock()
-	clear(s.migrations) // devices minted from the old key keep their own keys
-	s.migMu.Unlock()
 	return nil
 }
 
@@ -326,7 +321,7 @@ func (s *Server) RevokeDevice(id string) (RevokeResult, error) {
 // New builds a server. Paired devices live in memory until WithDevices gives
 // it the registry on disk.
 func New(addr, token string, backend Backend) *Server {
-	s := &Server{addr: addr, token: strings.TrimSpace(token), backend: backend, limiter: newIPLimiter(20, 200), migrations: map[string]migration{}}
+	s := &Server{addr: addr, token: strings.TrimSpace(token), backend: backend, limiter: newIPLimiter(20, 200)}
 	s.WithDevices(devices.NewMemory())
 	return s
 }
@@ -451,6 +446,7 @@ func (s *Server) routes() *http.ServeMux {
 	if s.screen != nil {
 		s.screenRoutes(mux, remote)
 		s.browserLiveRoutes(mux, remote) // browser_live.go
+		s.showRoutes(mux, remote)        // show.go
 	}
 	if s.usage != nil {
 		s.usageRoutes(mux, remote) // usage.go

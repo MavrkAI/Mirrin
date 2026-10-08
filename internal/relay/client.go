@@ -1,4 +1,4 @@
-// Package relay is the daemon's side of antbot.tunnel.v1. It keeps an
+// Package relay is the daemon's side of mirrin.tunnel.v1. It keeps an
 // outbound tunnel open to each relay and merges the connections they carry
 // into one net.Listener. Each accepted connection is a client's raw TLS
 // stream, and its RemoteAddr is the client's address from the PROXY v2

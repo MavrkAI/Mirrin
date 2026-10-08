@@ -52,6 +52,9 @@ type Agent struct {
 	// the prompt: the conversation may say a booking is under way after the
 	// owner dropped it.
 	Tasks func() string
+	// SharedChat, if set, reports whether only the owner talks in a chat:
+	// such chats see each other's last few exchanges (elsewhere.go).
+	SharedChat func(chatKey string) bool
 	// CheckApproved, if set, runs just before an approved call executes; an
 	// error means the world has moved on and the call is not run.
 	CheckApproved func(ctx context.Context, ap memory.Approval) error
@@ -255,7 +258,7 @@ func (a *Agent) run(ctx context.Context, chatKey string, incoming llm.Message, o
 		}
 		req := llm.Request{
 			System:         system,
-			SystemVolatile: a.volatile(ctx) + channelStyle(chatKey),
+			SystemVolatile: a.volatile(ctx) + a.elsewhere(ctx, chatKey) + channelStyle(chatKey) + letterGuide(ctx), // elsewhere.go, letters.go
 			Messages:       history,
 			Tools:          a.tools.Specs(),
 			MaxTokens:      a.cfg.LLM.MaxTokens,
@@ -332,7 +335,9 @@ func (a *Agent) run(ctx context.Context, chatKey string, incoming llm.Message, o
 		// Text emitted before a tool call is commentary; the real answer comes after.
 		finalText.Reset()
 	}
-	return a.reply(chatKey, strings.TrimSpace(finalText.String()), stop, outOfSteps)
+	out, err := a.reply(chatKey, strings.TrimSpace(finalText.String()), stop, outOfSteps)
+	a.noteWhy(ctx, chatKey, out) // why.go: what it drew on, for "Why?"
+	return out, err
 }
 
 // execute runs one tool call through the approvals gate.
@@ -434,6 +439,8 @@ func classify(text string) string {
 	switch {
 	case strings.HasPrefix(t, "["): // system-framed task (scheduled, approval outcome)
 		return "protocol"
+	case isChore(t): // chores.go: a web chore that stops at the button
+		return "chore"
 	case reCheckIn.MatchString(t):
 		return "checkin"
 	case len(strings.Fields(t)) <= 4 && strings.HasSuffix(t, "?"):
@@ -475,6 +482,8 @@ func (a *Agent) toolBudget(ctx context.Context, chatKey, text string) int {
 		n = b.Question
 	case "protocol":
 		return b.Protocol
+	case "chore":
+		return choreBudget(b)
 	}
 	if n > 0 && n < browsingBudget && browsing() {
 		n = browsingBudget
@@ -551,7 +560,7 @@ func caption(tool string, input json.RawMessage) string {
 		return "Looking in the registry."
 	case "install_pack":
 		return "Installing the pack."
-	case "set_reminder", "follow_up", "list_reminders", "cancel_reminder", "remember", "recall", "forget", "list_protocols", "remember_sensitive", "create_protocol", "update_protocol":
+	case "set_reminder", "follow_up", "list_reminders", "cancel_reminder", "remember", "remember_page", "recall", "forget", "list_protocols", "remember_sensitive", "create_protocol", "update_protocol":
 		return "" // instant; no narration
 	}
 	if i := strings.Index(tool, "__"); i > 0 {

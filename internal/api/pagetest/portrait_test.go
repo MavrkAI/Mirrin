@@ -105,3 +105,27 @@ func TestAWallScreenShowsNoPortrait(t *testing.T) {
 	reload(t, ctx)
 	waitFor(t, ctx, visible("#secPortrait")+` && `+visible("#portraitActs .right"), "the portrait on the owner's device")
 }
+
+// A first draft says so above the portrait, and still asks whether it's
+// right; the regular portrait that follows it doesn't.
+func TestAFirstDraftSaysItIsOne(t *testing.T) {
+	d := newDaemon(t)
+	d.handle("GET /screen", jsonH(aPortrait("2026-10-07T08:00:00Z", func(m map[string]any) {
+		delete(m, "portrait_new")
+		m["portrait_draft"] = true
+	})))
+	ctx := tab(t)
+	run(t, ctx, desktop(), chromedp.Navigate(d.url("/ui")))
+	waitFor(t, ctx, visible("#portraitActs .right"), "the portrait's buttons")
+	if got := textOf(t, ctx, "#portraitDraft"); got != "First draft · Tell me what I got wrong." {
+		t.Fatalf("the draft's label reads %q", got)
+	}
+	if !eval[bool](t, ctx, visible("#portraitDraft")) {
+		t.Fatal("the draft's label is hidden")
+	}
+	d.handle("GET /screen", jsonH(aPortrait("2026-10-11T08:00:00Z", nil)))
+	reload(t, ctx)
+	if eval[bool](t, ctx, visible("#portraitDraft")) {
+		t.Fatal("the regular portrait is labelled a first draft")
+	}
+}

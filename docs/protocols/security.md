@@ -86,7 +86,7 @@ Reviewers use the full checklist in [registry.md](registry.md#what-reviewers-che
 - `requires` leaves out tools the prompt uses, or the description doesn't mention a send, a payment or a deletion the prompt makes.
 - A schedule much more frequent than the job needs, or a scheduled prompt with no `NOTHING_TO_REPORT`.
 - Hidden text: invisible or look-alike characters, very long lines, or a prompt far longer than its job.
-- Symbolic links anywhere in the repository, a committed `.antbot-pack.json`, or YAML at the top level outside `protocols/` and `personas/` that isn't `pack.yaml`.
+- Symbolic links anywhere in the repository, a committed `.mirrin-pack.json`, or YAML at the top level outside `protocols/` and `personas/` that isn't `pack.yaml`.
 - A persona whose `character` gives the twin instructions to act rather than a way to speak.
 - An update whose diff changes what a protocol does without saying so in the pull request or the changelog.
 - No `commit` in the entry, or a repository whose history was rewritten after review.

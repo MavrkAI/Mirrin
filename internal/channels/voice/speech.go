@@ -334,11 +334,21 @@ type voiceStream struct {
 	// words after the last step, the result, are said.
 	steps int
 	held  strings.Builder
+	// The screen (spoken.go): scr puts the answer on it (nil: all of it is
+	// said), answer is the answer as written, gist the words said so far,
+	// and heldBack what waits to be said or shown.
+	scr      func(string) bool
+	answer   strings.Builder
+	gist     int
+	heldBack []string
 }
 
 // OpenStream starts speaking a reply as it is generated.
-func (c *Channel) OpenStream(ctx context.Context, _ string) channelsStream {
+func (c *Channel) OpenStream(ctx context.Context, chatID string) channelsStream {
 	v := &voiceStream{c: c, t: c.takeTiming(), approvalDirty: true}
+	if c.Screen.For != nil {
+		v.scr = c.Screen.For(chatID)
+	}
 	if c.ApprovalRevision != nil {
 		v.approvalRevision = c.ApprovalRevision()
 	}
@@ -394,6 +404,7 @@ func (v *voiceStream) Write(delta string) {
 }
 
 func (v *voiceStream) say(delta string) {
+	v.answer.WriteString(delta)
 	v.refreshApproval()
 	if !v.wrote && v.t.firstDelta.IsZero() {
 		v.t.firstDelta = time.Now()
@@ -416,8 +427,10 @@ func (v *voiceStream) speakSentence(s string) {
 		v.speakApproval()
 		return
 	}
-	v.q.Push(s)
-	v.text.WriteString(strings.TrimSpace(s) + " ")
+	if v.holdBack(s) { // spoken.go
+		return
+	}
+	v.speak(s)
 }
 
 func (v *voiceStream) speakApproval() {
@@ -465,6 +478,7 @@ func (v *voiceStream) Note(text string) {
 		v.speakSentence(s)
 	}
 	v.flushApproval(true)
+	v.release() // said before a step: working out loud, not an answer to show
 	if v.steps == 0 && v.text.Len() == 0 && v.t.ack.IsZero() && v.approvalPrompt == "" {
 		// Work is starting and nothing has been said: a person says "Sure,
 		// one sec" at once rather than leaving a silence.
@@ -492,6 +506,7 @@ func (v *voiceStream) Close() {
 			v.speakSentence(s)
 		}
 		v.flushApproval(true)
+		v.putOnScreen() // spoken.go
 		v.speakApproval()
 		if t := strings.TrimSpace(v.text.String()); t != "" {
 			fmt.Fprintf(v.c.out, "%s: %s\n", v.c.name, t)

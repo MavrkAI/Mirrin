@@ -45,7 +45,7 @@ main{max-width:720px;margin:0 auto;padding:24px 16px 64px}h1{font-size:22px;marg
 // Every request goes through api(), which puts each way a request can fail
 // into plain words, and shows "This device isn't paired" when that is why.
 const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function twinName(){try{const n=localStorage.getItem('antbot.name');if(n)return n}catch{}const m=document.querySelector('meta[name="mirrin-name"]');return (m&&m.content)||'Mirrin'}
+function twinName(){try{const n=localStorage.getItem('mirrin.name');if(n)return n}catch{}const m=document.querySelector('meta[name="mirrin-name"]');return (m&&m.content)||'Mirrin'}
 for(const el of document.querySelectorAll('[data-name]'))el.textContent=twinName();
 const PAGE_TITLE=document.title=twinName()+' · '+document.title;
 const FRIENDLY={not_paired:"This device isn't paired.",passkey_required:'This needs Face ID or Touch ID, which this device has not set up.',forbidden:"This device isn't allowed to do that."};

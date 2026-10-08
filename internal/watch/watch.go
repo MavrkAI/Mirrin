@@ -73,6 +73,9 @@ type Watcher struct {
 	lastErr map[string]string    // the last failure logged, so a dead source isn't logged every poll
 	tries   map[string]int       // polls in a row a change couldn't be looked at
 	gen     map[string]uint64    // bumped by Rebaseline, so a poll already under way is let go
+	claim   Claimer              // takes new items it handles itself (SetClaim)
+
+	facts func(context.Context) []string // the owner's facts for the clash check (clash.go)
 
 	pollMu sync.Mutex // one poll at a time
 }
@@ -334,11 +337,18 @@ func (w *Watcher) poll(ctx context.Context, src Source, gen uint64) {
 	}
 	prev = cleanSnapshot(prev)
 	var change Change
+	var clash clashCheck
 	if ordered {
 		mark = w.newestSeen(ctx, key, arr, prev)
 		change = Change{Added: arrived(prev, cur, arr, mark)}
 	} else {
 		change = Diff(prev, cur)
+		if !change.Empty() && !w.paused() {
+			clash = w.checkClashes(ctx, src, prev, cur) // clash.go
+		}
+	}
+	if !w.paused() {
+		change.Added = w.claimed(ctx, name, prev, cur, change.Added)
 	}
 	if change.Empty() || w.paused() {
 		w.mu.Lock()
@@ -347,7 +357,7 @@ func (w *Watcher) poll(ctx context.Context, src Source, gen uint64) {
 		save()
 		return
 	}
-	if err := w.notify(ctx, name, change); err != nil {
+	if err := w.notify(ctx, name, change, clash); err != nil {
 		// Keep the old snapshot so the next poll sees the change again: a
 		// model that was briefly down mustn't cost the owner the news.
 		w.mu.Lock()
@@ -448,7 +458,7 @@ func cleanLine(s string) string {
 
 // notify asks the agent about a change and delivers what it says. An error
 // means the change wasn't looked at, so it should be offered again.
-func (w *Watcher) notify(ctx context.Context, source string, change Change) error {
+func (w *Watcher) notify(ctx context.Context, source string, change Change, clash clashCheck) error {
 	chatKey := w.owner()
 	if chatKey == "" {
 		return nil
@@ -460,6 +470,7 @@ BEGIN CHANGES
 %sEND CHANGES
 
 The change above is all the context you get. The owner's memory is not shown. Do not call tools: every look-up or action, including calendar, reminders and memory, needs the owner's yes. Address the owner in ONE short message about what changed. If more context would help, offer a follow-up with "shall I?" instead of looking it up. Do not claim you checked anything beyond the change above. If it is routine and needs nothing, reply exactly NOTHING_TO_REPORT. If this concerns something happening in the next three hours, begin with NOW: and it goes out at once; otherwise it may wait for a better moment.`, source, change.String())
+	task += clash.prompt() // clash.go
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 	out, err := w.run(ctx, chatKey+"#watch-"+time.Now().Format("20060102-150405"), task)
@@ -476,6 +487,8 @@ The change above is all the context you get. The owner's memory is not shown. Do
 		// Delivery falls back through every channel already; asking the
 		// model again would only repeat the message where it did arrive.
 		w.log.Error("watch send failed", "err", err)
+	} else {
+		w.markTold(ctx, clash.lines) // clash.go
 	}
 	return nil
 }

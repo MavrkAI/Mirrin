@@ -121,3 +121,12 @@ func TestAuditKeepsOnlyRealFactIDs(t *testing.T) {
 		}
 	}
 }
+
+// What a saved page is about stays out of the audit log, as a fact does:
+// only the note's length and the fact's id.
+func TestAuditKeepsNoSavedPagesNote(t *testing.T) {
+	got := auditInput("remember_page", []byte(`{"note":"the divorce lawyer near work","subject":"people"}`), "remembered (#12), new: the page is saved", 300)
+	if strings.Contains(got, "divorce") || !strings.Contains(got, "note=28 chars") || !strings.HasSuffix(got, "facts=#12") {
+		t.Fatalf("got %q", got)
+	}
+}

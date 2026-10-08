@@ -11,14 +11,12 @@ import (
 )
 
 // TestTestsIsolateHome keeps `go test ./...` away from the contributor's own
-// twin. Save() writes ~/.mirrin/config.yaml, and outside tests Home() moves
-// a home from before the rename into place, so a test that reaches package
+// twin. Save() writes ~/.mirrin/config.yaml, so a test that reaches package
 // config must point MIRRIN_HOME at a temporary directory first: in the same
 // file (t.Setenv), or in the package's TestMain. Another file of the
 // package setting it for its own tests leaves the rest unguarded. Only
-// setting it counts: MIRRIN_HOME takes precedence over ANTBOT_HOME, and a
-// file that merely mentions a home variable (a unit fixture, say) isolates
-// nothing.
+// setting it counts: a file that merely mentions the home variable (a unit
+// fixture, say) isolates nothing.
 func TestTestsIsolateHome(t *testing.T) {
 	root, err := filepath.Abs(filepath.Join("..", ".."))
 	if err != nil {
@@ -113,8 +111,7 @@ func TestOnlySettingTheHomeIsolates(t *testing.T) {
 		`t.Setenv("MIRRIN_HOME", t.TempDir())`:                         true,
 		`os.Setenv("MIRRIN_HOME", dir)`:                                true,
 		`cmd.Env = append(os.Environ(), "MIRRIN_HOME="+dir)`:           true,
-		`env := map[string]string{"ANTBOT_HOME": "/Users/me/.antbot"}`: false,
-		`t.Setenv("ANTBOT_HOME", t.TempDir())`:                         false,
+		`env := map[string]string{"MIRRIN_HOME": "/Users/me/.mirrin"}`: false,
 		`// set MIRRIN_HOME first`:                                     false,
 		`if env["MIRRIN_HOME"] != home {`:                              false,
 	} {

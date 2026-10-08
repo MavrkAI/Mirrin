@@ -114,9 +114,6 @@ type Peer struct {
 
 	legacy bool   // arrived on the plain-HTTP api.remote listener
 	cookie string // the device cookie it came with, if that's how
-	// unsaved: it came with the old master-key cookie, and the key of its
-	// own it was to get couldn't be saved (refuse answers with cantSave).
-	unsaved bool
 }
 
 // Has reports whether the peer holds scope sc. The master key has every scope
@@ -259,9 +256,8 @@ func (a authz) Public(h http.HandlerFunc) http.HandlerFunc {
 }
 
 // noticeHeader tells a client using an old-style pairing code what to do
-// next. Its name dates from before the rename and stays, so clients that
-// look for it still find it.
-const noticeHeader = "AntBot-Notice" // rename:keep
+// next.
+const noticeHeader = "Mirrin-Notice"
 
 // sameOrigin checks a state-changing request came from the twin's own pages:
 // Sec-Fetch-Site, when sent, is same-origin (or none), and Origin, when sent,
@@ -286,7 +282,7 @@ func sameOrigin(r *http.Request, required bool) bool {
 // it (so it must prove it came from the twin's own page).
 func carriesCookie(r *http.Request) bool {
 	for _, c := range r.Cookies() {
-		if c.Name == cookieDev || c.Name == cookieSecure || slices.Contains(legacyDeviceCookies, c.Name) || slices.Contains(legacyCookies, c.Name) {
+		if c.Name == cookieDev || c.Name == cookieSecure {
 			return true
 		}
 	}
@@ -294,22 +290,12 @@ func carriesCookie(r *http.Request) bool {
 }
 
 // Cookies. Browsers get a cookie holding their own device token: __Host-mirrin
-// over TLS, mirrin_dev over plain HTTP (a __Host- cookie needs Secure). The
-// old antbot_token cookie held the master key itself; it is still read, on
-// the listeners that accepted it, only to move the browser onto a key of its
-// own.
+// over TLS, mirrin_dev over plain HTTP (a __Host- cookie needs Secure).
 const (
 	cookieDev    = "mirrin_dev"
 	cookieSecure = "__Host-mirrin"
 	cookieMaxAge = 180 * 24 * 3600 // sliding: refreshed whenever a page loads
 )
-
-var legacyCookies = []string{"antbot_token", "openhuman_token"} // rename:keep
-
-// The device cookie's names from before the rename (AntBot's), over plain
-// HTTP and over TLS. A browser signed in then stays signed in, and moves to
-// the new name on its next request.
-var legacyDeviceCookies = []string{"antbot_dev", "__Host-antbot"} // rename:keep
 
 func deviceCookieName(r *http.Request) string {
 	if r.TLS != nil {
@@ -318,21 +304,10 @@ func deviceCookieName(r *http.Request) string {
 	return cookieDev
 }
 
-// legacyDeviceCookieName is the old name of the device cookie r would carry.
-func legacyDeviceCookieName(r *http.Request) string {
-	if r.TLS != nil {
-		return legacyDeviceCookies[1]
-	}
-	return legacyDeviceCookies[0]
-}
-
-// secureCookie is the device token in r's __Host- cookie, under the new name
-// or the old one, or "".
+// secureCookie is the device token in r's __Host- cookie, or "".
 func secureCookie(r *http.Request) string {
-	for _, n := range []string{cookieSecure, legacyDeviceCookies[1]} {
-		if c, err := r.Cookie(n); err == nil && c.Value != "" {
-			return c.Value
-		}
+	if c, err := r.Cookie(cookieSecure); err == nil {
+		return c.Value
 	}
 	return ""
 }
@@ -343,16 +318,6 @@ func (s *Server) setDeviceCookie(w http.ResponseWriter, r *http.Request, tok str
 		c.Secure = true
 	}
 	http.SetCookie(w, c)
-}
-
-// clearLegacyCookies expires the old cookies r brought. A __Host- cookie is
-// only replaced by one that is Secure, on "/" and without a Domain.
-func clearLegacyCookies(w http.ResponseWriter, r *http.Request) {
-	for _, n := range slices.Concat(legacyCookies, legacyDeviceCookies) {
-		if _, err := r.Cookie(n); err == nil {
-			http.SetCookie(w, &http.Cookie{Name: n, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: strings.HasPrefix(n, "__Host-")})
-		}
-	}
 }
 
 // isMaster reports whether tok is the master key, comparing in constant time
@@ -388,8 +353,7 @@ func (s *Server) masterKey() string {
 }
 
 // authenticate works out who is asking, from the Authorization header, else
-// the device cookie (under its old name too), else (where it was accepted)
-// the old master-key cookie, which it swaps for a device cookie on the spot.
+// the device cookie.
 func (s *Server) authenticate(w http.ResponseWriter, r *http.Request, l listener) (Peer, bool) {
 	p := basePeer(r, l)
 	if l.kind == kindRefused {
@@ -406,22 +370,6 @@ func (s *Server) authenticate(w http.ResponseWriter, r *http.Request, l listener
 		if got, ok := s.fromDevice(p, c.Value, l); ok {
 			got.cookie = c.Value
 			return got, true
-		}
-	}
-	// A browser signed in before the rename keeps its key, under the new name.
-	if c, err := r.Cookie(legacyDeviceCookieName(r)); err == nil && c.Value != "" {
-		if got, ok := s.fromDevice(p, c.Value, l); ok {
-			s.setDeviceCookie(w, r, c.Value)
-			clearLegacyCookies(w, r)
-			got.cookie = c.Value
-			return got, true
-		}
-	}
-	if l.kind == kindLoopback || l.kind == kindLegacy {
-		for _, n := range legacyCookies {
-			if c, err := r.Cookie(n); err == nil && s.isMaster(c.Value, l) {
-				return s.migrate(w, r, p, l)
-			}
 		}
 	}
 	return p, false
@@ -464,68 +412,6 @@ func (s *Server) logLegacy(p Peer) {
 		return
 	}
 	slog.Warn("the master key was used over plain HTTP from another computer; give that client a key of its own with `mirrin pair` (it can view, talk and approve with the master key there, but not change settings)", "from", ipString(p.ClientIP))
-}
-
-// migration remembers a key just made for an old master-key cookie, so the
-// page's requests racing in with the same old cookie share one device. Once
-// that device is revoked the entry stays, refusing: the old cookie must not
-// mint it a new one.
-type migration struct {
-	dev     devices.Device
-	tok     string
-	at      time.Time
-	refused bool
-}
-
-// migrate moves a browser that still carries the master key in its cookie
-// onto a key of its own: a browser on this computer (loopback) or a screen
-// paired before devices had their own keys (the old api.remote listener),
-// which the owner is told about.
-func (s *Server) migrate(w http.ResponseWriter, r *http.Request, p Peer, l listener) (Peer, bool) {
-	key := strconv.Itoa(int(l.kind)) + "|" + ipString(p.ClientIP) + "|" + r.UserAgent()
-	s.migMu.Lock()
-	for k, m := range s.migrations {
-		if !m.refused && time.Since(m.at) > 2*time.Minute {
-			delete(s.migrations, k)
-		}
-	}
-	m, ok := s.migrations[key]
-	if ok {
-		if d, live := s.Devices().Get(m.dev.ID); !live || d.Revoked() {
-			m.refused = true
-			s.migrations[key] = m
-		}
-		if m.refused {
-			s.migMu.Unlock()
-			return p, false
-		}
-	}
-	if !ok {
-		var err error
-		if l.kind == kindLoopback {
-			m.dev, m.tok, err = s.Devices().AddLocal(browserName(r))
-		} else {
-			m.dev, m.tok, err = s.Devices().AddShared(browserName(r), devices.KindPWA, p.Via, ipString(p.ClientIP))
-		}
-		if err != nil {
-			s.migMu.Unlock()
-			slog.Warn("couldn't give a browser a key of its own", "err", err)
-			p.unsaved = true
-			return p, false
-		}
-		m.at = time.Now()
-		s.migrations[key] = m
-		if l.kind == kindLegacy {
-			go s.announce(PairEvent{Device: m.dev, IP: ipString(p.ClientIP), Via: p.Via, How: HowLegacyScreen})
-		}
-	}
-	s.migMu.Unlock()
-	s.setDeviceCookie(w, r, m.tok)
-	clearLegacyCookies(w, r)
-	dev := m.dev
-	p.Device = &dev
-	p.cookie = m.tok
-	return p, true
 }
 
 // browserName guesses a friendly name for a browser from its User-Agent.
@@ -765,13 +651,8 @@ func (s *Server) notPaired(l listener, local bool) apiError {
 // device (pages.go).
 const pairPagePath = "/devices/add"
 
-// unauthorized answers a request authenticate turned down: a key that couldn't be
-// saved is the twin's problem (503), not the device's (401).
+// unauthorized answers a request authenticate turned down.
 func (s *Server) unauthorized(w http.ResponseWriter, r *http.Request, p Peer, l listener, local bool) {
-	if p.unsaved {
-		s.fail(w, r, http.StatusServiceUnavailable, s.cantSave())
-		return
-	}
 	s.fail(w, r, http.StatusUnauthorized, s.notPaired(l, local))
 }
 

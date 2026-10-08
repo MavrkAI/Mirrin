@@ -746,7 +746,7 @@ func TestTrustFollowsTheThreatModel(t *testing.T) {
 	}
 	// Each row of the threat model's outbound table, by the words it starts with.
 	rows := map[string]string{"Model use": "model", "Presence screen with weather": "weather", "Google connected": "google",
-		"Enabled messaging channels": "channels", "Web, browser": "web", "Optional online voice": "voice",
+		"Enabled messaging channels": "channels", "Web, browser": "web", "Optional online voice": "voice", "Optional quick judgments": "jev",
 		"Encrypted backup": "backup", "Explicit update": "updates", "Explicit cloud linking": "linked"}
 	ids := map[string]bool{}
 	for _, o := range OutboundCatalog() {
@@ -891,7 +891,7 @@ func TestAddYourPhoneInABrowser(t *testing.T) {
 		time.Sleep(50 * time.Millisecond)
 	}
 	var status int
-	eval(phoneTab, `fetch('/pair/ticket', {method: 'POST', credentials: 'omit', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({t: sessionStorage.getItem('antbot-install-ticket')})}).then(r => r.status)`, &status)
+	eval(phoneTab, `fetch('/pair/ticket', {method: 'POST', credentials: 'omit', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({t: sessionStorage.getItem('mirrin-install-ticket')})}).then(r => r.status)`, &status)
 	if status != 200 {
 		t.Fatalf("the Home Screen app's ticket: %d", status)
 	}

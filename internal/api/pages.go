@@ -61,7 +61,6 @@ func (s *Server) page(a authz, scope devices.Scope, body []byte, alt http.Handle
 					}
 					s.setDeviceCookie(w, r, dtok)
 				}
-				clearLegacyCookies(w, r)
 			}
 			w.Header().Set("Cache-Control", "no-store")
 			http.Redirect(w, r, target, http.StatusFound)

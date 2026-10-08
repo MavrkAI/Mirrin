@@ -58,7 +58,7 @@ func (s *Server) approvals() (ApprovalBackend, bool) {
 // decideApproval is POST /approvals/{id}/{decision}. This computer decides
 // as it always has. Another device's decision may need a passkey first
 // (reach.step_up): a 428 carries the check, and the same request, retried
-// with the AntBot-Stepup header and the signed check as its body, decides.
+// with the Mirrin-Stepup header and the signed check as its body, decides.
 func (s *Server) decideApproval(w http.ResponseWriter, r *http.Request, id int64, decision string) {
 	ctx := r.Context()
 	approve := decision == "approve"

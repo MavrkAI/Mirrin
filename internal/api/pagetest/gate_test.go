@@ -104,7 +104,7 @@ func TestRememberedNameWinsOverAStaleHeadName(t *testing.T) {
 			}
 			ctx := tab(t)
 			run(t, ctx, desktop(), chromedp.Navigate(d.url(p)))
-			run(t, ctx, chromedp.Evaluate(`localStorage.setItem('antbot.name','Grace')`, nil), chromedp.Reload())
+			run(t, ctx, chromedp.Evaluate(`localStorage.setItem('mirrin.name','Grace')`, nil), chromedp.Reload())
 			if p == "/ui" {
 				waitFor(t, ctx, visible("#unpaired"), "the not-paired notice")
 			} else {

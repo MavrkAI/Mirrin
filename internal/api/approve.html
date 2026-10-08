@@ -123,8 +123,7 @@ a.back{color:var(--accent)}
   $('approve').onclick = () => decide('approve');
   $('deny').onclick = () => decide('deny');
   $('setup').onclick = async () => {
-    // For one load after an update, pwa.js can still be the one from before the rename.
-    const pwa = window.mirrinPWA || window.antbotPWA; /* rename:keep */
+    const pwa = window.mirrinPWA;
     if (!pwa || !pwa.enrolPasskey) return;
     $('setup').disabled = true;
     try { if (await pwa.enrolPasskey()) { say('Face ID is set up. You can approve from here now.', 'ok'); $('setup').hidden = true; $('note').hidden = true; } }

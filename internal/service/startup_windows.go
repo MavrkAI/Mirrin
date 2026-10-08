@@ -16,7 +16,6 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/windows"
-	"golang.org/x/sys/windows/registry"
 
 	"github.com/MavrkAI/Mirrin/internal/config"
 	"github.com/MavrkAI/Mirrin/internal/homelock"
@@ -41,8 +40,6 @@ func newStartup(dataDir string, secretEnvs []string, up func() bool, out io.Writ
 		launch:   launchDetached,
 		stopTwin: func() error { return stopTrays(lock) },
 		running:  func() bool { return len(lockHolders(lock)) > 0 },
-		legacy:   legacyServiceHere,
-		retire:   func() error { return retireWindowsService(out) },
 		elevated: func() bool { return windows.GetCurrentProcessToken().IsElevated() },
 	}, nil
 }
@@ -67,24 +64,13 @@ func controlStartup(cfg *config.Config, action string, up func() bool, out io.Wr
 	return s.control(action)
 }
 
-// stateStartup is State on Windows. The Windows service an earlier Mirrin
-// installed counts until it's removed.
+// stateStartup is State on Windows.
 func stateStartup() (installed, running bool) {
 	s, err := newStartup(dataDir(nil), nil, nil, io.Discard)
 	if err != nil {
 		return false, false
 	}
-	return s.anyInstalled(), s.running()
-}
-
-// tidyStartup is TidyUnit on Windows: keys an older version wrote into its
-// Windows service's registry environment move to the secrets file, and
-// AntBot's Startup entry becomes Mirrin's.
-func tidyStartup(out io.Writer) {
-	tidyRegistryEnv(serviceRegistry{name: windowsSCMLegacyName}, out)
-	if s, err := newStartup(dataDir(nil), nil, nil, out); err == nil {
-		s.tidyLegacyEntry()
-	}
+	return s.installed(), s.running()
 }
 
 const (
@@ -104,10 +90,9 @@ func launchDetached(exe string, env []string) error {
 	return cmd.Process.Release()
 }
 
-// processList is "pid<TAB>command line" for each mirrin.exe running, and
-// each antbot.exe: AntBot's tray, from before the rename, holds a home too.
+// processList is "pid<TAB>command line" for each mirrin.exe running.
 func processList() string {
-	script := `Get-CimInstance Win32_Process -Filter "Name='` + Name + `.exe' OR Name='` + windowsSCMLegacyName + `.exe'" | ForEach-Object { "$($_.ProcessId)` + "`t" + `$($_.CommandLine)" }`
+	script := `Get-CimInstance Win32_Process -Filter "Name='` + Name + `.exe'" | ForEach-Object { "$($_.ProcessId)` + "`t" + `$($_.CommandLine)" }`
 	cmd := exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script)
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	b, err := cmd.Output()
@@ -214,64 +199,4 @@ func lockHolders(path string) []int {
 		return out
 	}
 	return nil
-}
-
-// legacyServiceHere reports whether the Windows service an earlier version
-// installed for this home is still there.
-func legacyServiceHere() bool {
-	s, err := legacyService(windowsSCMLegacyName)
-	if err != nil || !installed(s) {
-		return false
-	}
-	env := map[string]string{}
-	lines, _ := serviceRegistry{name: windowsSCMLegacyName}.Read()
-	for _, l := range lines {
-		if k, v, ok := strings.Cut(l, "="); ok && k != "" {
-			env[k] = v
-		}
-	}
-	return ownUnit(env)
-}
-
-// retireWindowsService removes the Windows service earlier versions
-// installed (it ran as LocalSystem), keeping any keys its registry
-// environment held first. It needs administrator rights.
-func retireWindowsService(out io.Writer) error {
-	s, err := legacyService(windowsSCMLegacyName)
-	if err != nil {
-		return err
-	}
-	if !installed(s) {
-		return nil
-	}
-	tidyRegistryEnv(serviceRegistry{name: windowsSCMLegacyName}, out)
-	_ = s.Stop()
-	return s.Uninstall()
-}
-
-// serviceRegistry is a Windows service's Environment value under
-// HKLM\SYSTEM\CurrentControlSet\Services\<name>.
-type serviceRegistry struct{ name string }
-
-func (r serviceRegistry) key(access uint32) (registry.Key, error) {
-	return registry.OpenKey(registry.LOCAL_MACHINE, `SYSTEM\CurrentControlSet\Services\`+r.name, access)
-}
-
-func (r serviceRegistry) Read() ([]string, error) {
-	k, err := r.key(registry.QUERY_VALUE)
-	if err != nil {
-		return nil, err
-	}
-	defer k.Close()
-	v, _, err := k.GetStringsValue("Environment")
-	return v, err
-}
-
-func (r serviceRegistry) Write(lines []string) error {
-	k, err := r.key(registry.SET_VALUE)
-	if err != nil {
-		return err
-	}
-	defer k.Close()
-	return k.SetStringsValue("Environment", lines)
 }

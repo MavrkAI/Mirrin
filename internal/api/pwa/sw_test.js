@@ -47,11 +47,11 @@ async function fire(h,type,data={}) {let waiting=Promise.resolve();h[type]({...d
  let response;first.fetch({request:{method:'GET',url:'https://twin.test/ui',mode:'navigate'},respondWith(p){response=p;}});
  assert.match(await (await response).text(),/Can't reach/);
  offline=false;
- // A shell cached before the rename goes too; another app's cache stays.
- all.set('antbot-shell-0123abcd',new Map());all.set('someone-else',new Map());
+ // The older shell goes; another app's cache stays.
+ all.set('someone-else',new Map());
  const second=worker(source.replace(/mirrin-shell-([a-f0-9]+)/g,'mirrin-shell-next-$1'));
  await fire(second,'install');await fire(second,'activate');
- assert.ok(!all.has('antbot-shell-0123abcd'),'kept the shell cached before the rename');assert.ok(all.has('someone-else'));all.delete('someone-else');
+ assert.ok(all.has('someone-else'));all.delete('someone-else');
  assert.equal((await caches.keys()).length,1);assert.ok((await caches.keys())[0].includes('-next-'));
  // A corrupted cache must fail activation before old known-good caches are removed.
  const next=(await caches.keys())[0];all.get(next).set('/offline',new Response('tampered'));

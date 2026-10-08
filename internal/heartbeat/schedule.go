@@ -453,7 +453,7 @@ func (h *Heartbeat) sendBacklog(ctx context.Context, chatKey, text string, rs []
 			h.undelivered(ctx, r, key, err, now)
 			continue
 		}
-		_ = h.store.MarkFired(ctx, r.ID)
+		h.markFired(ctx, r)
 		h.store.Audit(ctx, "reminder.fired", key, r.Text)
 	}
 }

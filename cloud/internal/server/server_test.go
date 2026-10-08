@@ -307,7 +307,7 @@ func TestHandleRules(t *testing.T) {
 			t.Errorf("%q passes the character rules", h)
 		}
 	}
-	for _, h := range []string{"www", "admin", "adm1n", "w-w-w", "5upport", "g00gle-fan", "my-paypa1", "rnavrk", "mirrin-help", "antbot-help", "5ecur1ty", "vvww"} { // rename:keep
+	for _, h := range []string{"www", "admin", "adm1n", "w-w-w", "5upport", "g00gle-fan", "my-paypa1", "rnavrk", "mirrin-help", "5ecur1ty", "vvww"} {
 		if err := allowedHandle(h); !errors.Is(err, errReservedHandle) {
 			t.Errorf("%q: %v, want reserved", h, err)
 		}

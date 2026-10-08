@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -15,10 +13,10 @@ import (
 )
 
 type fakeServices struct {
-	installed, legacy      bool
-	removeErr, legacyErr   error
-	removed, legacyRemoved bool
-	calls                  []string
+	installed bool
+	removeErr error
+	removed   bool
+	calls     []string
 	// foreignUnit is another twin's service definition, which runs foreignProgram.
 	foreignUnit, foreignProgram string
 }
@@ -27,24 +25,12 @@ func (f *fakeServices) Installed() bool { return f.installed }
 func (f *fakeServices) Foreign() (string, string, bool) {
 	return f.foreignUnit, f.foreignProgram, f.foreignUnit != ""
 }
-func (f *fakeServices) LegacyInstalled() bool { return f.legacy }
 func (f *fakeServices) Remove() error {
 	f.calls = append(f.calls, "remove")
 	if f.removeErr != nil {
 		return f.removeErr
 	}
 	f.removed = true
-	return nil
-}
-func (f *fakeServices) RemoveLegacy(out io.Writer) error {
-	f.calls = append(f.calls, "remove legacy")
-	if f.legacyErr != nil {
-		return f.legacyErr
-	}
-	f.legacyRemoved = true
-	// A machine can have both: AntBot's service and openHuman's before it.
-	fmt.Fprintln(out, "Removed the old AntBot background service.")
-	fmt.Fprintln(out, "Removed the old openHuman background service.")
 	return nil
 }
 
@@ -95,8 +81,7 @@ func newUninstallTest(t *testing.T, answers string) *uninstallTest {
 func exists(p string) bool { _, err := os.Stat(p); return err == nil }
 
 // writeApp lays out a macOS app with the bundle identifier id, as
-// packaging/macos/Info.plist writes it: Mirrin.app holds mirrin, and
-// AntBot.app antbot.
+// packaging/macos/Info.plist writes it: Mirrin.app holds mirrin.
 func writeApp(t *testing.T, app, id string) {
 	t.Helper()
 	name := strings.TrimSuffix(filepath.Base(app), ".app")
@@ -150,11 +135,10 @@ func TestUninstallAsksFirst(t *testing.T) {
 func TestUninstallYesKeepsTheTwin(t *testing.T) {
 	ut := newUninstallTest(t, "-")
 	ut.u.yes = true
-	ut.svc.legacy = true
 	if err := ut.u.run(); err != nil {
 		t.Fatalf("%v\n%s", err, ut.out)
 	}
-	if !ut.svc.removed || !ut.svc.legacyRemoved {
+	if !ut.svc.removed {
 		t.Fatalf("services: %+v", ut.svc)
 	}
 	if exists(ut.u.exe) || exists(filepath.Join(ut.u.appDirs[0], "Mirrin.app")) {
@@ -164,7 +148,7 @@ func TestUninstallYesKeepsTheTwin(t *testing.T) {
 		t.Fatal("--yes deleted the twin")
 	}
 	out := ut.out.String()
-	for _, want := range []string{"Removed the background service.", "Removed the old AntBot background service.", "Removed the old openHuman background service.", "Mirrin is uninstalled.", "Your twin is still in " + ut.u.home + ", so installing Mirrin again brings it back"} {
+	for _, want := range []string{"Removed the background service.", "Mirrin is uninstalled.", "Your twin is still in " + ut.u.home + ", so installing Mirrin again brings it back"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("want %q in:\n%s", want, out)
 		}
@@ -258,38 +242,25 @@ func TestUninstallFindsEveryCopy(t *testing.T) {
 	ut := newUninstallTest(t, "-")
 	ut.u.yes = true
 	root := filepath.Dir(filepath.Dir(ut.u.exe))
-	oldBin := filepath.Join(root, "old", "openhuman")
-	writeTestFile(t, oldBin, []byte("openhuman v0.2.0\n"))
-	antBin := filepath.Join(root, "gopath", "bin", "antbot")
-	writeTestFile(t, antBin, []byte("antbot v0.3.0-12-gabc1234\n"))
 	otherCLI := filepath.Join(root, "gopath", "bin", "mirrin")
 	writeTestFile(t, otherCLI, program("dev"))
-	oldApp := filepath.Join(ut.u.appDirs[0], "OpenHuman.app")
-	writeApp(t, oldApp, "com.openhuman.mavrk")
-	antApp := filepath.Join(ut.u.appDirs[0], "AntBot.app")
-	writeApp(t, antApp, "com.antbot.mavrk")
 	leftover := filepath.Join(filepath.Dir(ut.u.exe), ".mirrin.new")
 	writeTestFile(t, leftover, []byte("half an update"))
 	movedAside := filepath.Join(filepath.Dir(ut.u.exe), "mirrin.old-1727430000.exe")
 	writeTestFile(t, movedAside, program("v9.9.7"))
-	// What an AntBot update left beside the program, under its names.
-	antLeftover := filepath.Join(filepath.Dir(ut.u.exe), ".antbot.new")
-	writeTestFile(t, antLeftover, []byte("half an update"))
-	antAside := filepath.Join(filepath.Dir(ut.u.exe), "antbot.old.exe")
-	writeTestFile(t, antAside, []byte("antbot v0.3.0\n"))
 	brewed := filepath.Join(root, "homebrew", "Cellar", "mirrin", "9.9.8", "bin", "mirrin")
 	writeTestFile(t, brewed, program(oldTag))
-	ut.u.others = []string{ut.u.exe, otherCLI, oldBin, antBin, brewed, filepath.Join(root, "gone", "mirrin")}
+	ut.u.others = []string{ut.u.exe, otherCLI, brewed, filepath.Join(root, "gone", "mirrin")}
 	if err := ut.u.run(); err != nil {
 		t.Fatalf("%v\n%s", err, ut.out)
 	}
-	for _, p := range []string{ut.u.exe, otherCLI, oldBin, antBin, oldApp, antApp, leftover, movedAside, antLeftover, antAside} {
+	for _, p := range []string{ut.u.exe, otherCLI, leftover, movedAside} {
 		if exists(p) {
 			t.Errorf("%s is still there", p)
 		}
 	}
 	out := ut.out.String()
-	for _, want := range []string{"the old openHuman program: " + oldBin, "the old AntBot program: " + antBin, "the old openHuman app: " + oldApp, "the old AntBot app: " + antApp, "a leftover from an update", "Homebrew installed " + brewed + ". Remove it with: brew uninstall mirrin"} {
+	for _, want := range []string{"the program: " + otherCLI, "a leftover from an update", "Homebrew installed " + brewed + ". Remove it with: brew uninstall mirrin"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("want %q in:\n%s", want, out)
 		}
@@ -300,17 +271,11 @@ func TestUninstallFindsEveryCopy(t *testing.T) {
 	if n := strings.Count(out, "  - the program: "+ut.u.exe); n != 1 {
 		t.Errorf("listed the running program %d times:\n%s", n, out)
 	}
-	// The plan reads the same every time: newest name first.
-	a, ant, o := strings.Index(out, "  - the app: "), strings.Index(out, "  - the old AntBot app: "), strings.Index(out, "  - the old openHuman app: ")
-	if a < 0 || ant < a || o < ant {
-		t.Errorf("the apps are listed out of order:\n%s", out)
-	}
 }
 
-// OpenHuman and AntBot are also other products' names, and any program can
-// be called mirrin: only programs that answer as Mirrin does (or as AntBot
-// and openHuman did), and apps with Mirrin's bundle identifiers, are
-// removed, whether or not it asks first.
+// Any program can be called mirrin: only programs that answer as Mirrin
+// does, and apps with Mirrin's bundle identifier, are removed, whether or
+// not it asks first.
 func TestUninstallLeavesOtherProductsAlone(t *testing.T) {
 	for _, yes := range []bool{true, false} {
 		answers := "y\n\n" // remove Mirrin, keep the twin
@@ -320,27 +285,21 @@ func TestUninstallLeavesOtherProductsAlone(t *testing.T) {
 		ut := newUninstallTest(t, answers)
 		ut.u.yes = yes
 		root := filepath.Dir(filepath.Dir(ut.u.exe))
-		theirApp := filepath.Join(ut.u.appDirs[0], "OpenHuman.app")
-		writeApp(t, theirApp, "com.example.openhuman")
 		userApps := filepath.Join(ut.u.userHome, "Applications")
 		unlabelled := filepath.Join(userApps, "Mirrin.app")
 		writeTestFile(t, filepath.Join(unlabelled, "Contents", "MacOS", "Mirrin"), []byte("someone's"))
 		ut.u.appDirs = append(ut.u.appDirs, userApps)
-		antApp := filepath.Join(userApps, "AntBot.app")
-		writeApp(t, antApp, "dev.antbot.desktop")
-		theirs := filepath.Join(root, "other", "openhuman")
-		writeTestFile(t, theirs, []byte("OpenHuman desktop 1.4.2\n"))
+		theirApp := filepath.Join(userApps, "Mirror.app")
+		writeApp(t, theirApp, "com.example.mirror")
 		sameName := filepath.Join(root, "tools", "mirrin")
 		writeTestFile(t, sameName, []byte("mirrin 2.0 (a mirror tool)\n"))
-		antName := filepath.Join(root, "agents", "antbot")
-		writeTestFile(t, antName, []byte("antbot 2.0 (ant colony simulator)\n"))
 		silent := filepath.Join(root, "silent", "mirrin")
 		writeTestFile(t, silent, nil)
-		ut.u.others = []string{theirs, sameName, antName, silent}
+		ut.u.others = []string{sameName, silent}
 		if err := ut.u.run(); err != nil {
 			t.Fatalf("yes=%v: %v\n%s", yes, err, ut.out)
 		}
-		for _, p := range []string{theirApp, unlabelled, antApp, theirs, sameName, antName, silent} {
+		for _, p := range []string{theirApp, unlabelled, sameName, silent} {
 			if !exists(p) {
 				t.Errorf("yes=%v: removed %s, which isn't Mirrin's", yes, p)
 			}
@@ -478,38 +437,6 @@ func TestUninstallPointsOutWhatTheInstallerAddedToPath(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !strings.Contains(ut.out.String(), bin+" is still on your PATH.") {
-		t.Fatalf("output:\n%s", ut.out)
-	}
-}
-
-// The AntBot installer's PATH lines, from before the rename, are found and
-// removed like the Mirrin installer's.
-func TestUninstallRemovesTheAntBotInstallersPathLine(t *testing.T) {
-	ut := newUninstallTest(t, "y\n\ny\n")
-	bin := filepath.Dir(ut.u.exe)
-	zshrc := filepath.Join(ut.u.userHome, ".zshrc")
-	orig := "alias ll='ls -l'\n\n# Added by the AntBot installer\nexport PATH=\"" + bin + ":$PATH\"\nexport EDITOR=vi\n"
-	writeTestFile(t, zshrc, []byte(orig))
-	if err := ut.u.run(); err != nil {
-		t.Fatalf("%v\n%s", err, ut.out)
-	}
-	if got, _ := os.ReadFile(zshrc); string(got) != "alias ll='ls -l'\nexport EDITOR=vi\n" {
-		t.Fatalf(".zshrc is now %q\n%s", got, ut.out)
-	}
-	if !strings.Contains(ut.out.String(), "The AntBot installer put "+bin+" on your PATH in "+zshrc+". Remove that line?") {
-		t.Fatalf("output:\n%s", ut.out)
-	}
-
-	// Not asked, it says which line to delete.
-	ut = newUninstallTest(t, "-")
-	ut.u.yes = true
-	bin = filepath.Dir(ut.u.exe)
-	fish := filepath.Join(ut.u.userHome, ".config", "fish", "config.fish")
-	writeTestFile(t, fish, []byte("# Added by the AntBot installer\nfish_add_path "+bin+"\n"))
-	if err := ut.u.run(); err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(ut.out.String(), "The AntBot installer put "+bin+" on your PATH in "+fish+". If nothing else you use is in that folder, delete the line \u201c# Added by the AntBot installer\u201d") {
 		t.Fatalf("output:\n%s", ut.out)
 	}
 }
@@ -658,9 +585,9 @@ func TestBundleID(t *testing.T) {
 	var asked []string
 	u.command = func(_ context.Context, name string, args ...string) (string, error) {
 		asked = append(asked, name+" "+strings.Join(args, " "))
-		return "com.openhuman.mavrk\n", nil
+		return "com.mirrin.mavrk\n", nil
 	}
-	if got := bundleID(u.command, binary); got != "com.openhuman.mavrk" || len(asked) != 1 || !strings.HasPrefix(asked[0], "plutil -extract CFBundleIdentifier raw") {
+	if got := bundleID(u.command, binary); got != "com.mirrin.mavrk" || len(asked) != 1 || !strings.HasPrefix(asked[0], "plutil -extract CFBundleIdentifier raw") {
 		t.Errorf("binary: %q, asked %v", got, asked)
 	}
 }

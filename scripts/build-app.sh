@@ -2,8 +2,8 @@
 # Builds dist/Mirrin.app from the mirrin binary.
 # Uses $MIRRIN_BIN when set (the release passes a universal binary), else builds
 # for this Mac. Signs with $APPLE_SIGN_ID (a "Developer ID Application: …"
-# identity) when set, else with the local mirrin-dev identity if present (or
-# antbot-dev, made before the rename), else ad-hoc.
+# identity) when set, else with the local mirrin-dev identity if present, else
+# ad-hoc.
 set -e
 cd "$(dirname "$0")/.."
 VERSION=${VERSION:-$(git describe --tags --always --dirty 2>/dev/null || echo dev)}
@@ -22,9 +22,7 @@ cp LICENSE THIRD_PARTY_NOTICES "$APP/Contents/Resources/"
 LOCAL_ID=
 if [ -z "$APPLE_SIGN_ID" ]; then
   ids=$(security find-identity -v -p codesigning 2>/dev/null || true)
-  for n in mirrin-dev antbot-dev; do # rename:keep
-    if printf '%s\n' "$ids" | grep -q "\"$n\""; then LOCAL_ID=$n && break; fi
-  done
+  if printf '%s\n' "$ids" | grep -q '"mirrin-dev"'; then LOCAL_ID=mirrin-dev; fi
 fi
 if [ -n "$APPLE_SIGN_ID" ]; then
   codesign --deep --force --options runtime --timestamp --entitlements packaging/macos/entitlements.plist -s "$APPLE_SIGN_ID" "$APP"

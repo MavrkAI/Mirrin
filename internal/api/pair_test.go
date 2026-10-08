@@ -204,9 +204,9 @@ func TestDevicesFileHoldsNoKeys(t *testing.T) {
 func TestOldStyleTerminalMovesOntoItsOwnKey(t *testing.T) {
 	e := newEnv(t)
 	// The master key over the old listener works, for what old codes gave,
-	// with a notice under the header's name from before the rename.
+	// with a notice saying what to do next.
 	w := e.do(onLegacy, req{path: "/status", header: bearer(master)})
-	if w.Code != 200 || w.Header().Get("AntBot-Notice") == "" {
+	if w.Code != 200 || w.Header().Get("Mirrin-Notice") == "" {
 		t.Fatalf("old-style code: %d %v", w.Code, w.Header())
 	}
 	if w := e.do(onLegacy, req{path: "/devices", header: bearer(master)}); w.Code != 404 {

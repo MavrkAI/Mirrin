@@ -14,7 +14,7 @@ import (
 // excerpt of their input.
 
 // privateTools are the tools whose arguments and results are memory content.
-var privateTools = map[string]bool{"remember": true, "remember_sensitive": true, "recall": true, "forget": true}
+var privateTools = map[string]bool{"remember": true, "remember_sensitive": true, "recall": true, "forget": true, "remember_page": true}
 
 // reFactID finds the ids in a memory tool's result, and only there: recall
 // lists "#ID [subject] content" per line, remember says "remembered (#ID"
@@ -30,7 +30,7 @@ func auditInput(tool string, input json.RawMessage, result string, n int) string
 	var in map[string]any
 	_ = json.Unmarshal(input, &in)
 	var parts []string
-	for _, k := range []string{"fact", "query"} {
+	for _, k := range []string{"fact", "query", "note"} {
 		if s, ok := in[k].(string); ok {
 			parts = append(parts, fmt.Sprintf("%s=%d chars", k, utf8.RuneCountInString(s)))
 		}

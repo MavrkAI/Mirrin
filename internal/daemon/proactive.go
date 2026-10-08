@@ -102,6 +102,10 @@ func screenPing(src events.Source, text string) string {
 		return "A follow-up is on the screen."
 	case "tip", "idea":
 		return ""
+	case "weekly": // it can mention money (weekly.go)
+		return "Your week is on the screen."
+	case "brief": // it can name who and what, over a screen being shared
+		return "A note for your next meeting is on the screen."
 	}
 	return text // reminders, and notices with no source
 }
@@ -109,11 +113,12 @@ func screenPing(src events.Source, text string) string {
 // sayInRoom reads text out loud on the voice channel, but only to someone
 // in the room: voice is on, it isn't quiet hours, and it is a reminder or
 // the owner talked to the twin out loud in the last ten minutes. A
-// follow-up is not a reminder here: what it found can be private. It
+// follow-up is not a reminder here: what it found can be private. A
+// meeting brief is never read out during another meeting. It
 // reports whether it was said.
 func (d *Daemon) sayInRoom(ctx context.Context, src events.Source, text string) bool {
 	ch, ok := d.channel("voice")
-	if !ok {
+	if !ok || src.Kind == "weekly" { // the weekly note can mention money: never read out
 		return false
 	}
 	now := clock()
@@ -122,6 +127,11 @@ func (d *Daemon) sayInRoom(ctx context.Context, src events.Source, text string) 
 	}
 	if src.Kind != "reminder" && now.Sub(time.Unix(0, d.heardAloud.Load())) > spokeWithin {
 		return false
+	}
+	if src.Kind == "brief" { // not out loud into the meeting before it
+		if _, _, busy := d.inMeeting(ctx, now); busy {
+			return false
+		}
 	}
 	if err := d.deliver(ctx, ch, voiceChat, ch.OwnerChatID(), text); err != nil {
 		d.log.Warn("say on voice", "err", err)

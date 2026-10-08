@@ -38,10 +38,9 @@ var reserved = []string{
 	"update", "verify", "webmaster", "wpad", "www",
 }
 
-// brands may not appear anywhere in a handle, however spelled. The
-// product's name before the rename stays reserved: nobody may pass as it.
+// brands may not appear anywhere in a handle, however spelled.
 var brands = []string{
-	"mirrin", "antbot", "mavrk", "amazon", "apple", "binance", "coinbase", "facebook", "google", // rename:keep
+	"mirrin", "mavrk", "amazon", "apple", "binance", "coinbase", "facebook", "google",
 	"icloud", "instagram", "letsencrypt", "metamask", "microsoft", "netflix", "paypal", "whatsapp",
 }
 

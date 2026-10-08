@@ -49,6 +49,7 @@ type Config struct {
 	Backup Backup `yaml:"backup,omitempty"`
 	// Cloud is the optional paid availability layer; nothing is contacted until `mirrin cloud link`.
 	Cloud Cloud `yaml:"cloud,omitempty"`
+	Jev   Jev   `yaml:"jev"` // optional quick judgments with TypeSafe's Jev (jev.go)
 
 	// ProtocolsDir holds user-defined protocol YAML files (and packs/ beneath it).
 	ProtocolsDir string `yaml:"protocols_dir"`
@@ -84,6 +85,8 @@ type Watch struct {
 	IntervalMinutes int  `yaml:"interval_minutes"`
 	Calendar        bool `yaml:"calendar"`
 	Inbox           bool `yaml:"inbox"`
+	// MeetingBriefs: a line before meeting someone you know (default on; briefs.go).
+	MeetingBriefs *bool `yaml:"meeting_briefs,omitempty"`
 }
 
 // UI configures the presence screen.

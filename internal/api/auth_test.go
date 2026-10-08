@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -34,8 +33,10 @@ var routeTable = []route{
 	{"POST", "/approvals/1/deny", "", devices.Approve, true},
 	{"POST", "/screen/tips/off", "", devices.Chat, true},
 	{"POST", "/screen/facts/1/undo", "", devices.Chat, true},
+	{"POST", "/screen/facts/1/remind", "", devices.Chat, true},
 	{"POST", "/screen/reminders/1/done", "", devices.Chat, true},
 	{"POST", "/screen/portrait/ack", "", devices.Chat, true},
+	{"POST", "/browser/remember", "", devices.Chat, true},
 	{"POST", "/pause", `{"paused":false}`, devices.Admin, false},
 	{"POST", "/protocols/run", `{"name":"morning"}`, devices.Admin, false},
 	{"POST", "/jobs/run", `{"name":"patterns"}`, devices.Admin, false},
@@ -355,7 +356,7 @@ func TestOpeningMemoryKeepsTheScreensCookie(t *testing.T) {
 			t.Fatalf("%s link: %d", page, w.Code)
 		}
 		for _, c := range w.Result().Cookies() {
-			if c.Name == cookieDev || c.Name == "antbot_token" {
+			if c.Name == cookieDev {
 				t.Fatalf("%s replaced the screen's cookie: %+v", page, c)
 			}
 		}
@@ -373,110 +374,22 @@ func TestOpeningMemoryKeepsTheScreensCookie(t *testing.T) {
 	}
 }
 
-// The cookies' names: Mirrin's, then the ones browsers signed in before the
-// rename still carry. The tests below loop over the old names, so a rename
-// of one would leave them passing while that browser is signed out.
+// The device cookies' names.
 func TestCookieNames(t *testing.T) {
 	if cookieDev != "mirrin_dev" || cookieSecure != "__Host-mirrin" {
 		t.Errorf("device cookies %q and %q", cookieDev, cookieSecure)
 	}
-	if !slices.Equal(legacyDeviceCookies, []string{"antbot_dev", "__Host-antbot"}) {
-		t.Errorf("AntBot's device cookies %v", legacyDeviceCookies)
-	}
-	if !slices.Equal(legacyCookies, []string{"antbot_token", "openhuman_token"}) {
-		t.Errorf("the master-key cookies %v", legacyCookies)
-	}
 }
 
-// Screens paired the old way carry the master key in antbot_token (or, from
-// before the rename, openhuman_token). They keep working, on a key of their
-// own from their next request.
-func TestOldCookieMovesOntoItsOwnKey(t *testing.T) {
+// A cookie holds a device's own key, never the master key: the master key
+// in a cookie signs nothing in.
+func TestMasterKeyInACookieIsRefused(t *testing.T) {
 	e := newEnv(t)
-	for _, name := range legacyCookies {
-		w := e.do(onLoopback, req{path: "/screen", cookies: []*http.Cookie{{Name: name, Value: master}}})
-		if w.Code != 200 {
-			t.Fatalf("%s on loopback: %d", name, w.Code)
+	for _, l := range []where{onLoopback, onLegacy} {
+		w := e.do(l, req{path: "/screen", cookies: []*http.Cookie{{Name: cookieDev, Value: master}}})
+		if w.Code != 401 || cookieFrom(w, cookieDev) != nil {
+			t.Fatalf("master key in %s: %d %v", cookieDev, w.Code, w.Result().Cookies())
 		}
-		c := cookieFrom(w, cookieDev)
-		if c == nil || !devices.LooksLikeToken(c.Value) {
-			t.Fatalf("%s: no key of its own: %v", name, w.Result().Cookies())
-		}
-		if old := cookieFrom(w, name); old == nil || old.MaxAge >= 0 {
-			t.Fatalf("%s wasn't cleared: %+v", name, old)
-		}
-		if w := e.do(onLoopback, req{path: "/screen", cookies: []*http.Cookie{c}}); w.Code != 200 {
-			t.Fatalf("with the new cookie: %d", w.Code)
-		}
-	}
-	// A wall screen on the LAN listener becomes a device the owner is told about.
-	ua := map[string]string{"User-Agent": "Mozilla/5.0 (X11; Linux aarch64) Chrome/120.0"}
-	w := e.do(onLegacy, req{path: "/screen", header: ua, cookies: []*http.Cookie{{Name: "antbot_token", Value: master}}})
-	if w.Code != 200 {
-		t.Fatalf("old screen on the LAN listener: %d %s", w.Code, w.Body)
-	}
-	c := cookieFrom(w, cookieDev)
-	d, ok := e.store.Authenticate(c.Value)
-	if !ok || d.Local() || d.Has(devices.Admin) || !d.Has(devices.Approve) || d.Name != "Chrome on Linux" {
-		t.Fatalf("migrated screen %+v", d)
-	}
-	ev := e.pairedEvents(1)
-	if len(ev) != 1 || ev[0].How != HowLegacyScreen || ev[0].Device.ID != d.ID || ev[0].IP != "100.64.0.9" {
-		t.Fatalf("announcements %+v", ev)
-	}
-	// The page's other requests racing in with the old cookie share that key.
-	w2 := e.do(onLegacy, req{path: "/status", header: ua, cookies: []*http.Cookie{{Name: "antbot_token", Value: master}}})
-	if c2 := cookieFrom(w2, cookieDev); c2 == nil || c2.Value != c.Value {
-		t.Fatalf("a second device for the same screen: %v", c2)
-	}
-	// Never over the TLS listener.
-	if w := e.do(onRemote, req{path: "/screen", cookies: []*http.Cookie{{Name: "antbot_token", Value: master}}}); w.Code != 401 {
-		t.Fatalf("master-key cookie on the remote listener: %d", w.Code)
-	}
-}
-
-// A browser signed in before the rename carries its key in AntBot's cookie
-// (antbot_dev over plain HTTP, __Host-antbot over TLS). It stays signed in,
-// moves to the new cookie on the spot, and the old one is expired the way
-// browsers accept.
-func TestAntBotDeviceCookieStillSignsIn(t *testing.T) {
-	e := newEnv(t)
-	_, local, _ := e.store.AddLocal("Safari on Mac")
-	w := e.do(onLoopback, req{path: "/screen", cookies: []*http.Cookie{{Name: "antbot_dev", Value: local}}})
-	if w.Code != 200 {
-		t.Fatalf("antbot_dev on loopback: %d", w.Code)
-	}
-	if c := cookieFrom(w, cookieDev); c == nil || c.Value != local || c.MaxAge != cookieMaxAge {
-		t.Fatalf("no %s for the same key: %v", cookieDev, w.Result().Cookies())
-	}
-	if old := cookieFrom(w, "antbot_dev"); old == nil || old.MaxAge >= 0 {
-		t.Fatalf("antbot_dev wasn't expired: %+v", old)
-	}
-
-	_, phone, _ := e.store.Add("Phone", devices.KindPWA, nil, "", "")
-	same := map[string]string{"Origin": "https://twin.example.ts.net", "Sec-Fetch-Site": "same-origin"}
-	w = e.do(onRemote, req{method: "POST", path: "/approvals/3/approve", header: same, cookies: []*http.Cookie{{Name: "__Host-antbot", Value: phone}}})
-	if w.Code != 200 {
-		t.Fatalf("__Host-antbot on the TLS listener: %d %s", w.Code, w.Body)
-	}
-	if c := cookieFrom(w, cookieSecure); c == nil || c.Value != phone || !c.Secure {
-		t.Fatalf("no %s for the same key: %v", cookieSecure, w.Result().Cookies())
-	}
-	if old := cookieFrom(w, "__Host-antbot"); old == nil || old.MaxAge >= 0 || !old.Secure || old.Path != "/" || old.Domain != "" {
-		t.Fatalf("__Host-antbot wasn't expired so a browser accepts it: %+v", old)
-	}
-
-	// The old cookie is a credential like the new one: a change it carries
-	// must come from the twin's own page.
-	if w := e.do(onLoopback, req{method: "POST", path: "/memory/facts", body: `{"content":"x"}`, cookies: []*http.Cookie{{Name: "antbot_dev", Value: local}}}); w.Code != 403 {
-		t.Fatalf("a cross-site change with only antbot_dev: %d", w.Code)
-	}
-	// Only the cookie for its own transport counts, and only with a live key.
-	if w := e.do(onRemote, req{path: "/status", cookies: []*http.Cookie{{Name: "antbot_dev", Value: phone}}}); w.Code != 401 {
-		t.Fatalf("antbot_dev over TLS: %d", w.Code)
-	}
-	if w := e.do(onLoopback, req{path: "/status", cookies: []*http.Cookie{{Name: "antbot_dev", Value: "abt1_not-a-key"}}}); w.Code != 401 || cookieFrom(w, cookieDev) != nil {
-		t.Fatalf("a made-up key in antbot_dev: %d %v", w.Code, w.Result().Cookies())
 	}
 }
 
@@ -532,7 +445,7 @@ func TestGoogleCallbackNeedsTheBrowserThatStartedIt(t *testing.T) {
 		t.Fatalf("callback: %d finished=%v", w.Code, e.f.finished)
 	}
 	// It no longer hands out a session cookie of its own.
-	if cookieFrom(w, cookieDev) != nil || cookieFrom(w, "antbot_token") != nil {
+	if cookieFrom(w, cookieDev) != nil {
 		t.Fatalf("callback minted a session: %v", w.Result().Cookies())
 	}
 	// And only on this computer.

@@ -11,10 +11,8 @@ import (
 	"path/filepath"
 )
 
-// Name is the claim's file in a home's data folder. It keeps the name it had
-// as AntBot: an AntBot twin and a Mirrin one on the same data folder must
-// lock the same file to keep out of each other's way.
-const Name = "antbot.lock" // rename:keep
+// Name is the claim's file in a home's data folder.
+const Name = "mirrin.lock"
 
 // ErrLocked is what Lock returns when another process holds the lock.
 var ErrLocked = errors.New("locked")

@@ -97,7 +97,7 @@ Reviewers clone the pack at the listed commit and read all of it. Authors: check
 - [ ] `pack.yaml` has `name`, `description` and `repo`, and `repo` is this repository.
 - [ ] `mirrin protocols lint .` reports no errors. Warnings are explained or fixed.
 - [ ] Protocols are in `protocols/`, and there's no other YAML at the top level that would be read as one.
-- [ ] No symbolic links anywhere (`find . -type l` prints nothing), and no file called `.antbot-pack.json` (Mirrin writes that itself when it installs a pack).
+- [ ] No symbolic links anywhere (`find . -type l` prints nothing), and no file called `.mirrin-pack.json` (Mirrin writes that itself when it installs a pack).
 - [ ] A `LICENSE` file that lets people use the pack, and a README that says what each protocol does, when it runs, what it needs and which vars to set.
 
 **Every protocol**

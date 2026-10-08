@@ -4,15 +4,6 @@
 #   install -m 0644 mirrin-relay.service /etc/systemd/system/
 #   systemctl daemon-reload && systemctl enable --now mirrin-relay
 # relay.yaml holds only public keys, so 0644 is fine.
-# A relay set up before the rename runs as antbot-relay. Move it over first,
-# keeping its settings and its state (the ACME account and certificate):
-#   systemctl disable --now antbot-relay
-#   mv /etc/antbot-relay /etc/mirrin-relay
-#   mv /var/lib/private/antbot-relay /var/lib/private/mirrin-relay
-# then set state_dir in /etc/mirrin-relay/relay.yaml to /var/lib/mirrin-relay
-# (the only place this unit lets it write), install the binary and this unit
-# as above, and delete antbot-relay.service. Its metrics are now named
-# mirrin_relay_* (they were antbot_relay_*): update alert rules.
 
 [Unit]
 Description=mirrin-relay: SNI passthrough for Mirrin twins

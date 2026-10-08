@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"slices"
 	"sort"
 	"strings"
 
@@ -15,13 +14,8 @@ import (
 )
 
 // homeToken stands for the twin's home (~/.mirrin) in an exported config, so
-// paths follow the twin to wherever its new home is. It keeps AntBot's
-// spelling: archives are read by older builds too, which know only this one.
-const homeToken = "$ANTBOT_HOME" // rename:keep: older builds read archives with this token
-
-// homeTokens are the tokens an import reads: the one written, and the one a
-// later version may write.
-var homeTokens = []string{homeToken, "$MIRRIN_HOME"}
+// paths follow the twin to wherever its new home is.
+const homeToken = "$MIRRIN_HOME"
 
 // machineLocal are settings that describe this machine rather than the twin:
 // where things are kept, what is installed, which address the API binds. An
@@ -35,7 +29,7 @@ var machineLocal = [][]string{
 }
 
 // makePortable rewrites paths in an exported config: under the twin's home to
-// $ANTBOT_HOME/…, under the user's home to ~/….
+// $MIRRIN_HOME/…, under the user's home to ~/….
 func makePortable(cfg map[string]any, home string) {
 	homes := []string{filepath.Clean(home)}
 	if abs, err := filepath.Abs(home); err == nil && abs != homes[0] {
@@ -55,12 +49,12 @@ func makePortable(cfg map[string]any, home string) {
 	})
 }
 
-// localize turns $ANTBOT_HOME/… (or $MIRRIN_HOME/…) and ~/… in an imported
+// localize turns $MIRRIN_HOME/… and ~/… in an imported
 // config into paths on this machine.
 func localize(cfg map[string]any, home string) {
 	user, _ := os.UserHomeDir()
 	mapStrings(cfg, func(s string) string {
-		if rel, ok := homeRel(s); ok {
+		if rel, ok := tokenRel(s, homeToken); ok {
 			return filepath.Join(home, filepath.FromSlash(rel))
 		}
 		if rel, ok := tokenRel(s, "~"); ok && user != "" {
@@ -96,7 +90,7 @@ func upgradeLegacy(cfg map[string]any) {
 		return
 	}
 	user := ""
-	if dir, b := splitAnySep(src); b == brand.HomeDirName || slices.Contains(brand.LegacyHomeDirs, b) {
+	if dir, b := splitAnySep(src); b == brand.HomeDirName {
 		user = dir
 	}
 	mapStrings(cfg, func(s string) string {
@@ -369,7 +363,7 @@ func dirSetting(cfg map[string]any, key, home, def string) string {
 	if v == "" {
 		return filepath.Join(home, def)
 	}
-	if rel, ok := homeRel(v); ok {
+	if rel, ok := tokenRel(v, homeToken); ok {
 		return filepath.Join(home, filepath.FromSlash(rel))
 	}
 	return expandTilde(v)
@@ -442,17 +436,6 @@ func joinToken(token, rel string) string {
 		return token
 	}
 	return token + "/" + rel
-}
-
-// homeRel reports whether s is one of homeTokens, or one followed by /…,
-// and the rest.
-func homeRel(s string) (string, bool) {
-	for _, t := range homeTokens {
-		if rel, ok := tokenRel(s, t); ok {
-			return rel, true
-		}
-	}
-	return "", false
 }
 
 // tokenRel reports whether s is token or token/…, and the rest.

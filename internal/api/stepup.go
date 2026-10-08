@@ -122,7 +122,7 @@ func (s *Server) stepUpApproval(w http.ResponseWriter, r *http.Request, det Appr
 }
 
 // challenge is 428 {stepup, session}: sign this, then send the same
-// request again with AntBot-Stepup: session and the result as its body.
+// request again with Mirrin-Stepup: session and the result as its body.
 func (s *Server) challenge(w http.ResponseWriter, opts json.RawMessage, sid string) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Content-Type", "application/json")
@@ -227,7 +227,7 @@ func (s *Server) enrolNotAllowed(w http.ResponseWriter, r *http.Request, d devic
 		"Send /passkey "+id+" to "+s.twinName()+" from your own chat app or from `mirrin chat` on "+computer()+", then try again within 15 minutes.")
 }
 
-// registerFinish is POST /stepup/register/finish, with AntBot-Stepup: the
+// registerFinish is POST /stepup/register/finish, with Mirrin-Stepup: the
 // session from begin, and the new credential as the body.
 func (s *Server) registerFinish(w http.ResponseWriter, r *http.Request) {
 	p := PeerFrom(r.Context())

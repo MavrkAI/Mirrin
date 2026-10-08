@@ -110,3 +110,44 @@ func TestCalendarErrorsSayWhatToDo(t *testing.T) {
 		t.Fatalf("not connected: %v", err)
 	}
 }
+
+// The watcher's clash check reads each event's times from the last
+// snapshot, in the calendar's own zone.
+func TestSnapshotKeepsEachEventsTimes(t *testing.T) {
+	c, fake := connected(t)
+	if _, _, ok := c.Span("e1"); ok {
+		t.Fatal("a time known before any snapshot")
+	}
+	paris, _ := time.LoadLocation("Europe/Paris")
+	c.loc = paris
+	fake.AddEvent(googletest.Event{ID: "e2", Summary: "Standup", Start: "2030-10-01T08:00:00Z", End: "2030-10-01T08:15:00Z"})
+	if _, err := c.Snapshot(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	st, en, ok := c.Span("e2")
+	if !ok || st.Location() != paris || st.Format("15:04") != "10:00" || en.Format("15:04") != "10:15" {
+		t.Fatalf("span %v–%v %v", st, en, ok)
+	}
+	if _, _, ok := c.Span("nope"); ok {
+		t.Fatal("a time for an event that isn't there")
+	}
+}
+
+// An event the owner declined, or one marked free, runs into nothing.
+func TestDeclinedAndFreeEventsHaveNoSpan(t *testing.T) {
+	c, fake := connected(t)
+	fake.AddEvent(googletest.Event{ID: "no", Summary: "Offsite", Start: "2030-10-01T08:00:00Z", End: "2030-10-01T09:00:00Z", Declined: true})
+	fake.AddEvent(googletest.Event{ID: "free", Summary: "Focus time", Start: "2030-10-01T10:00:00Z", End: "2030-10-01T12:00:00Z", Free: true})
+	fake.AddEvent(googletest.Event{ID: "busy", Summary: "Review", Start: "2030-10-01T13:00:00Z", End: "2030-10-01T14:00:00Z"})
+	if _, err := c.Snapshot(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	for _, k := range []string{"no", "free"} {
+		if _, _, ok := c.Span(k); ok {
+			t.Errorf("%s has a span", k)
+		}
+	}
+	if _, _, ok := c.Span("busy"); !ok {
+		t.Error("an ordinary event lost its span")
+	}
+}

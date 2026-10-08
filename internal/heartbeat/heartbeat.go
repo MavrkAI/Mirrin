@@ -55,6 +55,7 @@ type Heartbeat struct {
 	zoneKnown  string           // the system's zone the owner last heard about (zoneKey)
 	zoneLogged string           // the system's zone at the last look, so a move is logged once
 	zoneRetry  time.Time        // a zone change that couldn't be told waits until then
+	offerWaits *waitingOffer    // a travel offer kept back for quiet hours (travelpeople.go)
 	loaded     bool             // protocols have been loaded since start
 	aliveSaved time.Time        // when the last look was stored (aliveKey)
 	poke       chan struct{}    // wakes the scheduler early (a reload, a resume)
@@ -73,6 +74,9 @@ type Heartbeat struct {
 	// OnZone hears that the time zone the twin keeps has changed, so what
 	// reads times in it (the reminders tool) can follow.
 	OnZone func(loc *time.Location)
+	// Quiet reports whether now is in the owner's quiet hours: the travel
+	// welcome's offer waits them out (travelpeople.go). Without it, never.
+	Quiet func(now time.Time) bool
 	// Theirs reports whether a chat is someone else's (a group, a person the
 	// twin answers for the owner), not the owner's own. A follow-up promised
 	// there doesn't look on its own (followup.go). Without it, none is.
@@ -81,6 +85,10 @@ type Heartbeat struct {
 	// (the daemon's held.go). done is called once the briefing has gone
 	// out, so what it carried isn't sent again; it may be nil.
 	Preamble func(ctx context.Context, p protocols.Protocol) (text string, done func())
+	// Related and Fired are what a reminder set from a fact adds as it goes
+	// out, and what follows once it has (fired.go). Either may be nil.
+	Related func(ctx context.Context, r memory.Reminder) string
+	Fired   func(ctx context.Context, r memory.Reminder)
 }
 
 // SetPaused stops protocols and reminders from firing until resumed. On
@@ -556,12 +564,13 @@ func (h *Heartbeat) fireOne(ctx context.Context, r memory.Reminder, now time.Tim
 		}
 		msg = fmt.Sprintf("Reminder (due %s%s): %s", h.when(r.DueAt, now), why, r.Text)
 	}
+	msg += h.related(ctx, r)
 	key, err := h.deliver(events.WithSource(ctx, events.Source{Kind: "reminder"}), r.ChatKey, msg)
 	if err != nil {
 		h.undelivered(ctx, r, key, err, now)
 		return
 	}
-	_ = h.store.MarkFired(ctx, r.ID)
+	h.markFired(ctx, r)
 	h.store.Audit(ctx, "reminder.fired", key, r.Text)
 }
 
@@ -578,7 +587,7 @@ func (h *Heartbeat) fireTogether(ctx context.Context, chatKey string, rs []memor
 			h.undelivered(ctx, r, key, err, now)
 			continue
 		}
-		_ = h.store.MarkFired(ctx, r.ID)
+		h.markFired(ctx, r)
 		h.store.Audit(ctx, "reminder.fired", key, r.Text)
 	}
 }

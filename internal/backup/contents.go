@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/MavrkAI/Mirrin/internal/config"
+	"github.com/MavrkAI/Mirrin/internal/homelock"
 )
 
 // Layout is where a twin's files are on this machine. Archive paths are
@@ -307,7 +308,7 @@ func leftOut(l Layout, items []item) []string {
 	if es, err := os.ReadDir(l.DataDir); err == nil {
 		for _, e := range es {
 			n := e.Name()
-			if strings.HasPrefix(n, ".") || took["data/"+n] || isSQLiteSidecar(n) || n == stateFile || n == lockName || n == "antbot.lock" {
+			if strings.HasPrefix(n, ".") || took["data/"+n] || isSQLiteSidecar(n) || n == stateFile || n == lockName || n == homelock.Name {
 				continue
 			}
 			if ext := filepath.Ext(n); !e.IsDir() && ext != "" && ext != ".db" && ext != ".json" && ext != ".token" {

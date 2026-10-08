@@ -4,7 +4,7 @@ Read `CONTRIBUTING.md` and `ARCHITECTURE.md` first; this file only adds what an 
 
 ## Never
 
-- Touch the real `~/.mirrin`, a not-yet-moved `~/.antbot` or `~/.openhuman`, or set `HOME` to a fake directory. Isolate with `MIRRIN_HOME=$(mktemp -d)` on every `go build`, `go run` and `go test`: without it, the first `go run ./cmd/mirrin` stops a running AntBot service and moves a real `~/.antbot` into `~/.mirrin`.
+- Touch the real `~/.mirrin`, or set `HOME` to a fake directory. Isolate with `MIRRIN_HOME=$(mktemp -d)` on every `go build`, `go run` and `go test`: without it, `go run ./cmd/mirrin` reads and writes the real twin's memory, keys and settings.
 - Launch Chrome without `--use-mock-keychain` and a temporary `--user-data-dir`. Under a sandbox or a temporary home, macOS asks the user to create a keychain, and its "Reset To Defaults" button would replace their real one. The real profile must never use the mock keychain.
 - Bind port 7742, run `mirrin service install`, the tray or voice, or message a real channel.
 - Contact a real third-party service from a test. Use `httptest` and the package fakes, such as `internal/skills/google/googletest`.

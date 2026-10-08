@@ -49,6 +49,7 @@ type conversation struct {
 	priorLean int8
 	offer     *alwaysOffer // "stop asking about this?", waiting for the owner's yes (alwaysallow.go)
 	runs      []*running   // turns and approved actions under way here, which a stop cuts short (interrupt.go)
+	ownAt     time.Time    // when the twin last sent a message here on its own (noticed)
 
 	refs int // runs holding it through acquire; guarded by locksMu
 }

@@ -94,7 +94,7 @@ func TestDenyListRejects(t *testing.T) {
 		"string seq":      {`{"seq":"1","iat":"2026-09-27T12:00:00Z","handles":[],"keys":[]}`, `within "/seq"`},
 		"invalid utf-8":   {"{\"seq\":1,\"iat\":\"2026-09-27T12:00:00Z\",\"handles\":[{\"h\":\"\xff\",\"why\":\"\"}],\"keys\":[]}", "invalid UTF-8"},
 		"not an object":   {`"deny everything"`, "unmarshal JSON string"}, // json/v2 says "cannot" or "unable to"
-		"entitlement too": {`{"seq":1,"iat":"2026-09-27T12:00:00Z","handles":[],"keys":[],"aud":"antbot"}`, `unknown object member name "aud"`},
+		"entitlement too": {`{"seq":1,"iat":"2026-09-27T12:00:00Z","handles":[],"keys":[],"aud":"mirrin"}`, `unknown object member name "aud"`},
 		"iat lowercase z": {`{"seq":1,"iat":"2026-09-27T12:00:00z","handles":[],"keys":[]}`, "iat is not an RFC 3339 time"},
 	} {
 		tok, err := seal([]byte(c.payload), denyListPrefix, "dl-test-a", priv, MaxDenyListSize)

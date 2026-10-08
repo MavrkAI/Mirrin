@@ -32,7 +32,7 @@ func at(now string, seen ...string) chromedp.Action {
   const Real = Date, off = new Real(%q).getTime() - Real.now();
   class Fake extends Real { constructor(...a) { if (a.length) super(...a); else super(Real.now() + off); } static now() { return Real.now() + off; } }
   window.Date = Fake;
-  localStorage.setItem('antbot.left.seen', %q);
+  localStorage.setItem('mirrin.left.seen', %q);
 })()`, now, ids)).Do(ctx)
 		return err
 	})
@@ -68,7 +68,7 @@ func TestLeftForYouShowsWhatItDidOnItsOwn(t *testing.T) {
 		t.Error("the Noticed section is still there")
 	}
 	// Both were shown open to someone here: this device has seen them.
-	if got := eval[string](t, ctx, `localStorage.getItem('antbot.left.seen')`); !strings.Contains(got, `"r1"`) || !strings.Contains(got, `"b1"`) {
+	if got := eval[string](t, ctx, `localStorage.getItem('mirrin.left.seen')`); !strings.Contains(got, `"r1"`) || !strings.Contains(got, `"b1"`) {
 		t.Errorf("seen %s", got)
 	}
 }

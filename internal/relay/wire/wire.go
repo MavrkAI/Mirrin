@@ -1,4 +1,4 @@
-// Package wire is the antbot.tunnel.v1 protocol between a daemon and a
+// Package wire is the mirrin.tunnel.v1 protocol between a daemon and a
 // mirrin-relay: the JSON handshake, the control stream and the PROXY v2
 // header in front of every relayed connection. docs/relay-protocol.md is
 // the specification. The daemon's tunnel client and the relay both use this
@@ -21,16 +21,16 @@ import (
 
 // Protocol constants. Changing any of them is a new protocol version.
 const (
-	Subprotocol = "antbot.tunnel.v1" // the WebSocket subprotocol
+	Subprotocol = "mirrin.tunnel.v1" // the WebSocket subprotocol
 	Path        = "/v1/tunnel"       // where a relay serves tunnels
 	Version     = 1                  // the "v" of challenge and hello
 
 	// HelloContext separates hello signatures from every other use of a
 	// device key.
-	HelloContext = "antbot-relay-tunnel-v1"
+	HelloContext = "mirrin-relay-tunnel-v1"
 	// ExporterLabel is the RFC 8446 exporter label that binds a hello to
 	// its TLS session.
-	ExporterLabel = "EXPORTER-antbot-tunnel"
+	ExporterLabel = "EXPORTER-mirrin-tunnel"
 
 	ExporterSize  = 32
 	NonceSize     = 32
@@ -204,7 +204,7 @@ func Exporter(cs tls.ConnectionState) ([]byte, error) {
 
 // HelloSigInput is what a hello signs:
 //
-//	"antbot-relay-tunnel-v1" 0x00 relay 0x00 nonce 0x00 exporter
+//	"mirrin-relay-tunnel-v1" 0x00 relay 0x00 nonce 0x00 exporter
 //
 // A relay id holds no 0x00 and the nonce and exporter have fixed sizes, so
 // different inputs never produce the same bytes.

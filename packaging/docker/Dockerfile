@@ -10,11 +10,7 @@ ARG TARGETARCH
 RUN apk add --no-cache ca-certificates tzdata wget && adduser -D -u 10001 twin
 COPY dist/mirrin-linux-${TARGETARCH} /usr/local/bin/mirrin
 COPY packaging/docker/entrypoint.sh packaging/docker/healthcheck.sh /usr/local/bin/
-# The default home goes by its name from before the rename, which is read
-# after MIRRIN_HOME: a home a deployment names with either -e MIRRIN_HOME or
-# the older -e ANTBOT_HOME wins over it, in the entrypoint and in
-# `docker exec` alike.
-ENV ANTBOT_HOME=/data
+ENV MIRRIN_HOME=/data
 RUN mkdir -p /data && chown twin:twin /data
 VOLUME ["/data"]
 USER twin

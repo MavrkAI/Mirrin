@@ -205,7 +205,7 @@ func (d *Daemon) Hello(ctx context.Context, onDelta, onStatus func(string)) (api
 	d.healModel()
 	d.stampInstall(ctx) // firstrun.go: the first week's tips count from here
 	c := d.Config()
-	now := time.Now().In(d.location())
+	now := clock().In(d.location())
 	if onStatus != nil {
 		onStatus(lookingAt(dayPart(now)))
 	}
@@ -234,7 +234,7 @@ func (d *Daemon) Hello(ctx context.Context, onDelta, onStatus func(string)) (api
 	// there has context. Typed on this Mac, it stays off view-only screens.
 	d.noticed(ctx, screenChat, out, out)
 	d.bus.Publish(events.Event{Kind: "said", Text: out, Data: map[string]string{"channel": "screen"}})
-	return api.HelloReply{Text: out, Note: note}, nil
+	return api.HelloReply{Text: out, Note: note, Offer: d.offerBriefing(ctx)}, nil // briefing_offer.go
 }
 
 // helloAsk is what the first hello's system prompt asks for, after the
@@ -333,7 +333,7 @@ func (d *Daemon) helloFacts(ctx context.Context, c config.Config, now time.Time)
 			defer wg.Done()
 			cctx, cancel := context.WithTimeout(ctx, 4*time.Second)
 			defer cancel()
-			if evs, err := cal.Upcoming(cctx, 5); err == nil {
+			if evs, err := cal.Upcoming(cctx, helloEvents); err == nil { // Google failing: say nothing of it
 				day = nextToday(evs, now)
 			}
 		}()
@@ -352,7 +352,11 @@ func (d *Daemon) helloFacts(ctx context.Context, c config.Config, now time.Time)
 		facts = append(facts, day)
 	}
 	var routines []string
+	offering := d.offeringBriefing(ctx) // the hello ends by offering it (briefing_offer.go)
 	for _, p := range d.Protocols() {
+		if offering && strings.EqualFold(p.Name, briefingName) {
+			continue
+		}
 		if p.IsEnabled() && strings.TrimSpace(p.Schedule) != "" && len(routines) < 3 {
 			routines = append(routines, p.Name+" "+protocols.Describe(p.Schedule)) // "morning briefing every day at 7:00"
 		}
@@ -371,8 +375,12 @@ func fetchedAt(w *Weather) string {
 	return w.FetchedAt
 }
 
+// helloEvents is how many coming events the first hello reads.
+const helloEvents = 5
+
 // nextToday words what is next on the calendar today: the next event yet
-// to start, else one that lasts all day, else that there is nothing more.
+// to start (and that it is the only one left, when that is sure), else one
+// that lasts all day, else that there is nothing more.
 func nextToday(evs []calendar.Event, now time.Time) string {
 	today := func(t time.Time) bool {
 		y, m, dd := t.In(now.Location()).Date()
@@ -386,18 +394,37 @@ func nextToday(evs []calendar.Event, now time.Time) string {
 		return "an event"
 	}
 	allDay := ""
-	for _, e := range evs {
+	for i, e := range evs {
 		switch {
 		case e.AllDay && today(e.Start) && allDay == "":
 			allDay = "All day today on the calendar: " + name(e) + "."
 		case !e.AllDay && e.Start.After(now) && today(e.Start):
-			return "Next on the calendar today: " + name(e) + " at " + e.Start.In(now.Location()).Format("3:04 pm") + "."
+			at := name(e) + " at " + e.Start.In(now.Location()).Format("3:04 pm") + "."
+			if onlyLeft(evs[i+1:], len(evs) < helloEvents, today) {
+				return "The only thing left on the calendar today: " + at
+			}
+			return "Next on the calendar today: " + at
 		}
 	}
 	if allDay != "" {
 		return allDay
 	}
 	return "Calendar: nothing more today."
+}
+
+// onlyLeft reports whether nothing timed comes later today in rest, the
+// events after the next one: sure when the list ended early (complete) or
+// it reaches past today.
+func onlyLeft(rest []calendar.Event, complete bool, today func(time.Time) bool) bool {
+	for _, e := range rest {
+		if !today(e.Start) {
+			return true
+		}
+		if !e.AllDay {
+			return false
+		}
+	}
+	return complete
 }
 
 // SayHello says the first hello out loud in the twin's own voice, pitch

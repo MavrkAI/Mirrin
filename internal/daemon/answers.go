@@ -466,6 +466,7 @@ var tickWords = map[string]bool{"done": true, "did it": true, "done it": true, "
 
 // answerReminder ticks off or puts back the reminder that was the twin's
 // last word in this chat, when the owner's whole message says done or when.
+// Other words, up to a short message, may be read by Jev (reminder_jev.go).
 func (d *Daemon) answerReminder(ctx context.Context, in channels.Inbound) (string, bool) {
 	key := in.Key()
 	if !in.IsOwner || forgeable(in.Channel) || memory.IsScratch(key) || !d.ownersOwnChat(key) {
@@ -475,10 +476,43 @@ func (d *Daemon) answerReminder(ctx context.Context, in channels.Inbound) (strin
 		return unicode.IsSpace(r) || unicode.IsPunct(r) || unicode.IsSymbol(r)
 	})), " ")
 	words := strings.ToLower(said)
-	if words == "" || len(words) > 40 {
+	if !reminderReplyFits(in.Text) {
 		return "", false
 	}
 	now := clock()
+	r, ok := d.firedReminder(ctx, key, now)
+	if !ok {
+		return "", false
+	}
+	if words == "" || len(words) > 40 {
+		return d.judgeReminderReply(ctx, in, r, now)
+	}
+	var reply string
+	if tickWords[words] {
+		if reply, ok = d.tickReminder(ctx, key, r, ""); !ok {
+			return "", false
+		}
+	} else {
+		due := now.Add(time.Hour)
+		if words != "later" {
+			t, err := reminders.ParseWhen(said, now, d.location())
+			if err != nil || !t.After(now) {
+				return d.judgeReminderReply(ctx, in, r, now)
+			}
+			due = t
+		}
+		if reply, ok = d.snoozeReminder(ctx, key, r, due, now); !ok {
+			return "", false
+		}
+	}
+	d.recordReminderReply(ctx, key, in.Text, reply)
+	return reply, true
+}
+
+// firedReminder is the reminder that went out in key (or, set elsewhere,
+// was sent here) under half an hour before now and is still the twin's last
+// word there, while the twin waits on nothing else from the owner.
+func (d *Daemon) firedReminder(ctx context.Context, key string, now time.Time) (memory.Reminder, bool) {
 	r, ok := d.store.LastFired(ctx, key, reminderReplyFor)
 	if !ok {
 		// Set somewhere else (by voice, on the screen) and sent here: the
@@ -486,40 +520,43 @@ func (d *Daemon) answerReminder(ctx context.Context, in channels.Inbound) (strin
 		r, ok = d.store.LastFired(ctx, "", reminderReplyFor)
 	}
 	if !ok || r.Kind != "remind" || now.Sub(r.FiredAt) > reminderReplyFor || !d.remindedLast(ctx, key, r) || d.openQuestion(key) {
+		return memory.Reminder{}, false
+	}
+	return r, true
+}
+
+// tickReminder ticks r off, with via (" (jev)" or "") after its line in
+// the activity log.
+func (d *Daemon) tickReminder(ctx context.Context, key string, r memory.Reminder, via string) (string, bool) {
+	if err := d.store.MarkDone(ctx, r.ID); err != nil {
 		return "", false
 	}
-	var reply string
-	if tickWords[words] {
-		if err := d.store.MarkDone(ctx, r.ID); err != nil {
-			return "", false
-		}
-		d.store.Audit(ctx, "reminder.done", key, fmt.Sprintf("#%d %s", r.ID, r.Text))
-		reply = "Ticked."
-	} else {
-		due := now.Add(time.Hour)
-		if words != "later" {
-			t, err := reminders.ParseWhen(said, now, d.location())
-			if err != nil || !t.After(now) {
-				return "", false
-			}
-			due = t
-		}
-		if err := d.store.Snooze(ctx, r.ID, due); err != nil {
-			return "", false
-		}
-		d.store.Audit(ctx, "reminder.snoozed", key, fmt.Sprintf("#%d %s, until %s", r.ID, r.Text, due.UTC().Format(time.RFC3339)))
-		reply = "Back at " + backAt(due, now, d.location()) + "."
-		if r.Snoozes+1 >= 3 && d.slippingOnce(ctx, r.ID) {
-			reply += " This one keeps slipping: shall I take it on, or drop it?"
-		}
+	d.store.Audit(ctx, "reminder.done", key, fmt.Sprintf("#%d %s%s", r.ID, r.Text, via))
+	return "Ticked.", true
+}
+
+// snoozeReminder puts r back till due. The third time, and only then, it
+// offers to take it on or drop it.
+func (d *Daemon) snoozeReminder(ctx context.Context, key string, r memory.Reminder, due, now time.Time) (string, bool) {
+	if err := d.store.Snooze(ctx, r.ID, due); err != nil {
+		return "", false
 	}
-	// Kept in the conversation, so the model knows what was settled.
-	for _, m := range []llm.Message{llm.Text(llm.RoleUser, in.Text), llm.Text(llm.RoleAssistant, reply)} {
+	d.store.Audit(ctx, "reminder.snoozed", key, fmt.Sprintf("#%d %s, until %s", r.ID, r.Text, due.UTC().Format(time.RFC3339)))
+	reply := "Back at " + backAt(due, now, d.location()) + "."
+	if r.Snoozes+1 >= 3 && d.slippingOnce(ctx, r.ID) {
+		reply += " This one keeps slipping: shall I take it on, or drop it?"
+	}
+	return reply, true
+}
+
+// recordReminderReply keeps the owner's word and the reply in the
+// conversation, so the model knows what was settled.
+func (d *Daemon) recordReminderReply(ctx context.Context, key, text, reply string) {
+	for _, m := range []llm.Message{llm.Text(llm.RoleUser, text), llm.Text(llm.RoleAssistant, reply)} {
 		if err := d.store.AppendMessage(context.WithoutCancel(ctx), key, m); err != nil {
 			d.log.Warn("reminder: record", "chat", key, "err", err)
 		}
 	}
-	return reply, true
 }
 
 // remindedLast reports whether the twin's latest message in key is r going

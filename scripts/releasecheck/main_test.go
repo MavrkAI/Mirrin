@@ -89,13 +89,11 @@ func TestCheckFlagsFilesThatArentPartOfARelease(t *testing.T) {
 		{SumsFile, false},
 		{SumsFile + ".sigstore.json", false},
 		{".DS_Store", false},
-		// Pre-rename leftovers in a local dist/ would otherwise be summed and uploaded.
-		{"openhuman-linux-amd64", true},
-		{"OpenHuman-v0.2.0-macos-arm64.dmg", true},
-		{"antbot-linux-amd64", true},
-		{"antbot-relay-linux-arm64", true},
-		{"AntBot-v0.2.1-macos.dmg", true},
-		{"AntBot-v0.2.1-windows-setup.exe", true},
+		// Leftovers in a local dist/ would otherwise be summed and uploaded.
+		{"other-linux-amd64", true},
+		{"other-relay-linux-arm64", true},
+		{"Other-v0.2.1-macos.dmg", true},
+		{"Other-v0.2.1-windows-setup.exe", true},
 		{"notes.md", true},
 	}
 	for _, c := range cases {

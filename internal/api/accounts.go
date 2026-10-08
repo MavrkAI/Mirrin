@@ -70,6 +70,7 @@ const oauthCookie = "mirrin_oauth"
 func (s *Server) accountRoutes(mux *http.ServeMux, a authz) {
 	mux.HandleFunc("GET /accounts", s.page(a, devices.Admin, accountsHTML, nil))
 	s.modelKeyRoutes(mux, a)     // model_key.go
+	s.jevRoutes(mux, a)          // jev_key.go
 	s.googleClientRoutes(mux, a) // accounts_google.go
 	mux.HandleFunc("GET /accounts/list", a.Require(devices.Admin, func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)

@@ -389,6 +389,9 @@ func (d *Daemon) Trust(ctx context.Context) api.TrustInfo {
 	if len(voice) > 0 {
 		mark("voice", strings.Join(voice, " and "))
 	}
+	if c.JevOn() {
+		mark("jev", "api.typesafe.ai")
+	}
 	if s, _ := backup.LoadSettings(config.Path()); s.Recipient != "" {
 		mark("backup", backup.Where(s))
 	}

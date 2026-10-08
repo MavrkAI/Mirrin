@@ -648,7 +648,7 @@ func TestOrbShowsNothingNoted(t *testing.T) {
 	d.push(map[string]any{"kind": "remembered", "text": "Akshay doesn't eat meat.", "data": map[string]any{"id": 7, "subject": "preferences"}})
 	d.push(map[string]any{"kind": "said", "text": "Got it.", "data": map[string]any{"channel": "voice"}})
 	waitFor(t, ctx, `LINES.some(l => l.text === 'Got it.')`, "the reply")
-	if eval[bool](t, ctx, `LINES.some(l => l.noted) || !!document.querySelector('.noted') || localStorage.getItem('antbot.noted.seen') !== null`) {
+	if eval[bool](t, ctx, `LINES.some(l => l.noted) || !!document.querySelector('.noted') || localStorage.getItem('mirrin.noted.seen') !== null`) {
 		t.Fatal("the orb noted what the twin kept")
 	}
 }

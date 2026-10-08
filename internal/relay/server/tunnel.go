@@ -27,7 +27,7 @@ const (
 	deniedRetry      = 3600             // seconds a denied daemon waits
 )
 
-// serveTunnel is GET /v1/tunnel: the antbot.tunnel.v1 handshake, then a
+// serveTunnel is GET /v1/tunnel: the mirrin.tunnel.v1 handshake, then a
 // yamux session with the relay as client, until the tunnel ends. The
 // WebSocket is hijacked from the HTTP server and outlives this handler.
 func (s *Server) serveTunnel(w http.ResponseWriter, r *http.Request) {
@@ -104,7 +104,7 @@ func (s *Server) handshake(ws *websocket.Conn, r *http.Request, limited bool) (*
 	h, err := wire.ParseHello(b)
 	switch {
 	case errors.Is(err, wire.ErrVersion):
-		return nil, refuse(wire.CodeUpgradeRequired, "This relay speaks antbot.tunnel.v1; update Mirrin.", 0)
+		return nil, refuse(wire.CodeUpgradeRequired, "This relay speaks mirrin.tunnel.v1; update Mirrin.", 0)
 	case err != nil:
 		return nil, refuse(wire.CodeBadSignature, "The relay could not read the hello.", 0)
 	case limited:

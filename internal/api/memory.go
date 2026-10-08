@@ -134,4 +134,5 @@ func (s *Server) memoryRoutes(mux *http.ServeMux, mem MemoryBackend, a authz) {
 		}
 		writeJSON(w, es)
 	}))
+	s.whyRoutes(mux, mem, a) // why.go
 }

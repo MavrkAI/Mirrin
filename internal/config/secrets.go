@@ -12,8 +12,6 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
-
-	"github.com/MavrkAI/Mirrin/internal/brand"
 )
 
 // SecretsPath is the 0600 file of KEY=value lines that keeps API keys and
@@ -27,11 +25,8 @@ func SecretsPathIn(home string) string { return filepath.Join(home, "secrets.env
 
 // Secret is the value of a secret named by its environment variable: the
 // environment first, so an exported key overrides a saved one, then the
-// secrets file. A variable of Mirrin's own is also found under the name it
-// had before the rename (ANTBOT_EMAIL_PASSWORD for MIRRIN_EMAIL_PASSWORD,
-// and the other way round): in the environment under any of its names
-// first, then in the file. It is read each time, so a key saved while the
-// twin runs is found without a restart.
+// secrets file. It is read each time, so a key saved while the twin runs is
+// found without a restart.
 func Secret(name string) string {
 	if name == "" {
 		return ""
@@ -40,21 +35,14 @@ func Secret(name string) string {
 		return v
 	}
 	vals, _ := ReadSecrets()
-	for _, n := range brand.EnvAliases(name) {
-		if v := vals[n]; v != "" {
-			return v
-		}
-	}
-	return ""
+	return vals[name]
 }
 
-// Exported is the name and value of the first of name's names (Secret) set
-// in this process's environment, or "", "" when none is.
+// Exported is name and its value when it is set in this process's
+// environment, or "", "" when it isn't.
 func Exported(name string) (string, string) {
-	for _, n := range brand.EnvAliases(name) {
-		if v := os.Getenv(n); v != "" {
-			return n, v
-		}
+	if v := os.Getenv(name); v != "" {
+		return name, v
 	}
 	return "", ""
 }
@@ -165,6 +153,7 @@ func (c *Config) SecretEnvs() []string {
 	names := []string{
 		// Read directly by the model gateway and the voice, whatever the config says.
 		"ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "ELEVENLABS_API_KEY",
+		DefaultJevKeyEnv, c.Jev.APIKeyEnv,
 		c.LLM.APIKeyEnv,
 		c.Channels.Telegram.TokenEnv, c.Channels.Discord.TokenEnv,
 		c.Channels.Slack.BotTokenEnv, c.Channels.Slack.AppTokenEnv,

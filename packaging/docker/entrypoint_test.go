@@ -96,7 +96,7 @@ func runEntrypoint(t *testing.T, env []string) (string, error) {
 		t.Fatal(err)
 	}
 	cmd := exec.Command("sh", "entrypoint.sh")
-	cmd.Env = append(withoutOldSettings(os.Environ()), "MIRRIN_HOME=", "MIRRIN_BIN="+fake,
+	cmd.Env = append(os.Environ(), "MIRRIN_HOME=", "MIRRIN_BIN="+fake,
 		"TWIN_NAME=", "TWIN_PERSONA=", "OWNER_NAME=", "OWNER_HONORIFIC=", "OWNER_TIMEZONE=", "OWNER_ABOUT=",
 		"LLM_PROVIDER=", "LLM_MODEL=", "TWIN_API_TOKEN=", "TWIN_GATEWAY=0", "TWIN_REPAIR_GATEWAY=", "TWIN_GATEWAY_TOKEN_FILE=")
 	cmd.Env = append(cmd.Env, env...)
@@ -123,34 +123,29 @@ func imageEnv(t *testing.T, data string) []string {
 	return env
 }
 
-// A container upgraded from the AntBot image keeps the home its deployment
-// named with -e ANTBOT_HOME: the image's own default must not hide it (the
-// twin would start blank in the image's volume, with a new key and
-// WhatsApp unlinked). -e MIRRIN_HOME wins over both. `docker exec mirrin`,
-// which sees only the image's and the deployment's settings, finds the same
-// home.
+// A container keeps the home its deployment names with -e MIRRIN_HOME, and
+// uses the image's /data otherwise. `docker exec mirrin`, which sees only
+// the image's and the deployment's settings, finds the same home.
 func TestImageKeepsTheDeploymentsHome(t *testing.T) {
 	needSh(t)
-	data, state, mine := t.TempDir(), t.TempDir(), t.TempDir()
+	data, mine := t.TempDir(), t.TempDir()
 	for _, c := range []struct {
 		name   string
 		deploy []string
 		want   string
 	}{
 		{"the image's default", nil, data},
-		{"-e ANTBOT_HOME", []string{"ANTBOT_HOME=" + state}, state},
 		{"-e MIRRIN_HOME", []string{"MIRRIN_HOME=" + mine}, mine},
-		{"both", []string{"ANTBOT_HOME=" + state, "MIRRIN_HOME=" + mine}, mine},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			for _, d := range []string{data, state, mine} {
+			for _, d := range []string{data, mine} {
 				os.Remove(filepath.Join(d, "config.yaml"))
 			}
 			env := append(imageEnv(t, data), c.deploy...)
 			if out, err := runEntrypoint(t, env); err != nil {
 				t.Fatalf("entrypoint failed: %v\n%s", err, out)
 			}
-			for _, d := range []string{data, state, mine} {
+			for _, d := range []string{data, mine} {
 				_, err := os.Stat(filepath.Join(d, "config.yaml"))
 				if got := err == nil; got != (d == c.want) {
 					t.Errorf("config in %s: %v, want the twin in %s", d, got, c.want)
@@ -310,13 +305,10 @@ run)
   i=0
   while [ $i -lt 100 ] && [ ! -f "$GW/status" ]; do i=$((i+1)); sleep 0.1; done
   echo "started: run" ;;
-pair) echo pair >>"` + log + `"; printf 'On the other computer, run:\n\n  %s connect ab2.CODE\n\n' "${FAKE_NAME:-mirrin}" ;;
+pair) echo pair >>"` + log + `"; printf 'On the other computer, run:\n\n  mirrin connect ab2.CODE\n\n' ;;
 connect)
   [ "$2" = --name ] && [ "$3" = gateway ] && [ "$4" = ab2.CODE ] || { echo "bad connect: $*" >&2; exit 1; }
-  # A program from before the rename (FAKE_NAME=antbot) keeps its home in ANTBOT_HOME.
-  home=$MIRRIN_HOME
-  [ "${FAKE_NAME:-mirrin}" = antbot ] && home=$ANTBOT_HOME
-  printf 'address: http://127.0.0.1:7742\ntoken: ` + key + `\nname: Mirrin\n' >"$home/remote.yaml" ;;
+  printf 'address: http://127.0.0.1:7742\ntoken: ` + key + `\nname: Mirrin\n' >"$MIRRIN_HOME/remote.yaml" ;;
 esac
 `
 	fake := filepath.Join(bin, "mirrin")
@@ -324,8 +316,8 @@ esac
 		t.Fatal(err)
 	}
 	cmd := exec.Command("sh", "entrypoint.sh")
-	cmd.Env = append(withoutOldSettings(os.Environ()), "PATH="+wgetPath(t), "MIRRIN_HOME="+home, "MIRRIN_BIN="+fake, "MIRRIN_PORT="+twin.port, "GW="+filepath.Join(home, "gateway"),
-		"TWIN_NAME=", "TWIN_API_TOKEN=", "TWIN_GATEWAY=", "TWIN_REPAIR_GATEWAY=", "TWIN_GATEWAY_TOKEN_FILE=", "TWIN_START_WAIT=10", "FAKE_NAME=")
+	cmd.Env = append(os.Environ(), "PATH="+wgetPath(t), "MIRRIN_HOME="+home, "MIRRIN_BIN="+fake, "MIRRIN_PORT="+twin.port, "GW="+filepath.Join(home, "gateway"),
+		"TWIN_NAME=", "TWIN_API_TOKEN=", "TWIN_GATEWAY=", "TWIN_REPAIR_GATEWAY=", "TWIN_GATEWAY_TOKEN_FILE=", "TWIN_START_WAIT=10")
 	cmd.Env = append(cmd.Env, env...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -355,6 +347,11 @@ func TestEntrypointPairsTheGatewayOnItsOwnKey(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(home, "data", "api.token")); !os.IsNotExist(err) {
 		t.Fatalf("the entrypoint wrote the master key: %v", err)
+	}
+	// The gateway's key never lands in the twin's own home: that would make
+	// the twin a client of itself.
+	if _, err := os.Stat(filepath.Join(home, "remote.yaml")); !os.IsNotExist(err) {
+		t.Fatalf("the gateway's key went into the twin's home: %v", err)
 	}
 
 	// A key that still works is kept: no new pairing.
@@ -435,73 +432,6 @@ func TestEntrypointKeepsTheGatewayKeyWhenTheTwinIsBusy(t *testing.T) {
 			t.Fatalf("%d: status %q", code, b)
 		}
 	}
-}
-
-// An image run with the settings' names from before the rename (ANTBOT_HOME,
-// ANTBOT_BIN, ANTBOT_PORT) still works; the MIRRIN_ names win.
-func TestEntrypointReadsTheOldSettings(t *testing.T) {
-	needSh(t)
-	home := t.TempDir()
-	out, err := entrypoint(t, t.TempDir(), "MIRRIN_HOME=", "ANTBOT_HOME="+home)
-	if err != nil || !strings.Contains(out, "started: run") {
-		t.Fatalf("entrypoint failed: %v\n%s", err, out)
-	}
-	if _, err := os.Stat(filepath.Join(home, "config.yaml")); err != nil {
-		t.Fatalf("no config in ANTBOT_HOME: %v", err)
-	}
-
-	mirrin, other := t.TempDir(), t.TempDir()
-	if out, err := entrypoint(t, mirrin, "ANTBOT_HOME="+other); err != nil {
-		t.Fatalf("entrypoint failed: %v\n%s", err, out)
-	}
-	if _, err := os.Stat(filepath.Join(other, "config.yaml")); err == nil {
-		t.Fatal("ANTBOT_HOME won over MIRRIN_HOME")
-	}
-
-	// The binary and the port too.
-	twin := newFakeTwin(t)
-	fake := filepath.Join(t.TempDir(), "antbot")
-	if err := os.WriteFile(fake, []byte("#!/bin/sh\necho \"old program: $*\"\n"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	out, err = entrypoint(t, t.TempDir(), "MIRRIN_BIN=", "ANTBOT_BIN="+fake)
-	if err != nil || !strings.Contains(out, "old program: run") {
-		t.Fatalf("ANTBOT_BIN wasn't run: %v\n%s", err, out)
-	}
-	cmd := exec.Command("sh", "healthcheck.sh")
-	cmd.Env = append(withoutOldSettings(os.Environ()), "PATH="+wgetPath(t), "MIRRIN_PORT=", "ANTBOT_PORT="+twin.port)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("the healthcheck didn't use ANTBOT_PORT: %v\n%s", err, out)
-	}
-}
-
-// A binary from before the rename prints `antbot connect <code>` and keeps
-// its home in ANTBOT_HOME: the gateway still pairs, and its key never lands
-// in the twin's own home (that would make the twin a client of itself).
-func TestEntrypointPairsTheGatewayWithAnOlderProgram(t *testing.T) {
-	needSh(t)
-	twin := newFakeTwin(t)
-	home := t.TempDir()
-	out, pairs := gatewayBoot(t, home, twin, "dev_old", "FAKE_NAME=antbot")
-	if b, err := os.ReadFile(filepath.Join(home, "gateway", "token")); err != nil || string(b) != "dev_old" || pairs != 1 {
-		t.Fatalf("gateway key = %q, %v, pairs %d\n%s", b, err, pairs, out)
-	}
-	if _, err := os.Stat(filepath.Join(home, "remote.yaml")); !os.IsNotExist(err) {
-		t.Fatalf("the gateway's key went into the twin's home: %v", err)
-	}
-}
-
-// withoutOldSettings is env without the settings' names from before the
-// rename (ANTBOT_*), which the scripts still read: a contributor's own must
-// not change what a test does.
-func withoutOldSettings(env []string) []string {
-	var out []string
-	for _, kv := range env {
-		if !strings.HasPrefix(strings.ToUpper(kv), "ANTBOT_") {
-			out = append(out, kv)
-		}
-	}
-	return out
 }
 
 // The healthcheck asks the public /healthz and holds no key.

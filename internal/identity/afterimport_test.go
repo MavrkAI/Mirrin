@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/MavrkAI/Mirrin/internal/config"
 	"github.com/MavrkAI/Mirrin/internal/protocols"
 )
 
@@ -188,19 +187,6 @@ func TestImportReconnectsRegistryPacksOnlyThroughThisIndex(t *testing.T) {
 		t.Fatalf("listed: reconnected %v, asked %+v", r.Reconnected, asked)
 	}
 
-	// The default index's address from before the rename is the default
-	// too, in the archive and in this machine's config: the signed index is
-	// read, never that address.
-	const oldDefault = "https://raw.githubusercontent.com/MavrkAI/AntBot/main/registry/index.json"
-	asked, indexes = nil, nil
-	here := twinHome(t, func(c *config.Config) { c.ProtocolRegistry = oldDefault })
-	r, err = Import(here, archive(oldDefault))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(r.Reconnected) != 1 || len(asked) != 1 || asked[0].Index != "" || len(indexes) != 1 || indexes[0] != "" {
-		t.Fatalf("old default: reconnected %v, asked %+v, indexes read %q", r.Reconnected, asked, indexes)
-	}
 }
 
 // Every import saved what it replaced in a new backups/<time> folder, and

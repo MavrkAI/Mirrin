@@ -274,9 +274,8 @@ var stringsNeverMentionCloud = []string{
 	"internal/daemon",
 }
 
-// cloudName matches the product's name however it is spaced or cased, and
-// its name from before the rename.
-var cloudName = regexp.MustCompile(`(?i)(mirrin|antbot)[\s_-]*cloud`) // rename:keep
+// cloudName matches the product's name however it is spaced or cased.
+var cloudName = regexp.MustCompile(`(?i)mirrin[\s_-]*cloud`)
 
 func TestTheTwinNeverMentionsCloud(t *testing.T) {
 	root := moduleRoot(t)

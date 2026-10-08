@@ -111,7 +111,7 @@ dl.facts{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:
 // Every request goes through api(), which puts each way a request can fail
 // into plain words, and shows "This device isn't paired" when that is why.
 const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function twinName(){try{const n=localStorage.getItem('antbot.name');if(n)return n}catch{}const m=document.querySelector('meta[name="mirrin-name"]');return (m&&m.content)||'Mirrin'}
+function twinName(){try{const n=localStorage.getItem('mirrin.name');if(n)return n}catch{}const m=document.querySelector('meta[name="mirrin-name"]');return (m&&m.content)||'Mirrin'}
 for(const el of document.querySelectorAll('[data-name]'))el.textContent=twinName();
 const PAGE_TITLE=document.title=twinName()+' · '+document.title;
 const FRIENDLY={not_paired:"This device isn't paired.",passkey_required:'This needs Face ID or Touch ID, which this device has not set up.',forbidden:"This device isn't allowed to do that."};
@@ -159,7 +159,7 @@ const VIEW=new URLSearchParams(location.search).get('view')==='reach'?'reach':'a
 const NAMES={tailscale:'Tailscale',relay:'Your relay',files:'Your certificate',cloud:'Hosted'};
 const STEP_WORDS={scanned:'The link was opened',claimed:'Paired',installed:'Added to the Home Screen',notifications:'Notifications are on',passkey:'Face ID is set up',test_received:'The test notification arrived'};
 let es=null,device=null,recheckTimer=null,link='',expiresAt=null,expiryTimer=null;
-function setTwin(n){if(!n)return;try{localStorage.setItem('antbot.name',n)}catch{}for(const el of document.querySelectorAll('[data-name]'))el.textContent=n}
+function setTwin(n){if(!n)return;try{localStorage.setItem('mirrin.name',n)}catch{}for(const el of document.querySelectorAll('[data-name]'))el.textContent=n}
 function host(u){try{return new URL(u).host}catch{return u||''}}
 function routeLine(r){const h=esc(host(r.base_url));
   if(r.kind==='tailscale')return 'Through your tailnet, at <code>'+h+'</code>. Your phone needs the Tailscale app, signed in to the same account.';

@@ -12,8 +12,7 @@ import (
 func TestServiceLogsRotateWithOpenWriter(t *testing.T) {
 	t.Setenv("MIRRIN_HOME", t.TempDir())
 	dir := t.TempDir()
-	// AntBot's service wrote antbot.*, which a retired service leaves behind.
-	for _, name := range []string{"mirrin.err", "mirrin.out", "mirrin.err.log", "mirrin.out.log", "antbot.err", "antbot.out.log"} {
+	for _, name := range []string{"mirrin.err", "mirrin.out", "mirrin.err.log", "mirrin.out.log"} {
 		path := filepath.Join(dir, name)
 		f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 		if err != nil {

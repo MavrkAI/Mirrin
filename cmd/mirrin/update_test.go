@@ -365,11 +365,6 @@ func TestUpdateRefusesWhatItCannotVerify(t *testing.T) {
 		}, "doesn't match its published checksum"},
 		{"no checksum list", func(ut *updateTest) { ut.rel.sums = "-" }, "has no checksum list"},
 		{"no build for this machine", func(ut *updateTest) { ut.rel.files = map[string][]byte{"mirrin-plan9-mips": program(newTag)} }, "has no build for"},
-		// A release from before the rename has only AntBot's programs, which
-		// Mirrin never installs under its own name.
-		{"a release from before the rename", func(ut *updateTest) {
-			ut.rel.files = map[string][]byte{"antbot" + strings.TrimPrefix(asset, "mirrin"): []byte("antbot " + newTag + "\n")}
-		}, "has no build for"},
 		{"won't start", func(ut *updateTest) { ut.rel.files[asset] = []byte("garbage") }, "won't start on this machine"},
 		{"is an older version", func(ut *updateTest) { ut.rel.files[asset] = program("v9.9.1") }, "won't start on this machine"},
 		{"github is busy", func(ut *updateTest) { ut.rel.codes = map[string]int{"/releases/download/" + newTag + "/" + asset: 503} }, "answered HTTP 503"},
@@ -975,60 +970,27 @@ func TestMovedReleases(t *testing.T) {
 	}
 }
 
-// Settings named before the rename (ANTBOT_REPO, ANTBOT_DOWNLOAD_URL) still
-// work; the MIRRIN_ names win.
-func TestUpdateReadsTheOldSettings(t *testing.T) {
-	for _, n := range []string{"REPO", "DOWNLOAD_URL"} {
-		for _, p := range []string{"MIRRIN_", "ANTBOT_", "OPENHUMAN_"} {
-			t.Setenv(p+n, "")
-		}
-	}
-	t.Setenv("ANTBOT_REPO", "me/fork")
-	t.Setenv("ANTBOT_DOWNLOAD_URL", "https://mirror.example/releases/")
+// MIRRIN_REPO and MIRRIN_DOWNLOAD_URL point updates at a fork or a mirror.
+func TestUpdateReadsItsSettings(t *testing.T) {
+	t.Setenv("MIRRIN_REPO", "me/fork")
+	t.Setenv("MIRRIN_DOWNLOAD_URL", "https://mirror.example/releases/")
 	u, err := newUpdater(io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if u.repo != "me/fork" || u.releases != "https://mirror.example/releases" {
-		t.Fatalf("old settings: repo %q, releases %q", u.repo, u.releases)
+		t.Fatalf("settings: repo %q, releases %q", u.repo, u.releases)
 	}
-	t.Setenv("MIRRIN_REPO", "me/new")
-	t.Setenv("ANTBOT_DOWNLOAD_URL", "")
-	if u, err = newUpdater(io.Discard); err != nil || u.repo != "me/new" || u.releases != "https://github.com/me/new/releases" {
-		t.Fatalf("new settings: repo %q, releases %q, %v", u.repo, u.releases, err)
+	t.Setenv("MIRRIN_DOWNLOAD_URL", "")
+	if u, err = newUpdater(io.Discard); err != nil || u.releases != "https://github.com/me/fork/releases" {
+		t.Fatalf("without a mirror: releases %q, %v", u.releases, err)
 	}
 }
 
-// AntBot.app, the app from before the rename, isn't Mirrin.app: an update
-// leaves it alone (a service from then may still run it), and says what it
-// is. Mirrin's own programs answer under any of their names.
-func TestUpdateLeavesAnOldAntBotApp(t *testing.T) {
+// Only a program that answers as Mirrin does reports a version.
+func TestUpdateVersionOf(t *testing.T) {
 	ut := newUpdateTest(t)
-	ut.u.goos = "darwin"
-	apps := filepath.Join(t.TempDir(), "Applications")
-	old := filepath.Join(apps, "AntBot.app")
-	writeApp(t, old, "com.antbot.mavrk")
-	theirs := filepath.Join(t.TempDir(), "Applications")
-	writeApp(t, filepath.Join(theirs, "AntBot.app"), "com.example.antbot")
-	ut.u.appDirs = []string{apps, theirs}
-	// A Mac's build, whatever this machine is (CI runs it on Linux and Windows).
-	ut.rel.files = map[string][]byte{"mirrin-darwin-" + runtime.GOARCH: program(newTag)}
-	ut.u.goarch = runtime.GOARCH
-	if err := ut.run(t, updateOptions{}); err != nil {
-		t.Fatalf("%v\n%s", err, ut.out)
-	}
-	if got := ut.installed(t); got != "mirrin "+newTag {
-		t.Fatalf("CLI: %q", got)
-	}
-	if b, _ := os.ReadFile(filepath.Join(old, "Contents", "MacOS", "antbot")); string(b) != string(program(oldTag)) {
-		t.Fatalf("the old app changed: %q", b)
-	}
-	out := ut.out.String()
-	if !strings.Contains(out, old+" is the old AntBot app, which Mirrin doesn't use") || strings.Contains(out, theirs) {
-		t.Fatalf("output:\n%s", out)
-	}
-
-	for line, want := range map[string]string{"mirrin " + newTag: newTag, "antbot " + newTag: newTag, "openhuman " + newTag: newTag, "AntBot 2.0": ""} {
+	for line, want := range map[string]string{"mirrin " + newTag: newTag, "Mirror 2.0": "", "mirror " + newTag: ""} {
 		bin := filepath.Join(t.TempDir(), "prog")
 		writeTestFile(t, bin, []byte(line+"\n"))
 		if got := ut.u.versionOf(context.Background(), bin); got != want {

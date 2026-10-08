@@ -30,7 +30,7 @@ import (
 	"github.com/MavrkAI/Mirrin/internal/httpsig"
 )
 
-// The fake signs with the public development keys: SHA-256("antbot dev key
+// The fake signs with the public development keys: SHA-256("mirrin dev key
 // " + kid) as the Ed25519 seed. Builds tagged mirrin_devkeys trust them;
 // release builds never do.
 const (
@@ -151,7 +151,7 @@ func (f *Fake) Handler() http.Handler { return f.srv.Config.Handler }
 
 // DevKey is the development private key for kid.
 func DevKey(kid string) ed25519.PrivateKey {
-	seed := sha256.Sum256([]byte("antbot dev key " + kid))
+	seed := sha256.Sum256([]byte("mirrin dev key " + kid))
 	return ed25519.NewKeyFromSeed(seed[:])
 }
 

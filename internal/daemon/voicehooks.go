@@ -55,6 +55,7 @@ func (d *Daemon) wireVoice(ch *voice.Channel) {
 		}
 		return newest.ID, voice.AskByHand(newest.ID, label(newest))
 	}
+	ch.Screen = d.screenAnswers() // showanswer.go
 	ch.OnProblem = d.voiceProblem
 	ch.OnInterrupt = d.stopVoiceTurn
 	// Compatibility for callers of the original hook; normal voice input

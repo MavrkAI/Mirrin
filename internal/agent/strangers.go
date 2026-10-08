@@ -73,6 +73,9 @@ func (a *Agent) ApprovalRequester(ctx context.Context, id int64) (string, bool) 
 // page) with no one watching: neither always_allow nor autonomy lets it
 // change anything on its own, so a write it wants is put to the owner.
 func (a *Agent) decide(ctx context.Context, chatKey string, tool tools.Tool, risk tools.Risk) approvals.Decision {
+	if outOfScope(chatKey, tool.Spec().Name) { // billsrun.go
+		return approvals.Deny
+	}
 	gate := a.gate() // the live policy, even mid-turn (turn.go)
 	d := gate.DecideRisk(tool, risk)
 	if memory.IsWatchRun(chatKey) {

@@ -23,7 +23,6 @@ import (
 
 	"github.com/MavrkAI/Mirrin/internal/api"
 	"github.com/MavrkAI/Mirrin/internal/backup"
-	"github.com/MavrkAI/Mirrin/internal/brand"
 	"github.com/MavrkAI/Mirrin/internal/config"
 	"github.com/MavrkAI/Mirrin/internal/daemon"
 	"github.com/MavrkAI/Mirrin/internal/health"
@@ -67,7 +66,7 @@ func startLogging(cmd string) *slog.Logger {
 			o.ConsoleAlways = func(msg string) bool { return msg == onlineMarker }
 		}
 	}
-	if brand.Env("DEBUG") != "" {
+	if os.Getenv("MIRRIN_DEBUG") != "" {
 		o.Level, o.Console, o.ConsoleLevel = slog.LevelDebug, os.Stderr, slog.LevelDebug
 	}
 	log, closer, err := logs.New(o)

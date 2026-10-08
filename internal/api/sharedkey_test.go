@@ -10,56 +10,20 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/MavrkAI/Mirrin/internal/devices"
 )
 
-// migrateOldScreen moves a wall screen with the old master-key cookie onto a
-// key of its own, over the plain-HTTP api.remote listener.
-func migrateOldScreen(t *testing.T, e *env, ua map[string]string) devices.Device {
+// sharedKeyDevice moves a terminal paired with an old-style code (the
+// master key, over the plain-HTTP api.remote listener) onto a key of its own.
+func sharedKeyDevice(t *testing.T, e *env) devices.Device {
 	t.Helper()
-	w := e.do(onLegacy, req{path: "/screen", header: ua, cookies: []*http.Cookie{{Name: "antbot_token", Value: master}}})
-	c := cookieFrom(w, cookieDev)
-	if w.Code != 200 || c == nil {
-		t.Fatalf("old screen: %d %v", w.Code, w.Result().Cookies())
+	w := e.do(onLegacy, req{method: "POST", path: "/pair/upgrade", body: `{"name":"Wall screen"}`, header: bearer(master)})
+	var resp ClaimResponse
+	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &resp) != nil || !resp.Device.SharedKey {
+		t.Fatalf("upgrade: %d %s", w.Code, w.Body)
 	}
-	d, ok := e.store.Authenticate(c.Value)
-	if !ok || !d.SharedKey {
-		t.Fatalf("migrated screen %+v %v", d, ok)
-	}
-	return d
-}
-
-// Regression: revoking a screen moved off the old shared key didn't cut it
-// off. For two minutes its old cookie picked up the cached key again, and
-// after that minted it a new one.
-func TestRevokedOldScreenStaysCutOff(t *testing.T) {
-	e := newEnv(t)
-	ua := map[string]string{"User-Agent": "Mozilla/5.0 (X11; Linux aarch64) Chrome/120.0"}
-	d := migrateOldScreen(t, e, ua)
-	if _, err := e.store.Revoke(d.ID); err != nil {
-		t.Fatal(err)
-	}
-	for range 2 {
-		w := e.do(onLegacy, req{path: "/screen", header: ua, cookies: []*http.Cookie{{Name: "antbot_token", Value: master}}})
-		if w.Code != 401 || cookieFrom(w, cookieDev) != nil {
-			t.Fatalf("old cookie after revoke: %d %v", w.Code, w.Result().Cookies())
-		}
-	}
-	live := 0
-	for _, x := range e.store.List() {
-		if !x.Revoked() {
-			live++
-		}
-	}
-	if live != 0 {
-		t.Fatalf("the old cookie minted %d new device(s)", live)
-	}
-	time.Sleep(50 * time.Millisecond) // announcements go out in the background
-	if ev := e.pairedEvents(0); len(ev) != 1 {
-		t.Fatalf("announced %d times", len(ev))
-	}
+	return resp.Device
 }
 
 // Revoking a device that came in with the master key replaces that key, so
@@ -72,7 +36,7 @@ func TestRevokingASharedKeyDeviceChangesTheMasterKey(t *testing.T) {
 	}
 	e.s.WithTokenFile(keyFile)
 	menuLink := e.s.UIURL()
-	d := migrateOldScreen(t, e, map[string]string{"User-Agent": "Chrome/120.0 (X11; Linux)"})
+	d := sharedKeyDevice(t, e)
 	// A device paired with a link of its own is revoked without touching the key.
 	phone, _, _ := e.store.Add("Phone", devices.KindPWA, nil, "", "")
 	w := e.do(onLoopback, req{method: "POST", path: "/devices/" + phone.ID + "/revoke", header: bearer(master)})
@@ -96,12 +60,9 @@ func TestRevokingASharedKeyDeviceChangesTheMasterKey(t *testing.T) {
 	if fi, _ := os.Stat(keyFile); runtime.GOOS != "windows" && fi.Mode().Perm() != 0o600 {
 		t.Fatalf("key file mode %v", fi.Mode())
 	}
-	// The old key no longer works from another computer, in any form.
+	// The old key no longer works from another computer.
 	if w := e.do(onLegacy, req{path: "/status", header: bearer(master)}); w.Code != 401 {
 		t.Fatalf("old key over api.remote: %d", w.Code)
-	}
-	if w := e.do(onLegacy, req{path: "/screen", cookies: []*http.Cookie{{Name: "antbot_token", Value: master}}}); w.Code != 401 {
-		t.Fatalf("old key's cookie over api.remote: %d", w.Code)
 	}
 	if w := e.do(onLegacy, req{path: "/status", header: bearer(newKey)}); w.Code != 200 {
 		t.Fatalf("new key over api.remote: %d", w.Code)
@@ -257,34 +218,6 @@ func TestMenuLinkSaysWhenItCantSaveTheKey(t *testing.T) {
 	if w.Code != 500 || !strings.Contains(w.Header().Get("Content-Type"), "text/html") ||
 		!strings.Contains(body, "couldn&#39;t save this browser&#39;s key in "+dir) || !strings.Contains(body, "writable") || strings.Contains(body, "permission denied") {
 		t.Fatalf("%d %s", w.Code, body)
-	}
-}
-
-// Regression: an old master-key cookie whose new key couldn't be saved was
-// told the device wasn't paired (401), sending the owner to pair again for
-// what is a full or read-only disk.
-func TestOldCookieSaysWhenItCantSaveTheKey(t *testing.T) {
-	e := newEnv(t)
-	dir := filepath.Dir(e.path)
-	if err := os.Chmod(dir, 0o500); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chmod(dir, 0o700) })
-	if f, err := os.CreateTemp(dir, "probe"); err == nil { // running as root
-		f.Close()
-		os.Remove(f.Name())
-		t.Skip("the folder stays writable")
-	}
-	for _, at := range []where{onLoopback, onLegacy} {
-		w := e.do(at, req{path: "/screen", cookies: []*http.Cookie{{Name: "antbot_token", Value: master}}})
-		var body apiError
-		if w.Code != 503 || json.Unmarshal(w.Body.Bytes(), &body) != nil || body.Error != "cant_save" {
-			t.Fatalf("%s: %d %s", at, w.Code, w.Body)
-		}
-	}
-	w := e.do(onLoopback, req{path: "/ui", header: map[string]string{"Accept": "text/html"}, cookies: []*http.Cookie{{Name: "antbot_token", Value: master}}})
-	if w.Code != 503 || !strings.Contains(w.Body.String(), "couldn&#39;t save") {
-		t.Fatalf("page: %d %s", w.Code, w.Body)
 	}
 }
 

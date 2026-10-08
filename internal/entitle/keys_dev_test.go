@@ -9,7 +9,7 @@ import (
 )
 
 // With -tags mirrin_devkeys, the compiled-in sets are exactly the documented
-// dev keys, SHA-256("antbot dev key " + kid), and tokens signed with them
+// dev keys, SHA-256("mirrin dev key " + kid), and tokens signed with them
 // verify.
 func TestDevKeysAreTheDocumentedOnes(t *testing.T) {
 	for kid, keys := range map[string]map[string]ed25519.PublicKey{
@@ -17,7 +17,7 @@ func TestDevKeysAreTheDocumentedOnes(t *testing.T) {
 		"dl-dev-a": DenyListKeys, "dl-dev-b": DenyListKeys,
 	} {
 		if pub, ok := keys[kid]; !ok || !pub.Equal(devPub(kid)) {
-			t.Errorf("%s is not SHA-256(\"antbot dev key %s\")", kid, kid)
+			t.Errorf("%s is not SHA-256(\"mirrin dev key %s\")", kid, kid)
 		}
 	}
 	if len(EntitlementKeys) != 2 || len(DenyListKeys) != 2 {
