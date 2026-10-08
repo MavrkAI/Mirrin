@@ -7,9 +7,8 @@ import (
 )
 
 // TestMain gives every test in the package a throwaway MIRRIN_HOME.
-// config.Default() resolves the home directory, which moves a pre-rename
-// ~/.openhuman into place, so a test run could otherwise move or rewrite the
-// contributor's own twin.
+// config.Default() resolves the home directory, so a test run could otherwise
+// write into the contributor's own twin.
 func TestMain(m *testing.M) {
 	home, err := os.MkdirTemp("", "mirrin-test-home-")
 	if err != nil {

@@ -115,7 +115,7 @@ func TestApprovalChallengeIsBoundToEverything(t *testing.T) {
 	input := []byte(`{"amount":"42.10"}`)
 	// Written out by hand from the design (docs/cloud-design.md §8).
 	h := sha256.New()
-	h.Write([]byte("antbot-approval-v1\x00"))
+	h.Write([]byte("mirrin-approval-v1\x00"))
 	h.Write(binary.BigEndian.AppendUint64(nil, 12))
 	h.Write([]byte("approve"))
 	in := sha256.Sum256(input)

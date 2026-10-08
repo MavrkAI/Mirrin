@@ -249,6 +249,29 @@ llm:
 
 `llm.provider` picks the backend; `llm.providers.<name>` holds each one's key (or `api_key_env`), `base_url` and last model, so switching from the menu bar keeps your choices. `openai-compatible` with a `base_url` covers LM Studio, vLLM, LiteLLM and friends. Ollama needs no key and lists installed models; `mirrin models [provider]` lists what each offers. Tool calling works on all of them; quality varies with the model, and small local models will make more mistakes than Claude.
 
+## Quick judgments (TypeSafe Jev, optional)
+
+Off by default, and nothing changes without it. With a key from [TypeSafe](https://typesafe.ai), the twin can ask Jev, a small model that returns a typed judgment (a yes probability, or one option from a list, with how sure it is) instead of text. It is only asked after the twin's own exact rules didn't settle something, and when it is off, fails, times out or isn't sure, the twin does exactly what it does without it.
+
+Each use sends only the few words its question needs, and never your memories, facts or other mail:
+
+- **Bills:** with bill watching on, when mail that looks like a bill arrives, its sender and subject line (up to ten emails in one question per check), so receipts, statements with nothing to pay and adverts don't take a full model run. Jev only ever skips that run, and only when it is very sure; anything else is read as before.
+- **Replies to reminders:** your short typed reply ("paid it", "not yet", "remind me later") and the reminder it answers, so it can tick or move the reminder. Photos, voice notes, longer messages and replies that also ask for something go to the model as before.
+- **Replies to the twin's notes:** your short reply ("sure go ahead", "stop sending these") and the offer it answers, with names left out, or just the kind of note (the Sunday note, a meeting brief), never its text.
+
+It is never used to decide an approval.
+
+To turn it on, open the Accounts page, paste your key under **Quick judgments (optional)**, and press **Check and save**: the key is tested with one fixed question, saved in `secrets.env` and never shown again in full. **Remove key** forgets it and switches it off. Or by hand:
+
+```yaml
+jev:
+  enabled: true      # a key alone never turns it on
+  # api_key_env: TYPESAFE_API_KEY   (the default; keep the key in secrets.env)
+  # model: jev-latest
+```
+
+Each call has two seconds, including one retry when TypeSafe is busy. Usage goes in the usage ledger as `jev.<use>`; there is no built-in price, so add one under `usage.prices` if you want it counted. A key TypeSafe refuses shows on the card.
+
 ## Multi-device
 
 Set `api.remote: true` and `api.listen` to the home machine's Tailscale address (`100.x.y.z:7742`; `0.0.0.0:7742` works too, but listens on every network), and restart. Then, on the home machine, `mirrin pair` makes a single-use code for another computer, `mirrin pair --screen` a link and QR code for a phone or tablet, and `mirrin pair --kiosk` a view-only link for a wall screen. A code or link works once, for 10 minutes, and never holds the home machine's master key: each device gets a key of its own, with only the scopes it was paired for (`--scopes view,chat,approve,admin`; settings answer on the home machine only). You're told when a device is paired, with how to cut it off; `mirrin devices` lists, renames and revokes them (the twin needn't be running), and `/revoke` in your own chat does the same. `mirrin connect <code>` on another computer verifies the connection and saves it; `chat` and `voice` there become thin clients, and `mirrin disconnect` goes back to the local twin. Reminders set from a remote session are delivered on the home machine's channels. `api.remote` is plain HTTP, so use it over [Tailscale](https://tailscale.com), where traffic is already encrypted, or a home network you trust, and never forward the port to the internet. For HTTPS instead (and the phone app, lock-screen approvals and Face ID), use `mirrin reach use tailscale`, your own certificate or your own relay: [reach.md](reach.md).
@@ -256,6 +279,10 @@ Set `api.remote: true` and `api.listen` to the home machine's Tailscale address 
 ## Change watcher
 
 `watch.enabled` (default on) snapshots the calendar (next 7 days) and new mail every `interval_minutes` (5) and asks the agent about differences. New mail means the unread IMAP inbox under `skills.email`, or Gmail's Primary inbox once the Google account is connected (when both are the same Gmail, it's watched once). It only runs for skills that are enabled, and it follows the Accounts page as you go: connecting Google or switching Calendar or Gmail on starts watching it at once, from what's there now, and disconnecting or switching off stops it, without a restart. What senders and invites wrote is treated as information, never instructions, and the watcher sees none of your memory; anything it would look up or do, even a read, waits for your yes. Turn a source off with `watch.calendar: false` or `watch.inbox: false`.
+
+## Meeting briefs
+
+With Google Calendar connected, about ten minutes before a meeting the twin looks at who is coming. If it knows something useful about one of them, from your memory or from the last month of mail with them (when Gmail is connected), you get one line in your own chat and on the presence screen: "Priya at 11. Last time you promised her the Q3 numbers." A meeting gets at most one brief. A routine meeting with no one it knows anything about gets nothing, and the model isn't even asked; nor does a meeting you declined, one with no one else, or one with more than twelve guests. Facts about health, money, relationships and secrets are never used, and a line that strays into them isn't said. The brief only reads (memory, `gmail_search`, `gmail_read`), treats mail and invites as information, never instructions, and goes to you alone. Nothing is said in quiet hours. On your computer's notifications it only says a note is waiting, and it is never read out loud while you're in another meeting. Turn briefs off by saying "no more meeting briefs", or with `watch.meeting_briefs: false`.
 
 ## Email
 

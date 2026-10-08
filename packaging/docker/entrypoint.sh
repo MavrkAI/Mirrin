@@ -1,17 +1,13 @@
 #!/bin/sh
 # Hosted twin: one container per owner. State lives under $MIRRIN_HOME
 # (a persistent volume). First boot writes a headless config from env.
-# MIRRIN_HOME, MIRRIN_BIN and MIRRIN_PORT may also be given by their names
-# from before the rename (ANTBOT_...); the MIRRIN_ name wins. ANTBOT_HOME is
-# set to the same home, so an older program given as the binary agrees.
 set -eu
-: "${MIRRIN_HOME:=${ANTBOT_HOME:-/data}}" # rename:keep
-ANTBOT_HOME=$MIRRIN_HOME                  # rename:keep
-export MIRRIN_HOME ANTBOT_HOME            # rename:keep
+: "${MIRRIN_HOME:=/data}"
+export MIRRIN_HOME
 mkdir -p "$MIRRIN_HOME/data" "$MIRRIN_HOME/protocols"
 CFG="$MIRRIN_HOME/config.yaml"
 
-BIN="${MIRRIN_BIN:-${ANTBOT_BIN:-/usr/local/bin/mirrin}}" # rename:keep
+BIN="${MIRRIN_BIN:-/usr/local/bin/mirrin}"
 
 # The gateway gets a device key of its own, which the owner can revoke on
 # its own (`mirrin devices revoke`), instead of the twin's master key. The
@@ -22,7 +18,7 @@ fi
 GATEWAY_TOKEN="${TWIN_GATEWAY_TOKEN_FILE:-$MIRRIN_HOME/gateway/token}"
 GATEWAY_DIR=$(dirname "$GATEWAY_TOKEN")
 REVOKED="$GATEWAY_DIR/revoked"
-BASE="http://127.0.0.1:${MIRRIN_PORT:-${ANTBOT_PORT:-7742}}" # rename:keep
+BASE="http://127.0.0.1:${MIRRIN_PORT:-7742}"
 
 # pair_gateway waits for the twin, then makes sure the gateway has a key:
 # it keeps one that works, removes one that was revoked (and pairs again
@@ -79,19 +75,17 @@ pair_gateway() {
     gw_status failed
     return 1
   }
-  # `pair` prints the line to run elsewhere: `mirrin connect <code>`, or
-  # `antbot connect <code>` from an older program.
-  code=$(printf '%s\n' "$out" | sed -n -E 's/^ *(mirrin|antbot) connect ([^ ]*).*$/\2/p' | head -n 1) # rename:keep
+  # `pair` prints the line to run elsewhere: `mirrin connect <code>`.
+  code=$(printf '%s\n' "$out" | sed -n -E 's/^ *mirrin connect ([^ ]*).*$/\1/p' | head -n 1)
   if [ -z "$code" ]; then
     echo "entrypoint: couldn't make a pairing code for the gateway: $out" >&2
     gw_status failed
     return 1
   fi
-  # The gateway's own home, under both names: with only one, a program that
-  # reads the other would save the gateway's key in the twin's home and
-  # make the twin a client of itself.
+  # The gateway's own home, so its key isn't saved in the twin's home,
+  # which would make the twin a client of itself.
   tmp=$(mktemp -d)
-  if ! MIRRIN_HOME="$tmp" ANTBOT_HOME="$tmp" "$BIN" connect --name gateway "$code" >/dev/null 2>&1; then # rename:keep
+  if ! MIRRIN_HOME="$tmp" "$BIN" connect --name gateway "$code" >/dev/null 2>&1; then # rename:keep
     rm -rf "$tmp"
     echo "entrypoint: the gateway couldn't pair with the twin" >&2
     gw_status failed

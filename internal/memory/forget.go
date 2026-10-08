@@ -63,6 +63,9 @@ func (s *Store) ForgetFact(ctx context.Context, id int64) (Fact, error) {
 	for _, h := range hooks {
 		h()
 	}
+	if len(hooks) > 0 { // what a hook deleted leaves the WAL too
+		_, _ = s.db.ExecContext(ctx, `PRAGMA wal_checkpoint(TRUNCATE)`)
+	}
 	return f, nil
 }
 
@@ -74,6 +77,12 @@ func scrub(ctx context.Context, db *sql.DB, f Fact) error {
 	}
 	defer tx.Rollback()
 	if _, err := tx.ExecContext(ctx, `DELETE FROM facts WHERE id=? AND content=?`, f.ID, f.Content); err != nil {
+		return err
+	}
+	if err := scrubWhy(ctx, tx, f.ID); err != nil { // why.go: no reply still points at it
+		return err
+	}
+	if err := dropFactReminders(ctx, tx); err != nil { // forget_reminders.go
 		return err
 	}
 	t := newTrail(f)

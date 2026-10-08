@@ -242,7 +242,7 @@ func TestICloudDrivePath(t *testing.T) {
 // Backups set up before the rename went to iCloud Drive › AntBot Backups,
 // and keep going there: Recovery Kits name it, and a machine standing by
 // watches it. New set-ups, and a Mac that has Mirrin's folder, use that.
-func TestICloudDrivePathKeepsAnAntBotFolder(t *testing.T) {
+func TestICloudDrivePathKeepsTheOldFolder(t *testing.T) {
 	user := t.TempDir()
 	drive := icloudDriveIn(user)
 	old := filepath.Join(drive, "AntBot Backups")
@@ -250,7 +250,7 @@ func TestICloudDrivePathKeepsAnAntBotFolder(t *testing.T) {
 		t.Fatal(err)
 	}
 	if p, err := icloudPathIn(user, ""); err != nil || p != old {
-		t.Fatalf("with AntBot's folder: %q %v", p, err)
+		t.Fatalf("with the old folder: %q %v", p, err)
 	}
 	if err := os.MkdirAll(filepath.Join(drive, "Mirrin Backups"), 0o700); err != nil {
 		t.Fatal(err)
@@ -259,14 +259,14 @@ func TestICloudDrivePathKeepsAnAntBotFolder(t *testing.T) {
 		t.Fatalf("with both folders: %q %v", p, err)
 	}
 	if !exists(old) {
-		t.Fatal("AntBot's folder was moved")
+		t.Fatal("the old folder was moved")
 	}
 }
 
 // The folder is chosen for each set of words, not for the whole drive: a
 // "Mirrin Backups" made by another Mac on the same Apple ID (which hadn't
-// seen AntBot's folder yet) doesn't send a Mac whose backups are in "AntBot
-// Backups" to an empty folder, where its backups would look gone. Backups
+// seen the old folder yet) doesn't send a Mac whose backups are in the old
+// folder to an empty one, where its backups would look gone. Backups
 // of the same words in either folder are listed and read.
 func TestICloudChoosesTheFolderPerNamespace(t *testing.T) {
 	ctx := context.Background()
@@ -287,7 +287,7 @@ func TestICloudChoosesTheFolderPerNamespace(t *testing.T) {
 	put(filepath.Join(cur, "theirs"), newName("snap", time.Now()))
 
 	if p, err := icloudPathIn(user, "mine"); err != nil || p != old {
-		t.Fatalf("this Mac's words: %q %v, want AntBot's folder", p, err)
+		t.Fatalf("this Mac's words: %q %v, want the old folder", p, err)
 	}
 	if p, err := icloudPathIn(user, "theirs"); err != nil || p != cur {
 		t.Fatalf("the other Mac's words: %q %v", p, err)

@@ -68,12 +68,9 @@ chat: build
 
 # On macOS, sign with a local identity if one exists so the microphone permission
 # survives rebuilds (see docs/skills.md → Microphone permission). Create one with
-# `make sign-identity`. Without SIGN_ID, the first identity of SIGN_IDS found is
-# used: an antbot-dev made before the rename still signs.
+# `make sign-identity`. SIGN_ID names another identity (default mirrin-dev).
 SIGN_ID ?=
-SIGN_IDS = $(or $(SIGN_ID),mirrin-dev antbot-dev) # rename:keep
-# The program's name before the rename: make install points out an old copy.
-OLD_PROGRAM := antbot# rename:keep
+SIGN_IDS = $(or $(SIGN_ID),mirrin-dev)
 
 # go install puts the program in GOBIN, else GOPATH/bin.
 install:
@@ -86,9 +83,6 @@ install:
 		done; \
 		if [ -n "$$id" ]; then codesign -s "$$id" -f -i com.mirrin.mavrk "$$bin/mirrin" && echo "signed with $$id"; \
 		else echo "warning: no $(firstword $(SIGN_IDS)) signing identity, so macOS asks for the microphone again after every rebuild. Make one with: make sign-identity"; fi; \
-	fi; \
-	if [ -e "$$bin/$(OLD_PROGRAM)" ]; then \
-		echo "note: the old $(OLD_PROGRAM) is still in $$bin. Once \`mirrin service install\` has moved its background service to mirrin, you can delete it."; \
 	fi
 
 sign-identity:

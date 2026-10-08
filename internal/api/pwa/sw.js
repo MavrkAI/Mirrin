@@ -18,8 +18,8 @@ self.addEventListener('install', event => event.waitUntil((async () => {
 self.addEventListener('activate', event => event.waitUntil((async () => {
   const cache = await caches.open(CACHE);
   for (const [path, hash] of Object.entries(HASHES)) await checked(await cache.match(path), hash);
-  // Older shells go, under the name from before the rename too.
-  for (const name of await caches.keys()) if ((name.startsWith('mirrin-shell-') || name.startsWith('antbot-shell-')) && name !== CACHE) await caches.delete(name); // rename:keep
+  // Older shells go.
+  for (const name of await caches.keys()) if (name.startsWith('mirrin-shell-') && name !== CACHE) await caches.delete(name);
   await self.clients.claim();
 })()));
 self.addEventListener('fetch', event => {

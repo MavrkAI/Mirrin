@@ -22,7 +22,7 @@ func runCmd(args ...string) (int, string, string) {
 }
 
 func TestVersionAndUsage(t *testing.T) {
-	if code, out, _ := runCmd("version"); code != 0 || !strings.Contains(out, "antbot.tunnel.v1") {
+	if code, out, _ := runCmd("version"); code != 0 || !strings.Contains(out, "mirrin.tunnel.v1") {
 		t.Fatalf("version: %d %q", code, out)
 	}
 	if code, _, errs := runCmd(); code != 2 || !strings.Contains(errs, "check-config") {
@@ -99,21 +99,10 @@ func TestCheckConfig(t *testing.T) {
 	}
 }
 
-// A relay set up before the rename keeps its settings in /etc/antbot-relay;
-// they are used until /etc/mirrin-relay has its own. --config always wins.
-func TestDefaultConfigFallsBackToTheOldPlace(t *testing.T) {
-	have := map[string]bool{}
-	exists := func(p string) bool { return have[p] }
-	if got := defaultConfigPath(exists); got != defaultConfig {
-		t.Fatalf("neither there: %q", got)
-	}
-	have[legacyConfig] = true
-	if got := defaultConfigPath(exists); got != legacyConfig {
-		t.Fatalf("only the old one: %q", got)
-	}
-	have[defaultConfig] = true
-	if got := defaultConfigPath(exists); got != defaultConfig {
-		t.Fatalf("both: %q", got)
+// --config names the settings; without it they are in /etc/mirrin-relay.
+func TestConfigFlag(t *testing.T) {
+	if got, err := configFlag("serve", nil); err != nil || got != defaultConfig {
+		t.Fatalf("default: %q %v", got, err)
 	}
 	if got, err := configFlag("serve", []string{"--config", "/tmp/x.yaml"}); err != nil || got != "/tmp/x.yaml" {
 		t.Fatalf("--config: %q %v", got, err)

@@ -42,6 +42,19 @@ type Message struct {
 // Event is one calendar event.
 type Event struct {
 	ID, Summary, Start, End string // RFC 3339
+	// Free marks the event as not busy (a focus or working-location
+	// block); Declined has the owner turn it down.
+	Free, Declined bool
+	Description    string
+	HangoutLink    string // Meet's link
+	VideoURI       string // another tool's video entry point
+	Attendees      []Attendee
+}
+
+// Attendee is a guest on an Event.
+type Attendee struct {
+	Email, Name, Response string
+	Self, Resource        bool
 }
 
 // Fake is the stand-in. Set its fields before (or between) calls; it is safe
@@ -61,6 +74,7 @@ type Fake struct {
 	email         string
 	messages      []Message
 	events        []Event
+	queries       []string // Gmail searches asked for, in order
 	sent          [][]byte
 	attachments   map[string][]byte // attachment id → bytes (long text parts Gmail keeps aside)
 	access        string            // the access token currently valid
@@ -223,8 +237,26 @@ func (f *Fake) AddAttachment(id string, data []byte) {
 	f.attachments[id] = data
 }
 
-// AddEvent puts an event on the calendar.
-func (f *Fake) AddEvent(e Event) { f.mu.Lock(); f.events = append(f.events, e); f.mu.Unlock() }
+// AddEvent puts an event on the calendar. One with the same ID is replaced,
+// as when an event is moved.
+func (f *Fake) AddEvent(e Event) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for i := range f.events {
+		if f.events[i].ID == e.ID {
+			f.events[i] = e
+			return
+		}
+	}
+	f.events = append(f.events, e)
+}
+
+// Queries lists the Gmail searches asked for so far, in order.
+func (f *Fake) Queries() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return slices.Clone(f.queries)
+}
 
 // Refreshes counts sign-in renewals Google was asked for.
 func (f *Fake) Refreshes() int { f.mu.Lock(); defer f.mu.Unlock(); return f.refreshes }
@@ -298,6 +330,7 @@ func (f *Fake) serve(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, map[string]any{"emailAddress": f.email})
 	case p == "/gmail/v1/users/me/messages" && r.Method == http.MethodGet:
 		q := r.URL.Query().Get("q")
+		f.queries = append(f.queries, q)
 		limit, _ := strconv.Atoi(r.URL.Query().Get("maxResults"))
 		if limit <= 0 {
 			limit = 100 // Gmail's default page
@@ -348,7 +381,30 @@ func (f *Fake) serve(w http.ResponseWriter, r *http.Request) {
 	case strings.HasPrefix(p, "/calendar/v3/calendars/") && strings.HasSuffix(p, "/events") && r.Method == http.MethodGet:
 		var items []map[string]any
 		for _, e := range f.events {
-			items = append(items, map[string]any{"id": e.ID, "summary": e.Summary, "status": "confirmed", "start": map[string]string{"dateTime": e.Start}, "end": map[string]string{"dateTime": e.End}})
+			item := map[string]any{"id": e.ID, "summary": e.Summary, "status": "confirmed", "start": map[string]string{"dateTime": e.Start}, "end": map[string]string{"dateTime": e.End}}
+			if e.Free {
+				item["transparency"] = "transparent"
+			}
+			if e.Description != "" {
+				item["description"] = e.Description
+			}
+			if e.HangoutLink != "" {
+				item["hangoutLink"] = e.HangoutLink
+			}
+			if e.VideoURI != "" {
+				item["conferenceData"] = map[string]any{"entryPoints": []map[string]string{{"entryPointType": "phone", "uri": "tel:+1-555-0100"}, {"entryPointType": "video", "uri": e.VideoURI}}}
+			}
+			var guests []map[string]any
+			for _, a := range e.Attendees {
+				guests = append(guests, map[string]any{"email": a.Email, "displayName": a.Name, "self": a.Self, "resource": a.Resource, "responseStatus": a.Response})
+			}
+			if e.Declined {
+				guests = append(guests, map[string]any{"email": f.email, "self": true, "responseStatus": "declined"})
+			}
+			if guests != nil {
+				item["attendees"] = guests
+			}
+			items = append(items, item)
 		}
 		writeJSON(w, map[string]any{"items": items})
 	case p == "/drive/v3/about":

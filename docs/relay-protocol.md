@@ -1,4 +1,4 @@
-# Relay tunnel protocol: `antbot.tunnel.v1`
+# Relay tunnel protocol: `mirrin.tunnel.v1`
 
 This is the protocol between a Mirrin daemon and a mirrin-relay. It is how
 a phone on any network reaches the twin on the user's machine while TLS still
@@ -38,7 +38,7 @@ Code:
 | URL | `wss://<relay control name>/v1/tunnel`, such as `wss://r1.relay.mirrin.app/v1/tunnel` |
 | TLS | 1.3 only, verified against the system roots. The relay serves its control name with its own certificate. |
 | HTTP | HTTP/1.1 Upgrade (ALPN `http/1.1`). No redirects are followed and no HTTP proxy is used. |
-| WebSocket subprotocol | `antbot.tunnel.v1`. Either side closes if it is not the one negotiated. |
+| WebSocket subprotocol | `mirrin.tunnel.v1`. Either side closes if it is not the one negotiated. |
 | WebSocket compression | none |
 
 The daemon dials every relay listed in its entitlement (`relays[]`), or the
@@ -98,12 +98,12 @@ configured without an id is taken at its word.
 The signed input is:
 
 ```
-"antbot-relay-tunnel-v1" 0x00 relay 0x00 nonce 0x00 exporter
+"mirrin-relay-tunnel-v1" 0x00 relay 0x00 nonce 0x00 exporter
 ```
 
 - `relay` is the relay id, as ASCII.
 - `nonce` is the challenge's 32 raw bytes.
-- `exporter` is `ExportKeyingMaterial("EXPORTER-antbot-tunnel", nil, 32)`
+- `exporter` is `ExportKeyingMaterial("EXPORTER-mirrin-tunnel", nil, 32)`
   on the daemon–relay TLS 1.3 session (RFC 8446 §7.5). Both ends compute it
   from their side of the same session.
 
@@ -325,7 +325,7 @@ system roots) and nothing else about the relay.
 `v` in the challenge and hello, and the subprotocol name, carry the version.
 - Adding optional fields, control types or error codes is compatible:
   unknown ones are ignored or retried.
-- Anything else is `antbot.tunnel.v2`. A relay that cannot serve a client's
+- Anything else is `mirrin.tunnel.v2`. A relay that cannot serve a client's
   version refuses it with `upgrade_required`.
 
 ## 8. Test vectors and fuzzing
@@ -337,7 +337,7 @@ system roots) and nothing else about the relay.
     implementation produces the same bytes.
 
   ```
-  {"t":"hello","v":1,"key":"iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w","sig":"KlBxrfYKXmCKM4VLmZbTMG-Y_EBkH1_5G8Tg7TSNxijTFGspTxH_mvoqEXcNI-sTQ88kmVv4qO54YPBSTWykDg","ent":null,"status_key_hash":"3rDjjO0eQd5vkucOgMQY0tNWr6qpnib1k528fT70dyo","client":"mirrin/0.4.0 darwin/arm64"}
+  {"t":"hello","v":1,"key":"iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w","sig":"JHW_KsJMf0dIlWMSfMpfx5k3SE39ulKh5lpYaGtY0Rfu8XD16nQR-6dxbnhj0HMQaTb5NJDe1qxYAKo8lYUTDA","ent":null,"status_key_hash":"3rDjjO0eQd5vkucOgMQY0tNWr6qpnib1k528fT70dyo","client":"mirrin/0.4.0 darwin/arm64"}
   ```
 - `TestProxyV2Golden` pins IPv4 and IPv6 headers assembled byte by byte from
   the HAProxy specification, which has no binary examples of its own. The

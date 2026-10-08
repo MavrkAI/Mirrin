@@ -108,6 +108,7 @@ type Daemon struct {
 	chanErr      map[string]string
 	chanSince    map[string]time.Time // when each channel was last (re)started
 	fwd          forwards             // owner chats that got another channel's messages
+	shown        shownAnswer          // the long answer last put on the screen (showanswer.go)
 	waPair       *whatsapp.Pairing
 	tasks        *tasks.Manager
 	purse        *spend.Ledger
@@ -129,6 +130,8 @@ type Daemon struct {
 	modelDown    atomic.Bool            // the model had no usable key; reload it before the next turn
 	instMu       sync.Mutex
 	instance     *os.File // this twin's claim on its home (instance.go)
+	// draft is the first-week portrait drafts (firstdraft.go).
+	draft draftState
 	// backups runs the encrypted backups (backup.go).
 	backups        *backup.Scheduler
 	welcomeRestore func(api.WelcomeRestoreRequest) error
@@ -136,6 +139,7 @@ type Daemon struct {
 	heardAloud     atomic.Int64                    // when the owner last talked to the twin out loud, in Unix ns (proactive.go)
 	ownerSaid      atomic.Int64                    // when the owner last messaged the twin, in Unix ns (held.go)
 	heldFlush      sync.Mutex                      // one send of what was held at a time (held.go)
+	jev            jevState                        // jev.go: optional quick judgments
 }
 
 // New assembles a daemon from configuration.
@@ -195,9 +199,10 @@ func New(cfg *config.Config, opts Options) (*Daemon, error) {
 		sess := browser.NewSession(cfg.Skills.Browser, cfg.DataDir, nil).AllowHosts(cfg.Skills.Web.AllowHosts...)
 		d.browser = sess
 		d.pageURL, d.pageCheck = sess.CurrentURL, sess.CheckApproved
-		sess.OnHandOver, sess.ScreenURL = d.browserHandedOver, d.screenAddress // browserlive.go
+		sess.OnHandOver, sess.ScreenURL, sess.ShowScreen = d.browserHandedOver, d.screenAddress, d.showScreen // browserlive.go
 		sess.OnActive = d.browserActive
 		reg.Register(sess.Tools()...)
+		reg.Register(memskill.PageTool(store, d.currentPage)) // rememberpage.go
 	}
 	var sources []watch.Source
 	d.google = gauth.NewAuth(cfg.Skills.Calendar)
@@ -278,6 +283,7 @@ func New(cfg *config.Config, opts Options) (*Daemon, error) {
 	reg.Register(protoskill.UpdateTool(d.Protocols, d.protocolUpdater())) // api_protocols.go
 
 	d.agent = agent.New(cfg, provider, store, reg, approvals.New(cfg.Autonomy), log)
+	d.agent.SharedChat = d.sharedChat // the owner's chats see each other's last words (elsewhere.go)
 	if d.browser != nil {
 		d.agent.Browser = d.browser.Brief // every chat knows what the browser has open
 	}
@@ -363,10 +369,13 @@ func New(cfg *config.Config, opts Options) (*Daemon, error) {
 	d.beat.Preamble = d.heldPreamble
 	// A follow-up promised in someone else's chat doesn't look (leftforyou.go).
 	d.beat.Theirs = func(key string) bool { return d.someoneElses(homeKey(key)) }
+	d.watchFactReminders() // datereminder.go: a reminder set from a fact
 	// Even with nothing to watch yet: connecting Google adds sources live.
 	if cfg.Watch.Enabled {
 		d.watcher = watch.New(store, sources, d.budgetWatchTask, d.Notify, d.proactiveChatKey,
 			time.Duration(cfg.Watch.IntervalMinutes)*time.Minute, d.backgroundPaused, log)
+		d.watcher.SetFacts(d.clashFacts) // watchclash.go: never a sensitive fact
+		d.watcher.SetClaim(d.claimBills) // bills.go: a bill in the mail gets a reminder
 	}
 	d.wireGoogle() // google_account.go
 	if err := d.ReloadProtocols(); err != nil {
@@ -907,6 +916,8 @@ func (d *Daemon) scheduleJobs() {
 	d.beat.AddJob("0 8 * * 0", d.sundayPortrait)
 	d.beat.AddJobWithin("30 9 * * *", ownerJobWithin, func(ctx context.Context) { d.nudge(ctx) }) // not made up hours late (timekeeping.go)
 	d.beat.AddJobWithin("0 17 * * *", ownerJobWithin, func(ctx context.Context) { d.noticePatterns(ctx) })
+	// Sunday 6pm: what I handled for you this week (weekly.go)
+	d.beat.AddJobWithin("0 18 * * 0", ownerJobWithin, d.weeklyNote)
 	d.beat.AddJob("15 3 * * *", func(ctx context.Context) { // tidy scratch conversations
 		d.PruneTasks()
 		if n, err := d.store.PruneScratch(ctx, 48*time.Hour, d.scratchKeep(ctx)...); err == nil && n > 0 {
@@ -917,6 +928,8 @@ func (d *Daemon) scheduleJobs() {
 	d.beat.AddJob("@every 15m", d.expireApprovals)
 	d.beat.AddJob("@every 1h", d.resumeBudgetPaused) // task_resume.go
 	d.beat.AddJob("@every 5m", d.flushHeld)          // held.go: what waited goes out once it can
+	// A line before meeting someone the twin knows about (meetingbrief.go).
+	d.beat.AddJobWithin(briefEvery, 2*time.Minute, d.meetingBriefs)
 }
 
 // scratchKeep lists the scratch conversations pruning leaves alone: open
@@ -1006,6 +1019,8 @@ type ScreenData struct {
 	PortraitNew string `json:"portrait_new,omitempty"`
 	PortraitAt  string `json:"portrait_at,omitempty"`
 	PortraitAck bool   `json:"portrait_ack,omitempty"`
+	// PortraitDraft says the portrait is a first draft (firstdraft.go).
+	PortraitDraft bool `json:"portrait_draft,omitempty"`
 	// LeftForYou is what the twin sent on its own lately (leftforyou.go).
 	LeftForYou []Left `json:"left_for_you"`
 	// CalendarError says why the calendar couldn't be read, in words the
@@ -1327,7 +1342,7 @@ func (d *Daemon) Restart() error {
 }
 
 // passwordEnv is the variable to set for the mailbox password: the one the
-// config names, which may be AntBot's (resolved through config.Secret).
+// config names (resolved through config.Secret).
 func passwordEnv(name string) string {
 	if name == "" {
 		return "MIRRIN_EMAIL_PASSWORD"
@@ -1335,14 +1350,8 @@ func passwordEnv(name string) string {
 	return name
 }
 
-// launchdLabel is the launchd job running this process: the label launchd
-// passes on (antbot for a job AntBot installed), else the service's own.
-func launchdLabel() string {
-	if l := os.Getenv("XPC_SERVICE_NAME"); brand.IsServiceLabel(l) {
-		return l
-	}
-	return brand.Name
-}
+// launchdLabel is the launchd job that runs the twin's service.
+func launchdLabel() string { return brand.Name }
 
 // MemoryURL is the local memory page (empty when the API is off).
 func (d *Daemon) MemoryURL() string { return d.apiURL(d.memoryURL) }
@@ -1679,6 +1688,9 @@ func (d *Daemon) dispatch(ctx context.Context, in channels.Inbound, ev agent.Eve
 		_ = d.store.Set(ctx, "nudges_off", "1")
 		return withAddress("Understood. No more tips", d.address()) + ".", nil
 	}
+	if reply, ok, err := d.ownerReplies(ctx, in, text, ev); ok { // owner_replies.go
+		return reply, err
+	}
 
 	// Approval decisions: "yes 12", "no 12", or a bare "yes" to what the twin just asked.
 	if reply, ok := d.deviceCantApprove(ctx, in); ok { // devices.go: a device paired without approve
@@ -1693,6 +1705,12 @@ func (d *Daemon) dispatch(ctx context.Context, in channels.Inbound, ev agent.Eve
 		return reply, nil
 	}
 	if reply, ok := d.answerReminder(ctx, in); ok { // answers.go: "done" or "later" to a reminder just sent
+		return reply, nil
+	}
+	if reply, ok := d.answerTravelOffer(ctx, in); ok { // travelpeople.go: yes to "a nudge tomorrow?"
+		return reply, nil
+	}
+	if reply, ok := d.noticeReply(ctx, in); ok { // notice_replies.go: Jev reads a reply to a note
 		return reply, nil
 	}
 

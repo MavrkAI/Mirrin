@@ -39,10 +39,8 @@ import (
 	"github.com/MavrkAI/Mirrin/internal/devices"
 )
 
-// Header carries a step-up session id on the retried request. Its name
-// dates from before the rename and stays: a phone may still run the page
-// script it cached then.
-const Header = "AntBot-Stepup" // rename:keep
+// Header carries a step-up session id on the retried request.
+const Header = "Mirrin-Stepup"
 
 // Timings.
 const (
@@ -121,12 +119,12 @@ func Required(level Level, risk, decision string) bool {
 }
 
 // ApprovalChallenge is what a passkey signs to approve (or deny) approval
-// id: SHA-256("antbot-approval-v1" 0x00 id(8 bytes, big-endian) decision
+// id: SHA-256("mirrin-approval-v1" 0x00 id(8 bytes, big-endian) decision
 // SHA-256(input) nonce). A signature for one approval, one decision or one
 // stored input is worth nothing for another.
 func ApprovalChallenge(id int64, decision string, input []byte, nonce [32]byte) []byte {
 	h := sha256.New()
-	h.Write([]byte("antbot-approval-v1"))
+	h.Write([]byte("mirrin-approval-v1"))
 	h.Write([]byte{0})
 	var n [8]byte
 	binary.BigEndian.PutUint64(n[:], uint64(id))
@@ -142,7 +140,7 @@ func ApprovalChallenge(id int64, decision string, input []byte, nonce [32]byte) 
 // another.
 func enrolChallenge(deviceID string, nonce [32]byte) []byte {
 	h := sha256.New()
-	h.Write([]byte("antbot-enrol-v1"))
+	h.Write([]byte("mirrin-enrol-v1"))
 	h.Write([]byte{0})
 	h.Write([]byte(deviceID))
 	h.Write(nonce[:])

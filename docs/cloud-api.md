@@ -63,7 +63,7 @@ made with the daemon's Ed25519 device key:
 |---|---|
 | Covered | `("@method" "@target-uri" "content-digest")`, in that order |
 | `content-digest` | RFC 9530, `sha-256` only, over the body (empty for none) |
-| Parameters | `created`, `expires` (= `created` + 300), `nonce` (16 random bytes, base64url), `keyid`, `tag="antbot-cloud-v1"` |
+| Parameters | `created`, `expires` (= `created` + 300), `nonce` (16 random bytes, base64url), `keyid`, `tag="mirrin-cloud-v1"` |
 | `keyid` | `dev:` + base64url of the first 16 bytes of SHA-256 of the public key |
 | Label | `sig1` |
 

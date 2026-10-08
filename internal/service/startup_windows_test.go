@@ -32,7 +32,7 @@ func TestWindowsInstallWritesAStartupEntry(t *testing.T) {
 	s.launch = func(exe string, env []string) error { launched = env; running = true; return nil }
 	s.stopTwin = func() error { running = false; return nil }
 	s.running = func() bool { return running }
-	s.legacy, s.retire, s.elevated = nil, nil, nil // never the real service manager
+	s.elevated = nil // never the real token
 	s.wait = time.Second
 
 	if err := s.control("install"); err != nil {
@@ -60,22 +60,5 @@ func TestWindowsInstallWritesAStartupEntry(t *testing.T) {
 func TestWindowsLockHoldersOfAFreeHome(t *testing.T) {
 	if got := lockHolders(homelock.Path(t.TempDir())); len(got) != 0 {
 		t.Fatalf("lockHolders = %v", got)
-	}
-}
-
-// Keys a pre-patch install left in HKLM\...\Services\antbot\Environment
-// are moved out on install or tidy.
-func TestWindowsTidyRemovesRegistryKeys(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("MIRRIN_HOME", home)
-	r := &fakeRegistry{lines: []string{"ANTBOT_HOME=" + home, "OPENAI_API_KEY=sk-o", "USERPROFILE=C:\\Users\\me"}}
-	tidyRegistryEnv(r, io.Discard)
-	for _, l := range r.lines {
-		if strings.HasPrefix(l, "OPENAI_API_KEY=") {
-			t.Fatalf("key left in the registry: %v", r.lines)
-		}
-	}
-	if got, _ := config.ReadSecrets(); got["OPENAI_API_KEY"] != "sk-o" {
-		t.Fatal("key not kept")
 	}
 }

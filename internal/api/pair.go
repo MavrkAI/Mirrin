@@ -31,9 +31,8 @@ type How string
 
 // The ways a device gets its own key.
 const (
-	HowClaimed      How = "claimed"       // a pairing link or code
-	HowLegacyCode   How = "legacy_code"   // a terminal paired with an old-style code, moved onto its own key
-	HowLegacyScreen How = "legacy_screen" // a screen set up before devices had keys, moved onto its own key
+	HowClaimed    How = "claimed"     // a pairing link or code
+	HowLegacyCode How = "legacy_code" // a terminal paired with an old-style code, moved onto its own key
 )
 
 // PairEvent is a device that just got its own key.

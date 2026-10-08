@@ -115,7 +115,7 @@ const (
 )
 
 // RefusalSentence is what the owner reads when a relay refuses this
-// machine, for each code of antbot.tunnel.v1 (docs/relay-protocol.md
+// machine, for each code of mirrin.tunnel.v1 (docs/relay-protocol.md
 // §3.5). The relay's own message goes to the log.
 func RefusalSentence(code string) string {
 	switch code {

@@ -13,7 +13,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MavrkAI/Mirrin/internal/brand"
 	"github.com/MavrkAI/Mirrin/internal/config"
 )
 
@@ -26,7 +25,7 @@ var serviceLogMu sync.Mutex
 // service writing forever into an old file. A write racing the truncate can
 // be lost; the separate structured mirrin.log remains the primary log.
 func MaintainLogs(parent context.Context) func() {
-	if !config.ServiceMarked() || brand.Getenv(supervisedLogsEnv) == "1" {
+	if !config.ServiceMarked() || os.Getenv(supervisedLogsEnv) == "1" {
 		return func() {}
 	}
 	if err := rotationAllowed(runtime.GOOS, unitPath(runtime.GOOS, userHome(), Name)); err != nil {
@@ -53,18 +52,14 @@ func MaintainLogs(parent context.Context) func() {
 	return func() { cancel(); <-done }
 }
 
-// rotateServiceLogs bounds the service manager's logs in dir: the service's
-// own, and those a service under an old name (antbot.out) still writes
-// until it is retired.
+// rotateServiceLogs bounds the service manager's logs in dir.
 func rotateServiceLogs(dir string, limit int64) error {
 	serviceLogMu.Lock()
 	defer serviceLogMu.Unlock()
 	var errs []error
-	for _, svc := range append([]string{Name}, legacyNames...) {
-		for _, ext := range []string{".err", ".out", ".err.log", ".out.log"} {
-			if err := rotateServiceLog(filepath.Join(dir, svc+ext), limit); err != nil {
-				errs = append(errs, err)
-			}
+	for _, ext := range []string{".err", ".out", ".err.log", ".out.log"} {
+		if err := rotateServiceLog(filepath.Join(dir, Name+ext), limit); err != nil {
+			errs = append(errs, err)
 		}
 	}
 	return errors.Join(errs...)

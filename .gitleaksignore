@@ -87,3 +87,5 @@ internal/config/backup.go:generic-api-key:66
 internal/daemon/pages.go:generic-api-key:257
 internal/heartbeat/schedule.go:generic-api-key:91
 internal/config/connectors.go:discord-client-id:148
+docs/cloud-design.md:generic-api-key:268
+internal/memory/forget_reminders.go:generic-api-key:13

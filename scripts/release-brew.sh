@@ -16,7 +16,7 @@ if [ -z "$SUMS" ]; then
   TMP=$(mktemp -d)
   trap 'rm -rf "$TMP"' EXIT
   SUMS=$TMP/SHA256SUMS
-  URL="https://github.com/${MIRRIN_REPO:-${ANTBOT_REPO:-MavrkAI/Mirrin}}/releases/download/v$V/SHA256SUMS" # rename:keep
+  URL="https://github.com/${MIRRIN_REPO:-MavrkAI/Mirrin}/releases/download/v$V/SHA256SUMS"
   curl -fsSL "$URL" -o "$SUMS" || { echo "release-brew: could not download $URL" >&2; exit 1; }
 fi
 

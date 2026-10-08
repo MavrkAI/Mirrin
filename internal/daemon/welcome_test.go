@@ -753,7 +753,11 @@ func TestHelloNextOnTheCalendarToday(t *testing.T) {
 	}{
 		{nil, "Calendar: nothing more today."},
 		{[]calendar.Event{{Title: "Tomorrow's train", Start: at(8, 0).AddDate(0, 0, 1)}}, "Calendar: nothing more today."},
-		{[]calendar.Event{{Title: "Under way", Start: at(17, 30), End: at(18, 30)}, {Title: `Dinner "with" Priya`, Start: at(19, 30)}}, "Next on the calendar today: “Dinner with Priya” at 7:30 pm."},
+		{[]calendar.Event{{Title: "Under way", Start: at(17, 30), End: at(18, 30)}, {Title: `Dinner "with" Priya`, Start: at(19, 30)}}, "The only thing left on the calendar today: “Dinner with Priya” at 7:30 pm."},
+		{[]calendar.Event{{Title: "Dinner", Start: at(19, 30)}, {Title: "Call Sam", Start: at(21, 0)}}, "Next on the calendar today: “Dinner” at 7:30 pm."},
+		{[]calendar.Event{{Title: "Dinner", Start: at(19, 30)}, {Title: "Tomorrow's train", Start: at(8, 0).AddDate(0, 0, 1)}}, "The only thing left on the calendar today: “Dinner” at 7:30 pm."},
+		// Five read, all today: there may be more than were read.
+		{[]calendar.Event{{Title: "One", Start: at(18, 30)}, {Title: "Two", Start: at(18, 0), AllDay: true}, {Title: "Three", Start: at(18, 0), AllDay: true}, {Title: "Four", Start: at(18, 0), AllDay: true}, {Title: "Five", Start: at(18, 0), AllDay: true}}, "Next on the calendar today: “One” at 6:30 pm."},
 		{[]calendar.Event{{Title: "Mum's birthday", Start: at(0, 0), AllDay: true}}, "All day today on the calendar: “Mum's birthday”."},
 	} {
 		if got := nextToday(c.evs, now); got != c.want {

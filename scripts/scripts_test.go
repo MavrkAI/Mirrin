@@ -135,9 +135,7 @@ func shellQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", `'\''
 // real ones on PATH, with cosign when a body is given, and launchctl and
 // systemctl that know no services unless given a body. The real service
 // managers are never asked, so a contributor's own Mirrin service can't
-// change what a test sees; nor is their own AntBot from before the rename
-// (an antbot that isn't AntBot's stands in, unless given a body). The file
-// commands are guarded (see guard).
+// change what a test sees. The file commands are guarded (see guard).
 func fakeTools(t *testing.T, in install) string {
 	t.Helper()
 	dir := t.TempDir()
@@ -180,11 +178,6 @@ func fakeTools(t *testing.T, in install) string {
 	if in.hdiutil != "" {
 		write("hdiutil", in.hdiutil)
 	}
-	if in.antbot == "" {
-		write("antbot", "echo 'antbot: an unrelated program'\n")
-	} else {
-		write("antbot", in.antbot)
-	}
 	for name, body := range map[string]string{"launchctl": in.launchctl, "systemctl": in.systemctl} {
 		if body == "" {
 			body = "exit 1\n"
@@ -200,7 +193,6 @@ type install struct {
 	gh                     string // body of a fake gh; empty means one not signed in, "-" none (use with pick)
 	launchctl, systemctl   string // bodies of fake service managers; empty means no services
 	xattr, spctl, hdiutil  string // bodies of fake macOS tools; empty means the real ones, if any
-	antbot                 string // body of the antbot on PATH; empty means one that isn't AntBot's
 	files                  map[string][]byte
 	sums                   string
 	codes                  map[string]int // see release
@@ -248,7 +240,7 @@ func (in install) run(t *testing.T) (string, string, error) {
 	// anything else (a relative path or a redirect): a test run once left a
 	// fake mirrin in a contributor's real ~/.local/bin. No Chrome runs here,
 	// so the keychain rule about HOME doesn't apply.
-	cmd.Env = append(withoutOldSettings(os.Environ()),
+	cmd.Env = append(os.Environ(),
 		"HOME="+t.TempDir(),
 		"PATH="+path,
 		"SHELL=/bin/sh",
@@ -263,19 +255,6 @@ func (in install) run(t *testing.T) (string, string, error) {
 	cmd.Env = append(cmd.Env, in.env...)
 	out, err := cmd.CombinedOutput()
 	return string(out), dest, err
-}
-
-// withoutOldSettings is env without the installers' settings from before
-// the rename (ANTBOT_*), which they still read: a contributor's own must not
-// change what a test does.
-func withoutOldSettings(env []string) []string {
-	var out []string
-	for _, kv := range env {
-		if !strings.HasPrefix(strings.ToUpper(kv), "ANTBOT_") {
-			out = append(out, kv)
-		}
-	}
-	return out
 }
 
 func TestInstallPicksTheRightBuild(t *testing.T) {
@@ -547,8 +526,7 @@ func writeFile(t *testing.T, path string, b []byte) {
 }
 
 // TestInstallServiceNotes checks what an install says about services. An
-// upgraded binary does nothing until the service restarts, and the openHuman
-// service from before the rename relaunches the old program forever.
+// upgraded binary does nothing until the service restarts.
 func TestInstallServiceNotes(t *testing.T) {
 	needSh(t)
 	uid := strconv.Itoa(os.Getuid())
@@ -579,22 +557,6 @@ func TestInstallServiceNotes(t *testing.T) {
 		{"Linux service runs a mirrin from elsewhere", install{kernel: "Linux", machine: "x86_64", files: linux,
 			systemctl: systemd("mirrin.service", "/opt/old/mirrin")},
 			[]string{"runs a mirrin from another folder", "mirrin service uninstall && mirrin service install"}, nil},
-		{"openHuman still runs on a Mac", install{kernel: "Darwin", machine: "arm64", arm64: "1", files: mac,
-			launchctl: launchd("openhuman", "/Users/x/go/bin/openhuman")},
-			[]string{"openHuman (Mirrin's first name)", "Library/LaunchAgents/openhuman.plist", "mirrin service install", "starts again at your next login"},
-			[]string{"rm -f", "launchctl bootout"}}, // the plist may hold the only copy of its keys: mirrin moves them first
-		{"openHuman still runs on Linux", install{kernel: "Linux", machine: "x86_64", files: linux,
-			systemctl: systemd("openhuman.service", "/home/x/go/bin/openhuman")},
-			[]string{"openHuman (Mirrin's first name)", ".config/systemd/user/openhuman.service", "mirrin service install"},
-			[]string{"rm -f", "disable --now"}},
-		{"AntBot still runs on a Mac", install{kernel: "Darwin", machine: "arm64", arm64: "1", files: mac,
-			launchctl: launchd("antbot", "/Users/x/go/bin/antbot")},
-			[]string{"AntBot (Mirrin's name before)", "Library/LaunchAgents/antbot.plist", "mirrin service install", "starts again at your next login"},
-			[]string{"rm -f", "openHuman", "launchctl bootout"}}, // the plist may hold the only copy of its keys: mirrin moves them first
-		{"AntBot still runs on Linux", install{kernel: "Linux", machine: "x86_64", files: linux,
-			systemctl: systemd("antbot.service", "/home/x/go/bin/antbot")},
-			[]string{"AntBot (Mirrin's name before)", ".config/systemd/user/antbot.service", "mirrin service install"},
-			[]string{"rm -f", "openHuman", "disable --now"}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -613,76 +575,6 @@ func TestInstallServiceNotes(t *testing.T) {
 				if strings.Contains(out, w) {
 					t.Errorf("output has %q:\n%s", w, out)
 				}
-			}
-		})
-	}
-}
-
-// Settings named before the rename (ANTBOT_*) still drive an install, and
-// the MIRRIN_ name wins when both are set. Every setting install.sh
-// documents reads its old name too.
-func TestInstallHonoursTheOldSettings(t *testing.T) {
-	needSh(t)
-	files := map[string][]byte{"mirrin-linux-amd64-nowhatsapp": fakeBinary("mirrin-linux-amd64-nowhatsapp")}
-	// releases/latest is down, so only the version asked for can install.
-	down := map[string]int{"latest": http.StatusServiceUnavailable}
-	old := filepath.Join(t.TempDir(), "old-bin")
-	out, _, err := install{kernel: "Linux", machine: "x86_64", files: files, codes: down, env: []string{
-		"MIRRIN_BIN_DIR=", "ANTBOT_BIN_DIR=" + old, "ANTBOT_BUILD=nowhatsapp", "ANTBOT_VERSION=" + testVersion}}.run(t)
-	if err != nil {
-		t.Fatalf("install failed: %v\n%s", err, out)
-	}
-	if got, err := os.ReadFile(filepath.Join(old, "mirrin")); err != nil || !strings.Contains(string(got), "nowhatsapp") {
-		t.Fatalf("not installed from the old settings (%v):\n%s", err, out)
-	}
-
-	both := filepath.Join(t.TempDir(), "new-bin")
-	out, _, err = install{kernel: "Linux", machine: "x86_64", files: files, codes: down, env: []string{
-		"MIRRIN_BIN_DIR=" + both, "ANTBOT_BIN_DIR=" + old + "-not", "MIRRIN_BUILD=nowhatsapp", "ANTBOT_BUILD=default",
-		"MIRRIN_VERSION=" + testVersion, "ANTBOT_VERSION=v0.0.1"}}.run(t)
-	if err != nil {
-		t.Fatalf("install failed: %v\n%s", err, out)
-	}
-	if _, err := os.Stat(filepath.Join(both, "mirrin")); err != nil {
-		t.Fatalf("MIRRIN_BIN_DIR lost to ANTBOT_BIN_DIR:\n%s", out)
-	}
-
-	src, err := os.ReadFile(repoFile("install.sh"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, m := range regexp.MustCompile(`(?m)^#   MIRRIN_([A-Z_]+)=`).FindAllStringSubmatch(string(src), -1) {
-		n := m[1]
-		if line := "MIRRIN_" + n + "=${MIRRIN_" + n + ":-${ANTBOT_" + n + ":-}}"; !strings.Contains(string(src), line) {
-			t.Errorf("install.sh doesn't read ANTBOT_%s: no %q", n, line)
-		}
-	}
-}
-
-// An antbot from before the rename stays (a service from then may still run
-// it) and is pointed out; another product's antbot isn't mentioned.
-func TestInstallNotesAnOldAntbot(t *testing.T) {
-	needSh(t)
-	files := map[string][]byte{"mirrin-linux-amd64": fakeBinary("mirrin-linux-amd64")}
-	for _, c := range []struct {
-		name, answer string
-		noted        bool
-	}{
-		{"AntBot's", "antbot v0.3.0-5-gabc1234", true},
-		{"a source build", "antbot dev", true},
-		{"another product's", "antbot 2.0 (ant colony simulator)", false},
-	} {
-		t.Run(c.name, func(t *testing.T) {
-			out, _, err := install{kernel: "Linux", machine: "x86_64", files: files,
-				antbot: "[ \"$1\" = version ] && echo '" + c.answer + "'\n"}.run(t)
-			if err != nil {
-				t.Fatalf("install failed: %v\n%s", err, out)
-			}
-			if noted := strings.Contains(out, "the old AntBot program is still at"); noted != c.noted {
-				t.Fatalf("noted = %v, want %v:\n%s", noted, c.noted, out)
-			}
-			if strings.Contains(out, "rm ") {
-				t.Fatalf("suggests deleting it now:\n%s", out)
 			}
 		})
 	}
@@ -914,7 +806,6 @@ func TestInstallPowerShell(t *testing.T) {
 		// must fail the step, though a pasted one leaves the window open.
 		{"one-liner from a command line", map[string][]byte{}, sum(bin) + "  mirrin-linux-amd64\n", nil, true, "has no build for windows/" + runtime.GOARCH},
 		{"one-liner installs", map[string][]byte{asset: bin}, "", nil, true, "Mirrin " + testVersion + " is installed"},
-		{"installs with the settings' old names", map[string][]byte{asset: bin}, "", nil, false, "Mirrin " + testVersion + " is installed"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -925,24 +816,18 @@ func TestInstallPowerShell(t *testing.T) {
 				cmd = exec.Command(ps, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
 					"Get-Content -Raw '"+strings.ReplaceAll(repoFile("install.ps1"), "'", "''")+"' | Invoke-Expression")
 			}
-			// The settings, under the names from before the rename (ANTBOT_)
-			// for the case that says so.
-			prefix := "MIRRIN_"
-			if strings.Contains(c.name, "old names") {
-				prefix = "ANTBOT_"
-			}
 			// Leave the normal install path unset, independent of the host.
 			var cleanEnv []string
-			for _, entry := range withoutOldSettings(os.Environ()) {
+			for _, entry := range os.Environ() {
 				key, _, _ := strings.Cut(entry, "=")
 				if !strings.HasPrefix(strings.ToUpper(key), "MIRRIN_") {
 					cleanEnv = append(cleanEnv, entry)
 				}
 			}
 			cmd.Env = append(cleanEnv,
-				prefix+"DOWNLOAD_URL="+srv.URL+"/releases",
-				prefix+"BIN_DIR="+dest,
-				prefix+"NO_MODIFY_PATH=1",
+				"MIRRIN_DOWNLOAD_URL="+srv.URL+"/releases",
+				"MIRRIN_BIN_DIR="+dest,
+				"MIRRIN_NO_MODIFY_PATH=1",
 				"MIRRIN_FAKE_MIRRIN=1",
 			)
 			if strings.HasPrefix(c.name, "MIT") {

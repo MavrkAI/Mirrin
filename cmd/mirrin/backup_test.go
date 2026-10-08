@@ -71,7 +71,7 @@ func twinHome(t *testing.T) *config.Config {
 	cfg := config.Default()
 	cfg.Name = "Jeeves"
 	cfg.LLM.APIKey = "sk-test"
-	// No local API address: twinRunning then only looks at data/antbot.lock,
+	// No local API address: twinRunning then only looks at data/mirrin.lock,
 	// and never calls a real twin that may be listening on 127.0.0.1:7742.
 	cfg.API.Listen = ""
 	if err := cfg.Save(); err != nil {

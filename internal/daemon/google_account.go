@@ -28,6 +28,7 @@ const (
 // changes while the twin was off are noticed.
 func (d *Daemon) wireGoogle() {
 	d.google.OnSignedOut(d.googleSignedOut)
+	d.inboxFirstBefore(context.Background()) // inbox_first.go: connected before, so no first look
 	d.syncGoogleWatch(false)
 }
 

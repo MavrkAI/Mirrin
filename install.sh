@@ -19,18 +19,7 @@
 #   MIRRIN_NO_MODIFY_PATH=1    never offer to add the CLI folder to your shell profile
 #   MIRRIN_REPO=owner/name     install from a fork
 #   MIRRIN_DOWNLOAD_URL=URL    where the releases live (a mirror)
-# The same settings named ANTBOT_..., from before Mirrin was renamed, still
-# work; the MIRRIN_ name wins when both are set.
 set -eu
-
-MIRRIN_BUILD=${MIRRIN_BUILD:-${ANTBOT_BUILD:-}}                   # rename:keep
-MIRRIN_VERSION=${MIRRIN_VERSION:-${ANTBOT_VERSION:-}}             # rename:keep
-MIRRIN_BIN_DIR=${MIRRIN_BIN_DIR:-${ANTBOT_BIN_DIR:-}}             # rename:keep
-MIRRIN_NO_APP=${MIRRIN_NO_APP:-${ANTBOT_NO_APP:-}}                # rename:keep
-MIRRIN_APPS_DIR=${MIRRIN_APPS_DIR:-${ANTBOT_APPS_DIR:-}}          # rename:keep
-MIRRIN_NO_MODIFY_PATH=${MIRRIN_NO_MODIFY_PATH:-${ANTBOT_NO_MODIFY_PATH:-}} # rename:keep
-MIRRIN_REPO=${MIRRIN_REPO:-${ANTBOT_REPO:-}}                      # rename:keep
-MIRRIN_DOWNLOAD_URL=${MIRRIN_DOWNLOAD_URL:-${ANTBOT_DOWNLOAD_URL:-}} # rename:keep
 
 REPO=${MIRRIN_REPO:-MavrkAI/Mirrin}
 RELEASES=${MIRRIN_DOWNLOAD_URL:-https://github.com/$REPO/releases}
@@ -288,32 +277,7 @@ path_note() {
   fi
 }
 
-# old_service_note says how a service from before the rename, set up for
-# AntBot ($1 = antbot) or openHuman ($1 = openhuman), is turned off: it would
-# otherwise keep relaunching the old program beside Mirrin. mirrin retires
-# it itself (service.RetireLegacy), moving the keys its definition holds
-# into the secrets file first, so the definition is never deleted here: it
-# may be the only copy of those keys. Only stopping it isn't advised: its
-# definition starts it again at the next login, and until that is gone the
-# twin's home stays in its old folder.
-old_service_note() {
-  case "$1" in
-    antbot) who="AntBot (Mirrin's name before)" ;; # rename:keep
-    *) who="openHuman (Mirrin's first name)" ;;
-  esac
-  if [ "$OS" = darwin ]; then
-    old=$HOME/Library/LaunchAgents/$1.plist
-    [ -f "$old" ] || launchctl print "gui/$uid/$1" >/dev/null 2>&1 || return 0
-  else
-    old=$HOME/.config/systemd/user/$1.service
-    [ -f "$old" ] || systemctl --user cat "$1.service" >/dev/null 2>&1 || return 0
-  fi
-  say "$who is still set up as a service and restarts itself whenever it stops."
-  say "Run \`mirrin service install\` to turn it off for good (it keeps the keys in $old first) and run Mirrin in the background in its place. Stopping it alone isn't enough: it starts again at your next login."
-}
-
-# service_note says how to put a running Mirrin service on the new version,
-# and how a service from before the rename is turned off.
+# service_note says how to put a running Mirrin service on the new version.
 service_note() {
   uid=$(id -u)
   if [ "$OS" = darwin ]; then
@@ -339,27 +303,6 @@ service_note() {
       esac
     fi
   fi
-  for name in antbot openhuman; do # rename:keep
-    old_service_note "$name"
-  done
-}
-
-# old_install_note points out the program and app from before the rename,
-# which stay: a service from then may still run them. Only a program that
-# answers as AntBot did ("antbot v0.3.0" or "antbot dev") counts; another
-# product has the same name.
-old_install_note() {
-  old=$(command -v antbot 2>/dev/null || true) # rename:keep
-  case "$old" in /?*) ;; *) old= ;; esac
-  if [ -n "$old" ] && "$old" version </dev/null 2>/dev/null | head -n 1 | grep -Eq '^antbot (v|dev)'; then # rename:keep
-    say "note: the old AntBot program is still at $old. Mirrin doesn't use it; once \`mirrin service install\` has moved the background service to Mirrin, you can delete it." # rename:keep
-  fi
-  [ "$OS" = darwin ] || return 0
-  for app in /Applications/AntBot.app "$HOME/Applications/AntBot.app"; do # rename:keep
-    if [ -d "$app" ] && [ "$(plutil -extract CFBundleIdentifier raw -o - "$app/Contents/Info.plist" 2>/dev/null || true)" = com.antbot.mavrk ]; then # rename:keep
-      say "note: $app is the old AntBot app. Mirrin.app takes its place; once \`mirrin service install\` has moved the background service to Mirrin, you can move it to the Trash." # rename:keep
-    fi
-  done
 }
 
 install_app() {
@@ -463,7 +406,6 @@ Pick a newer release from $RELEASES, or build from source: $FROM_SOURCE"
     say "note: another mirrin at $found comes first on your PATH; remove it or put $DEST ahead of it."
   fi
   service_note
-  old_install_note
   say ""
   say "Next:"
   say "  export ANTHROPIC_API_KEY=...   # or OPENAI_API_KEY / GEMINI_API_KEY, or just have Ollama running"

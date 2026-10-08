@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,6 +24,7 @@ import (
 	"github.com/MavrkAI/Mirrin/internal/cloud/cloudtest"
 	"github.com/MavrkAI/Mirrin/internal/config"
 	"github.com/MavrkAI/Mirrin/internal/daemon"
+	"github.com/MavrkAI/Mirrin/internal/jev"
 	"github.com/MavrkAI/Mirrin/internal/relay"
 )
 
@@ -44,9 +46,11 @@ func TestDefaultDaemonSendsNothingToCloud(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
 		config func(*config.Config)
+		jevKey bool // a TypeSafe key exported, with Jev never switched on
 	}{
-		{"default config", func(*config.Config) {}},
-		{"cloud api configured but never linked", func(c *config.Config) { c.Cloud.API = cloud.DefaultAPI }},
+		{"default config", func(*config.Config) {}, false},
+		{"cloud api configured but never linked", func(c *config.Config) { c.Cloud.API = cloud.DefaultAPI }, false},
+		{"jev key exported but not enabled", func(*config.Config) {}, true},
 	} {
 		for _, day := range []struct {
 			name string
@@ -58,9 +62,17 @@ func TestDefaultDaemonSendsNothingToCloud(t *testing.T) {
 			t.Run(tc.name+", "+day.name, func(t *testing.T) {
 				cfg, model := hermeticDefaultConfig(t)
 				tc.config(cfg)
+				var jevCalls *atomic.Int32
+				if tc.jevKey {
+					t.Setenv("TYPESAFE_API_KEY", "ts-exported-but-not-enabled")
+					jevCalls = serveJev(t)
+				}
 				g := watchEgress(t)
 				day.live(t, cfg, model)
 				g.check(t)
+				if jevCalls != nil && jevCalls.Load() != 0 {
+					t.Errorf("%d requests to TypeSafe with Jev never switched on", jevCalls.Load())
+				}
 				if _, err := os.Stat(filepath.Join(cfg.DataDir, "cloud")); !errors.Is(err, fs.ErrNotExist) {
 					t.Errorf("the default config left data/cloud behind: %v", err)
 				}
@@ -80,6 +92,26 @@ const (
 	testRelay = "r1.relay.mirrin.invalid"
 	modelHost = "model.invalid"
 )
+
+// serveJev answers TypeSafe's host in memory and counts the requests.
+func serveJev(t *testing.T) *atomic.Int32 {
+	var n atomic.Int32
+	u, _ := url.Parse(jev.DefaultURL)
+	guard.serve(t, u.Host, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		n.Add(1)
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+	return &n
+}
+
+// The guard sees the Jev client's requests too, so the case above counts.
+func TestGuardSeesJev(t *testing.T) {
+	calls := serveJev(t)
+	_, err := jev.New("k").Ask(t.Context(), "x", map[string]jev.Question{"q": jev.Noul{Instructions: "q?"}})
+	if calls.Load() != 1 || err == nil {
+		t.Fatalf("%d requests seen; %v", calls.Load(), err)
+	}
+}
 
 // The guard is not blind: the cloud client's requests go through it.
 func TestGuardSeesTheCloudClient(t *testing.T) {

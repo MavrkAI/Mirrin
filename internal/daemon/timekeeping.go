@@ -29,8 +29,10 @@ func (d *Daemon) keepTime() {
 		return c.User.Timezone
 	})
 	d.beat.OnZone = d.zoneMoved
+	d.beat.Quiet = d.quietNow // the travel welcome's offer waits out quiet hours
 	d.agent.Location = d.beat.Location
 	d.agent.Tools().Register(d.modelTools()...)
+	d.agent.Tools().Register(d.briefingTools()...) // the first hello's offer (briefing_offer.go)
 	d.restorePause()
 }
 

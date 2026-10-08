@@ -1,7 +1,7 @@
 // Package httpsig signs and verifies Mirrin Cloud API requests with HTTP
 // Message Signatures (RFC 9421). The profile is fixed: Ed25519 over @method,
 // @target-uri and content-digest (RFC 9530, sha-256), with created, expires
-// (created+300 s), a 16-byte nonce, keyid and tag "antbot-cloud-v1". The
+// (created+300 s), a 16-byte nonce, keyid and tag "mirrin-cloud-v1". The
 // server checks the clock with a skew allowance and refuses a nonce it has
 // seen. It uses the standard library only.
 //
@@ -30,7 +30,7 @@ import (
 const (
 	// Tag marks Mirrin Cloud signatures, so other signatures on the same
 	// request are ignored.
-	Tag = "antbot-cloud-v1"
+	Tag = "mirrin-cloud-v1"
 	// Label is the dictionary key Sign uses. Verify finds signatures by Tag.
 	Label = "sig1"
 	// Lifetime is expires minus created. Verify refuses anything longer.
@@ -41,7 +41,7 @@ const (
 var covered = []string{"@method", "@target-uri", "content-digest"}
 
 var (
-	// ErrUnsigned means there is no antbot-cloud-v1 signature.
+	// ErrUnsigned means there is no mirrin-cloud-v1 signature.
 	ErrUnsigned = errors.New("httpsig: request is not signed")
 	// ErrSignature means the signature is malformed, off-profile or wrong.
 	ErrSignature = errors.New("httpsig: bad signature")
@@ -104,7 +104,7 @@ func Sign(r *http.Request, keyID string, priv ed25519.PrivateKey, now time.Time)
 	return nil
 }
 
-// Verify checks r's antbot-cloud-v1 signature and returns its key id. lookup
+// Verify checks r's mirrin-cloud-v1 signature and returns its key id. lookup
 // maps a key id to a public key; it should fail for unknown or revoked keys.
 // now is when the request arrived, and skew the clock allowance either side
 // (300 s for the control plane). seen is required: the nonce is recorded

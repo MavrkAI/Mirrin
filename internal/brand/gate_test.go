@@ -60,39 +60,15 @@ func gitGrep(t *testing.T, root string, args ...string) []match {
 
 type match struct{ file, line, text string }
 
-// keptWhole are the tracked files that may name AntBot anywhere: history,
-// this package (the old names' one home), data that is signed or pinned,
-// and the tests that prove a Mirrin and an AntBot-era install both work. A
-// folder ends in /; the rest are path.Match patterns.
+// keptWhole are the tracked files that may name the old products anywhere:
+// private history that is never published, this package, and the backup
+// test vectors, which were derived under the old backup salt. A folder ends
+// in /; the rest are path.Match patterns.
 var keptWhole = []string{
-	"CHANGELOG.md",          // released entries are history
-	"docs/launch/name-*.md", // the search behind the name: history, never published
-	"docs/dev/",             // history, never published
+	"docs/dev/",    // history, never published
+	"docs/launch/", // the search behind the name: history, never published
 	"internal/brand/",
-	"registry/index.json",                   // minisign-signed: the maintainer re-signs it
-	"internal/backup/testdata/vectors.json", // golden vectors, derived under antbot-backup-v1
-	"internal/cloud/testdata/mentions/",     // proves the Cloud-pitch guard still catches AntBot Cloud
-
-	// Tests with AntBot-era fixtures beside the current ones.
-	"internal/service/*_test.go",
-	"cmd/mirrin/update_test.go",
-	"cmd/mirrin/uninstall_test.go",
-	"cmd/mirrin-relay/main_test.go",
-	"internal/api/auth_test.go",
-	"internal/api/pwa/sw_test.js",
-	"internal/api/sharedkey_test.go",
-	"internal/identity/*_test.go",
-	"internal/backup/*_test.go",
-	"internal/entitle/*_test.go",
-	"internal/config/home_test.go",
-	"internal/config/home_isolation_test.go",
-	"internal/homelock/homelock_test.go",
-	"internal/daemon/servicename_test.go",
-	"internal/protocols/packs_test.go",
-	"internal/skills/system/own_files_test.go",
-	"packaging/docker/entrypoint_test.go",
-	"scripts/scripts_test.go",
-	"scripts/releasecheck/main_test.go",
+	"internal/backup/testdata/vectors.json",
 }
 
 func isKeptWhole(file string) bool {
@@ -107,85 +83,39 @@ func isKeptWhole(file string) bool {
 	return false
 }
 
-// keptSpellings are the old name's spellings that never change, because
-// they are bytes on the wire, in signatures and encrypted backups, or names
-// of files and browser storage on users' machines (frozen_test.go pins
-// each one where it is defined). The branch the work happens on isn't one:
-// what is built but not released is "in the next release".
-var keptSpellings = regexp.MustCompile(`antbot\.lock|\.antbot-pack\.json|antbot\.tunnel\.v\d+|antbot-relay-tunnel-v1|EXPORTER-antbot-tunnel|` +
-	`antbot-(backup|handover|backup-namespace|recover|cloud|approval|enrol)-v1|antbot dev key|"aud":"antbot"|aud is not antbot|` +
-	`(?i:antbot-stepup|antbot-notice)|ANTBOT01|antbot\.(name|theme|noted\.seen|left\.seen|character)\b|antbot-(install-ticket|last-seen)\b`)
+// keptSpellings are the backup values that still carry the old name, because
+// existing backups and their recovery depend on them (frozen_test.go pins
+// each one where it is defined).
+var keptSpellings = regexp.MustCompile(`antbot-(backup|handover|backup-namespace|recover)-v1|AntBot Backups`)
 
-var reOldName = regexp.MustCompile(`(?i)antbot`)
+var reOldName = regexp.MustCompile(`(?i)antbot|openhuman`)
 
-// namesOldProduct reports whether a line of a tracked file names AntBot
-// other than where that is kept on purpose: a file kept whole, a rename:keep
-// line or a kept spelling.
+// namesOldProduct reports whether a line of a tracked file names AntBot or
+// openHuman other than in a file kept whole or a kept backup value.
 func namesOldProduct(file, text string) bool {
-	if isKeptWhole(file) || strings.Contains(text, "rename:keep") {
+	if isKeptWhole(file) {
 		return false
 	}
 	return reOldName.MatchString(keptSpellings.ReplaceAllString(text, ""))
 }
 
-// oldNameLines is how many lines of each other tracked file may name AntBot,
-// not counting rename:keep lines and kept spellings: code and docs that
-// explain what happens to an AntBot-era install. A file not listed may name
-// it nowhere.
+// oldNameLines is how many other lines of a file may name the old products:
+// tests of the kept backup values, and the test that checks the site never
+// mentions them. A file not listed may name them nowhere.
 var oldNameLines = map[string]int{
-	"AGENTS.md":                            1,
-	"ARCHITECTURE.md":                      2,
-	"Makefile":                             1,
-	"README.md":                            1,
-	"cmd/mirrin-relay/main.go":             1,
-	"cmd/mirrin/uninstall.go":              9,
-	"cmd/mirrin/update.go":                 2,
-	"docs/backup-format.md":                1,
-	"docs/cloud-design.md":                 4,
-	"docs/maintainers-release.md":          4, // the private MavrkAI/AntBot repository stays
-	"docs/reach.md":                        1,
-	"docs/relay-selfhost.md":               8,
-	"docs/threat-model.md":                 1,
-	"install.ps1":                          3,
-	"install.sh":                           3,
-	"internal/api/auth.go":                 2,
-	"internal/backup/restore.go":           4,
-	"internal/backup/target_folder.go":     1,
-	"internal/config/home.go":              7,
-	"internal/config/home_rebase.go":       2,
-	"internal/config/secrets.go":           1,
-	"internal/config/service.go":           3,
-	"internal/daemon/daemon.go":            2,
-	"internal/homelock/homelock.go":        1,
-	"internal/identity/settings.go":        3,
-	"internal/reach/byod.go":               1,
-	"internal/service/desktop.go":          1,
-	"internal/service/foreign.go":          1,
-	"internal/service/legacy.go":           3,
-	"internal/service/logs.go":             1,
-	"internal/service/service.go":          6,
-	"internal/service/rehome.go":           4,
-	"internal/service/startup.go":          7,
-	"internal/service/startup_windows.go":  2,
-	"internal/skills/system/sensitive.go":  2,
-	"packaging/docker/Dockerfile":          2,
-	"packaging/docker/entrypoint.sh":       2,
-	"packaging/relay/mirrin-relay.service": 6,
-	"packaging/windows/mirrin.iss":         11,
-	"scripts/build-app.sh":                 1,
-	"site/README.md":                       3,
-	"site/site_test.go":                    3, // checks the old name is gone from the pages
+	"internal/backup/phrase_test.go": 1, // the vectors' "antbot" key
+	"site/site_test.go":              1,
 }
 
-// TestOldNameStaysOut keeps AntBot's name out of the tracked files, except
-// where it is kept on purpose. A branch started before the rename and merged
-// after it would otherwise bring back os.Getenv("ANTBOT_…") reads, ~/.antbot
-// paths and AntBot in text people read, which compile and pass their own
-// tests while being quietly wrong.
+// TestOldNameStaysOut keeps the old products' names out of the tracked
+// files, except for the backup values kept on purpose. A branch started
+// before the rename and merged after it would otherwise bring back old
+// settings, homes and names in text people read, which compile and pass
+// their own tests while being quietly wrong.
 func TestOldNameStaysOut(t *testing.T) {
 	root := repoRoot(t)
 	lines := map[string][]string{}
-	for _, m := range gitGrep(t, root, "-i", "-e", "antbot") {
+	for _, m := range gitGrep(t, root, "-i", "-E", "-e", "antbot|openhuman") {
 		if !namesOldProduct(m.file, m.text) {
 			continue
 		}
@@ -198,10 +128,7 @@ func TestOldNameStaysOut(t *testing.T) {
 	sort.Strings(files)
 	for _, f := range files {
 		if n, allowed := len(lines[f]), oldNameLines[f]; n > allowed {
-			t.Errorf("%s names AntBot on %d lines, %d allowed:\n\t%s\n"+
-				"Read an old environment variable, home or service name through package brand. "+
-				"A line that must say AntBot (a migration, a message about the old install) gets a rename:keep comment, "+
-				"or raise the file's count in internal/brand/gate_test.go.",
+			t.Errorf("%s names an old product on %d lines, %d allowed:\n\t%s\nName Mirrin instead.",
 				f, n, allowed, strings.Join(lines[f], "\n\t"))
 		}
 	}
@@ -212,26 +139,23 @@ func TestOldNameStaysOut(t *testing.T) {
 	}
 	for _, f := range bytes.Split(out, []byte{0}) {
 		if name := string(f); reOldName.MatchString(name) && !isKeptWhole(name) {
-			t.Errorf("%s is named after AntBot; name it after Mirrin", name)
+			t.Errorf("%s is named after an old product; name it after Mirrin", name)
 		}
 	}
 }
 
-// TestNoHalfRenamedSpellings catches what a blind AntBot → Mirrin
-// replacement makes of the kept spellings (mirrin.lock, mirrin-backup-v1),
-// the branch name, the Homebrew class and the domain Mirrin doesn't use.
+// TestNoHalfRenamedSpellings catches what a blind replacement makes of the
+// kept backup values, the branch name and the domains Mirrin doesn't use.
 func TestNoHalfRenamedSpellings(t *testing.T) {
 	root := repoRoot(t)
-	pattern := `mirrin-next|mirrin\.lock|\.mirrin-pack\.json|mirrin\.dev([^a-z0-9]|$)|` +
-		`mirrin-(backup|handover|backup-namespace|recover|approval|enrol|cloud)-v1|mirrin\.tunnel\.v1|mirrin-relay-tunnel-v1|` +
-		`EXPORTER-mirrin|mirrin dev key|class Antbot|aud is not mirrin|mirrin\.ai([^a-z0-9]|$)`
+	pattern := `mirrin-next|mirrin\.dev([^a-z0-9]|$)|mirrin-(backup|handover|backup-namespace|recover)-v1|mirrin\.ai([^a-z0-9]|$)`
 	for _, m := range gitGrep(t, root, "-i", "-E", "-e", pattern, "--", ":!internal/brand/gate_test.go") {
-		t.Errorf("%s:%s: %s\nThis spelling is the old one's on purpose (see frozen_test.go), or not Mirrin's (the domain is mirrin.app).", m.file, m.line, strings.TrimSpace(m.text))
+		t.Errorf("%s:%s: %s\nThis value keeps the old spelling on purpose (see frozen_test.go), or isn't Mirrin's (the domain is mirrin.app).", m.file, m.line, strings.TrimSpace(m.text))
 	}
 }
 
-// The gate isn't blind: what a pre-rename branch would bring back is caught,
-// and only the spellings kept on purpose pass.
+// The gate isn't blind: an old name coming back is caught, and only the
+// backup values kept on purpose pass.
 func TestGateCatchesTheOldName(t *testing.T) {
 	for _, c := range []struct {
 		file, text string
@@ -239,18 +163,17 @@ func TestGateCatchesTheOldName(t *testing.T) {
 	}{
 		{"internal/daemon/x.go", `if os.Getenv("ANTBOT_DEBUG") != "" {`, true},
 		{"internal/daemon/x.go", `home := filepath.Join(user, ".antbot")`, true},
+		{"internal/daemon/x.go", `home := filepath.Join(user, ".openhuman")`, true},
 		{"internal/api/x.html", `<h1>Welcome to AntBot</h1>`, true},
-		{"internal/tlsmgr/x.go", `os.CreateTemp(dir, ".antbot-next-key-*")`, true},
-		{"internal/daemon/x.go", `lock := filepath.Join(data, "antbot.lock") // ok, and ANTBOT_HOME too`, true},
-		{"internal/daemon/x.go", `lock := filepath.Join(data, "antbot.lock")`, false},
-		{"internal/daemon/x.go", `legacy := ".antbot" // rename:keep`, false},
-		{"internal/relay/wire/wire.go", `Subprotocol = "antbot.tunnel.v1"`, false},
-		{"internal/api/pwa/client_test.js", `assert.equal(again.headers['antbot-stepup'],'su_abc')`, false},
-		{"internal/api/ui.html", `localStorage.getItem('antbot.theme')`, false},
+		{"internal/daemon/x.go", `legacy := ".antbot" // rename:keep`, true},
+		{"internal/relay/wire/wire.go", `Subprotocol = "antbot.tunnel.v1"`, true},
+		{"internal/api/ui.html", `localStorage.getItem('antbot.theme')`, true},
+		{"CHANGELOG.md", "AntBot can now ...", true},
 		{"README.md", "built on antbot-next, ships in the next release", true},
-		{"CHANGELOG.md", "AntBot can now ...", false},
-		{"internal/service/service_test.go", `writeFile(t, p, "Label antbot")`, false},
-		{"internal/brand/brand.go", `LegacyNames = []string{"antbot", "openhuman"}`, false},
+		{"internal/backup/keys.go", `const kdfSalt = "antbot-backup-v1"`, false},
+		{"internal/backup/target_folder.go", `legacyICloudFolder = "AntBot Backups"`, false},
+		{"docs/dev/backlog.md", "AntBot's old notes", false},
+		{"internal/brand/brand.go", `// Mirrin was called AntBot`, false},
 	} {
 		if got := namesOldProduct(c.file, c.text); got != c.want {
 			t.Errorf("namesOldProduct(%s, %s) = %v, want %v", c.file, c.text, got, c.want)

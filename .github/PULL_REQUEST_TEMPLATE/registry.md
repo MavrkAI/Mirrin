@@ -28,7 +28,7 @@
 - [ ] No prompt tells the twin to approve things, skip approvals, follow instructions it reads, install packs, create protocols or tools, or keep anything from the owner
 - [ ] Scheduled protocols run no more often than they need to and reply `NOTHING_TO_REPORT` when there's nothing to say
 - [ ] No credentials or personal data in any prompt, var default or persona
-- [ ] No symbolic links (`find . -type l` prints nothing) and no `.antbot-pack.json`
+- [ ] No symbolic links (`find . -type l` prints nothing) and no `.mirrin-pack.json`
 - [ ] A `LICENSE` file, and a README that says what each protocol does, when it runs, what it needs and which vars to set
 
 <!-- Reviewers: clone the pack at the listed commit and read every file, using "What reviewers check" in docs/protocols/registry.md. For a new version, read `git diff <old> <new>` in full. -->

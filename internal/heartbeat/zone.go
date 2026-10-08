@@ -163,6 +163,7 @@ func (h *Heartbeat) followZone(ctx context.Context) {
 	h.zoneLogged = cur
 	h.mu.Unlock()
 	if cur == known {
+		h.offerAfterQuiet(ctx, cur)
 		return
 	}
 	if known == "" { // the first look ever: nothing to compare with
@@ -181,6 +182,7 @@ func (h *Heartbeat) followZone(ctx context.Context) {
 		return // no chat to tell yet; a channel may still be connecting
 	}
 	var text string
+	var offered func() // travelpeople.go: an offer the notice carries, kept once it's out
 	if c.pinned {
 		// Said once per zone the system moves to: the owner chose this.
 		if told, _ := h.store.Get(ctx, zoneToldKey); told == cur || cur == c.loc.String() {
@@ -195,6 +197,12 @@ func (h *Heartbeat) followZone(ctx context.Context) {
 			text = fmt.Sprintf("%s is on %s time now; reminders and routines follow it.", capitalize(machine()), place(cur))
 		}
 		text += h.keptMoments(ctx, owner, c.loc)
+		if isCity(cur) {
+			var offer string
+			offer, offered = h.knownHere(ctx, known, cur)
+			offer, offered = h.waitOutQuiet(cur, offer, offered)
+			text += offer
+		}
 	}
 	if err := h.sendWithin(ctx, owner, text); err != nil {
 		h.log.Warn("time zone change not told; will try again", "err", err)
@@ -202,6 +210,9 @@ func (h *Heartbeat) followZone(ctx context.Context) {
 		h.zoneRetry = h.now().Add(zoneRetryWait)
 		h.mu.Unlock()
 		return
+	}
+	if offered != nil {
+		offered()
 	}
 	h.zoneTold(ctx, cur, c.pinned)
 }

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mirrin</title>
-<script>try{const t=localStorage.getItem("antbot.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch{}</script>
+<script>try{const t=localStorage.getItem("mirrin.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch{}</script>
 <style>
 /* Dark or light, with the OS or the toggle in the header (a wall screen can be
    pinned dark so it never glares). Every colour used for words reads at WCAG
@@ -308,6 +308,20 @@ body.paused:not(.offline) .orb .eye .lid{animation:none;opacity:1}
 .line .noted .undo:hover,.line .noted a:hover{color:var(--fg)}
 .line .noted a{color:var(--accent)}
 .line .noted .where{display:block}
+/* a noted date's "Remind me on the 11th?" (datereminder.go) */
+.line .noted .remind{border:0;background:none;padding:.2rem 0;min-height:0;color:var(--accent);font-size:var(--t-sm)}
+.line .noted .remind:hover{color:var(--fg)}
+/* why: what a reply drew on, with a Forget beside each (on this computer) */
+.line .why{position:absolute;top:0;right:4rem;min-height:24px;padding:.2rem .55rem;font-size:var(--t-xs);border-radius:var(--r-sm);color:var(--muted);background:transparent;border:1px solid var(--line2);opacity:0;transition:opacity .15s}
+.line .why:hover,.line .why[aria-expanded="true"]{color:var(--fg);border-color:var(--edge)}
+.line:hover .why,.line:focus-within .why,.line .why[aria-expanded="true"]{opacity:1}
+@media (hover:none){.line .why{opacity:1}}
+.line .whybox{font-size:var(--t-sm);line-height:1.5;color:var(--muted);overflow-wrap:anywhere}
+.line .whybox p{margin:.2rem 0}
+.line .whybox ul{margin:0;padding:0;list-style:none}
+.line .whybox li{margin:.15rem 0;color:var(--fg)}
+.line .whybox .forget{border:0;background:none;padding:.2rem 0;min-height:0;color:var(--accent);font-size:var(--t-sm)}
+.line .whybox .forget:hover{color:var(--fg)}
 @keyframes blink{to{opacity:0}}
 .txmore{display:none}
 /* the reply on its way: three dots where its words will be (on a phone; on a wide screen the character shows it) */
@@ -463,6 +477,8 @@ body.sheeton{overflow:hidden}
 #bsAutoHint{padding-left:calc(1rem + var(--s2));font-size:var(--t-xs);color:var(--muted)}
 #bsAutoHint:empty{display:none}
 .bsacts{display:flex;gap:var(--s2);margin-left:auto}
+/* "Remember this page": with a page to keep, never beside an OK it needs */
+#bSheet[data-mode=approval] #bRemember{display:none}
 /* an OK it needs: the request beside what it will submit, Approve and Deny in view as the picture scrolls */
 #bSheet[data-mode=approval] #bsBody{display:grid;grid-template-columns:minmax(16rem,24rem) minmax(0,1fr);gap:var(--s4);align-items:start;align-content:start;overflow:auto}
 #bsNeed{position:sticky;top:0;grid-column:1;grid-row:1;border-radius:var(--r-lg)}
@@ -568,6 +584,7 @@ body.sheeton{overflow:hidden}
 .left .tipacts button:hover{border-color:var(--edge)}
 
 .portrait{margin:0;color:var(--muted);font-size:var(--t-sm);line-height:1.5;max-width:72ch}
+.pdraft{margin:0 0 var(--s2);font-size:var(--t-xs);color:var(--muted)}
 .pnew{margin:var(--s2) 0 0;font-size:var(--t-sm);line-height:1.5;max-width:72ch}
 .pacts{display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s3)}
 .pacts button{min-height:2rem;padding:0 .9rem;font-size:var(--t-xs);background:transparent;color:var(--fg);border:1px solid var(--line2)}
@@ -771,6 +788,18 @@ body.orbmode:has(#bubble.show .need) #widget .orbdock{width:64px;height:64px}
 body.orbmode:has(#bubble.show .need) #widget .orb{--size:52px}
 body.orbmode.idle.collapsed #widget .orb{transform:scale(.3);opacity:.9}
 body.orbmode.idle.collapsed #widget .orbdock:hover .orb{transform:scale(.62);opacity:1}
+/* a long answer said out loud, in full (#show) */
+#showCard{width:min(40rem,calc(100vw - 2rem));max-height:min(80vh,calc(100dvh - 2rem));padding:0;border:1px solid var(--line2);border-radius:var(--r-lg);background:var(--sheet);color:var(--fg)}
+#showCard[open]{display:flex;flex-direction:column}
+#showCard::backdrop{background:var(--scrim)}
+#showCard h2{margin:0;padding:var(--s5) var(--s5) var(--s2);font-size:var(--t-lg)}
+#showCard .tx{margin:0;padding:0 var(--s5);overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;line-height:1.5}
+#showCard .hint{margin:var(--s3) var(--s5) 0;color:var(--muted);font-size:var(--t-sm)}
+#showCard .btns{display:flex;gap:var(--s2);justify-content:flex-end;padding:var(--s4) var(--s5) var(--s5)}
+#showCard .btns button{font:inherit;padding:.5rem 1rem;border-radius:var(--r-md);border:1px solid var(--line2);background:var(--card2);color:var(--fg);cursor:pointer}
+#showCard .btns button:hover{border-color:var(--edge)}
+#showCard .btns button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+body.orbmode #showCard{display:none}
 </style>
 </head>
 <body class="idle">
@@ -817,7 +846,7 @@ body.orbmode.idle.collapsed #widget .orbdock:hover .orb{transform:scale(.62);opa
         <p class="bnote" id="bState"></p></section>
       <section id="secToday" aria-labelledby="hToday"><h2 id="hToday" tabindex="-1">Today</h2><div id="day"></div></section>
       <section id="secTasks" aria-labelledby="hTasks" hidden><h2 id="hTasks" tabindex="-1">Tasks <span class="n" id="taskN" hidden>0</span></h2><div class="tasks" id="tasks"></div></section>
-      <section id="secPortrait" aria-labelledby="hPortrait" hidden><h2 id="hPortrait" tabindex="-1">How Mirrin sees you</h2><p class="portrait" id="portrait"></p>
+      <section id="secPortrait" aria-labelledby="hPortrait" hidden><h2 id="hPortrait" tabindex="-1">How Mirrin sees you</h2><p class="pdraft" id="portraitDraft" hidden><b>First draft</b> · Tell me what I got wrong.</p><p class="portrait" id="portrait"></p>
         <p class="pnew" id="portraitNew" hidden></p>
         <div class="pacts" id="portraitActs" hidden><button type="button" class="right">That's you</button><button type="button" class="notquite">Not quite</button></div></section>
     </div>
@@ -840,10 +869,11 @@ body.orbmode.idle.collapsed #widget .orbdock:hover .orb{transform:scale(.62);opa
     </div>
     <div class="bsfoot"><p class="bnote" id="bNote" role="status"></p>
       <div id="bsAutoRow" hidden><label><input type="checkbox" id="bsAuto" aria-describedby="bsAutoHint"><span id="bsAutoText"></span></label><small id="bsAutoHint"></small></div>
-      <div class="bsacts"><button type="button" id="bTake" hidden>Take over</button></div></div>
+      <div class="bsacts"><button type="button" id="bTake" hidden>Take over</button><button type="button" id="bRemember">Remember this page</button></div></div>
   </div>
 </div>
 <div id="lightbox" role="dialog" aria-modal="true" aria-label="Screenshot of what will be submitted" tabindex="-1"><img id="lightboxImg" alt="What will be submitted"><button type="button" class="close" id="lightboxClose">Close</button></div>
+<dialog id="showCard" aria-labelledby="showTitle" aria-describedby="showHint"><h2 id="showTitle">Here it is in full</h2><div class="tx" id="showText" tabindex="0"></div><p class="hint" id="showHint">To hear it instead, say “just read it to me”.</p><div class="btns"><button type="button" id="showCopy">Copy</button><button type="button" id="showClose">Close</button></div></dialog>
 <div id="toasts" role="status" aria-live="polite"></div>
 <div id="sr" class="sr" aria-live="polite"></div>
 <div id="conn" role="status" hidden></div>
@@ -909,8 +939,8 @@ let VOICE_READY = false; // voice is set up on this computer (offerVoiceSetup)
 try { if (String(new Intl.DateTimeFormat(undefined, {hour: 'numeric'}).resolvedOptions().hourCycle || '').startsWith('h1')) document.body.classList.add('h12'); } catch {}
 
 /* ---------- the twin's name, remembered so even a signed-out screen can use it ---------- */
-function nm(){ if (data && data.name) return data.name; try { const n = localStorage.getItem('antbot.name'); if (n) return n; } catch {} const m = document.querySelector('meta[name="mirrin-name"]'); return (m && m.content) || 'Mirrin'; }
-function rememberName(n){ try { if (n) localStorage.setItem('antbot.name', n); } catch {} }
+function nm(){ if (data && data.name) return data.name; try { const n = localStorage.getItem('mirrin.name'); if (n) return n; } catch {} const m = document.querySelector('meta[name="mirrin-name"]'); return (m && m.content) || 'Mirrin'; }
+function rememberName(n){ try { if (n) localStorage.setItem('mirrin.name', n); } catch {} }
 // Changes an element's text only when it differs, so a live region speaks once.
 const setText = (el, t) => { if (el && el.textContent !== t) el.textContent = t; };
 
@@ -1126,11 +1156,11 @@ function pushLine(kind, text, at, extra){
 // its reply, one row per reply: "Noted: … · Undo", or "Noted 3 things". The
 // first time on this device it also says where everything it remembers is.
 // Not in the orb widget.
-const NOTED_SEEN = 'antbot.noted.seen';
+const NOTED_SEEN = 'mirrin.noted.seen';
 let notedWait = null; // kept before the reply's first line arrived (voice, another screen)
 function remembered(ev){
   if (ORB || !ev.text || !ev.data || ev.data.id == null) return;
-  const f = {id: ev.data.id, text: String(ev.text)}, last = LINES[LINES.length - 1];
+  const f = {id: ev.data.id, text: String(ev.text), remind: ev.data.remind ? String(ev.data.remind) : ''}, last = LINES[LINES.length - 1];
   if (last && last.kind === 'said') { addNoted(last, f); renderTranscript(); }
   else (notedWait = notedWait || []).push(f); // it goes under the reply when that comes
 }
@@ -1154,6 +1184,7 @@ function notedRow(l){
       const b = document.createElement('button'); b.type = 'button'; b.className = 'undo'; b.textContent = 'Undo'; b.setAttribute('aria-label', 'Undo: forget this');
       b.onclick = e => { e.stopPropagation(); undoNoted(l, f); };
       r.append(' · ', b);
+      remindButton(l, f, r);
     }
   }
   if (n.first) { const w = document.createElement('span'); w.className = 'where'; w.textContent = 'Everything I remember is under Your twin… in the menu, and stays on this Mac.'; r.appendChild(w); }
@@ -1164,12 +1195,100 @@ async function undoNoted(l, f){
   n.busy = true;
   try {
     const res = await fetch('/screen/facts/' + encodeURIComponent(f.id) + '/undo', {method: 'POST'});
-    if (res.ok) n.said = 'Forgotten.';
+    if (res.ok) forgotten(f.id);
     else if (res.status === 409) n.said = (await problem(res)).text;
     else toast("Couldn't undo that: " + (await problem(res)).text, 'fail');
   } catch { toast(offlineText(), 'fail'); }
   n.busy = false; renderTranscript();
   if (n.said) announce(n.said);
+}
+// forgotten marks a fact gone wherever it shows, by Undo or by Why?'s
+// Forget: no Undo, Remind or Forget is left for it.
+function forgotten(id){
+  for (const o of LINES) {
+    for (const g of (o.why && o.why.facts) || []) if (g.id === id) g.gone = true;
+    const n = o.noted;
+    if (!n || n.said || !n.facts.some(x => x.id === id)) continue;
+    n.facts = n.facts.filter(x => x.id !== id);
+    if (!n.facts.length) n.said = 'Forgotten.';
+  }
+}
+/* ---------- a noted date: "Remind me on the 11th?" ---------- */
+// A fact with a date still to come offers, beside its Undo, the reminder
+// the twin would set for it (the event's "remind"). One tap sets it, with no
+// model turn; then the row says when it will come.
+function remindButton(l, f, r){
+  if (f.reminded) { r.append(' · ' + f.reminded); return; }
+  if (!f.remind) return;
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'remind'; b.textContent = f.remind;
+  b.onclick = e => { e.stopPropagation(); remindNoted(l, f); };
+  r.append(' · ', b);
+}
+async function remindNoted(l, f){
+  if (f.busy) return;
+  f.busy = true;
+  try {
+    const res = await fetch('/screen/facts/' + encodeURIComponent(f.id) + '/remind', {method: 'POST'});
+    if (res.ok) f.reminded = String((await res.json()).said || 'Done.');
+    else if (res.status === 409) { f.remind = ''; toast((await problem(res)).text, 'fail'); }
+    else toast("Couldn't set that reminder: " + (await problem(res)).text, 'fail');
+  } catch { toast(offlineText(), 'fail'); }
+  f.busy = false; renderTranscript();
+  if (f.reminded) announce(f.reminded);
+}
+/* ---------- why: what a reply drew on, with a Forget beside each ---------- */
+// Why? beside a reply lists the facts it drew on (POST /memory/why), each
+// with a Forget (the memory page's own DELETE). Only on this computer, as
+// the memory page is: what the twin knows about its owner opens here alone.
+function whyHere(){ return !ORB && ON_THIS_COMPUTER && may('admin'); }
+function whyButton(l){
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'why'; b.textContent = 'Why?';
+  b.setAttribute('aria-label', 'Why did you say that?'); b.setAttribute('aria-expanded', String(!!l.why));
+  b.onclick = e => { e.stopPropagation(); if (l.why) { l.why = null; renderTranscript(); } else openWhy(l); };
+  return b;
+}
+async function openWhy(l){
+  const w = l.why = {busy: true}; renderTranscript();
+  let r = null, j = null, fail = '';
+  try {
+    r = await fetch('/memory/why', {method: 'POST', headers: {'Content-Type': 'application/json', Accept: 'application/json'}, body: JSON.stringify({reply: l.text})});
+    if (r.ok) j = await r.json(); else fail = (await problem(r)).text;
+  } catch { fail = r ? "That didn't come back right. Try again in a moment." : offlineText(); }
+  if (l.why !== w) return; // closed while it looked
+  if (fail || !j) { l.why = null; renderTranscript(); toast("Couldn't say why just now. " + fail, 'fail'); return; }
+  l.why = {lead: String(j.lead || ''), facts: (Array.isArray(j.facts) ? j.facts : []).map(f => ({id: f.id, text: String(f.content || '')}))};
+  renderTranscript(); announce(l.why.lead);
+}
+function whyBox(l){
+  const w = l.why, box = document.createElement('div'); box.className = 'whybox';
+  if (w.busy) { box.textContent = 'Looking…'; return box; }
+  const p = document.createElement('p'); p.textContent = w.lead; box.appendChild(p);
+  if (!w.facts.length) return box;
+  const ul = document.createElement('ul');
+  for (const f of w.facts) {
+    const li = document.createElement('li');
+    if (f.gone) li.textContent = 'Forgotten.';
+    else {
+      li.append(f.text.trim() + ' · ');
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'forget'; b.textContent = 'Forget';
+      b.setAttribute('aria-label', 'Forget: ' + f.text);
+      b.onclick = e => { e.stopPropagation(); forgetWhy(f); };
+      li.appendChild(b);
+    }
+    ul.appendChild(li);
+  }
+  box.appendChild(ul);
+  return box;
+}
+async function forgetWhy(f){
+  if (f.busy) return;
+  f.busy = true;
+  try {
+    const r = await fetch('/memory/facts/' + encodeURIComponent(f.id), {method: 'DELETE', headers: {Accept: 'application/json'}});
+    if (r.ok) { f.gone = true; forgotten(f.id); announce('Forgotten.'); }
+    else toast("Couldn't forget that just now. Try again, or say “forget that”.", 'fail');
+  } catch { toast(offlineText(), 'fail'); }
+  f.busy = false; renderTranscript();
 }
 // shownLines are the lines already on screen once: re-rendering (every
 // streamed word does) must not replay their fade-in, or the conversation
@@ -1183,7 +1302,7 @@ function renderTranscript(focusMore){
   const a = document.activeElement;
   if (!keep && a && a !== box && box.contains(a)) {
     const line = a.closest('.line');
-    keep = {i: [...box.children].indexOf(line), cls: ['copy', 'more', 'retry', 'undo'].find(c => a.classList.contains(c)) || ''};
+    keep = {i: [...box.children].indexOf(line), cls: ['copy', 'more', 'retry', 'undo', 'why'].find(c => a.classList.contains(c)) || ''};
   }
   box.innerHTML = '';
   let latest = -1;
@@ -1212,6 +1331,7 @@ function renderTranscript(focusMore){
       el.appendChild(n);
     }
     if (l.noted && l.kind === 'said') el.appendChild(notedRow(l)); // what it just kept, with an Undo
+    if (l.kind === 'said' && l.text && !l.live && !l.err && whyHere()) { el.appendChild(whyButton(l)); if (l.why) el.appendChild(whyBox(l)); }
     // a long older line opens in place when tapped, or with its More button
     el.querySelector('.tx').onclick = () => { if (!hasSelection()) { l.full = !l.full; renderTranscript(); } };
     box.appendChild(el);
@@ -1253,7 +1373,29 @@ function renderTranscript(focusMore){
 // connected: "What's on tomorrow?" only once there is a calendar to read.
 function suggestions(d){
   const cal = !!(d && d.connected && d.connected.calendar);
-  return [cal ? {t: "What's on tomorrow?"} : {t: 'Remind me in 10 minutes to stretch'}, {t: 'What can you do for me?'}, {t: 'Remind me to…', seed: 'Remind me to '}];
+  return [...tryThis(d), cal ? {t: "What's on tomorrow?"} : {t: 'Remind me in 10 minutes to stretch'}, {t: 'What can you do for me?'}, {t: 'Remind me to…', seed: 'Remind me to '}];
+}
+/* Try this: a web chore to watch, on a public practice form that needs no
+   sign-in, offered while the twin has a browser and until it's been tried
+   once on this device. It asks to stop before sending, so the twin stops at
+   the button (and Submit always asks with a screenshot anyway); asked here,
+   the page comes up to watch as the twin starts on it. */
+const TRIED_KEY = 'mirrin.tried';
+let triedMem = null; // what was tried, if storage can't keep it
+function tried(){
+  if (triedMem) return triedMem;
+  try { const v = JSON.parse(localStorage.getItem(TRIED_KEY) || '[]'); if (Array.isArray(v)) return new Set(v); } catch {}
+  return new Set();
+}
+function markTried(id){
+  const t = tried(); t.add(id); triedMem = t;
+  try { localStorage.setItem(TRIED_KEY, JSON.stringify([...t])); } catch {}
+}
+const CHORE_ASK = 'Fill in the practice pizza order form at https://httpbin.org/forms/post for a medium margherita with extra cheese, and stop before submitting it.';
+function tryThis(d){
+  const out = [];
+  if (d && d.connected && d.connected.browser && !tried().has('chore')) out.push({t: 'Fill in a practice form, and stop before sending', ask: CHORE_ASK, id: 'chore'});
+  return out;
 }
 function renderSuggest(){
   const sg = $('#suggest'); if (!sg || ORB) return;
@@ -1263,7 +1405,7 @@ function renderSuggest(){
   sg.dataset.k = key; sg.innerHTML = '';
   for (const c of list) {
     const b = document.createElement('button'); b.type = 'button'; b.textContent = c.t;
-    b.onclick = () => { if (c.seed) showComposer(c.seed); else if (!streaming) send(c.t); };
+    b.onclick = () => { if (c.seed) showComposer(c.seed); else if (!streaming) { if (c.id) markTried(c.id); send(c.ask || c.t); } };
     sg.appendChild(b);
   }
 }
@@ -1914,7 +2056,7 @@ function renderTasks(d){
 // it is, when, and what it said. One this device has shown already folds to
 // "Morning briefing · 7:00 AM" and opens when tapped; a briefing stays open
 // until noon. No count, no badge, no dot. A wall screen gets titles only.
-const LEFT_SEEN = 'antbot.left.seen', leftOpened = new Set(), leftThanked = new Set();
+const LEFT_SEEN = 'mirrin.left.seen', leftOpened = new Set(), leftThanked = new Set();
 let tipsOffOn = ''; // the tip card whose "No more tips" turned the tips off
 function leftSeen(){ try { const s = JSON.parse(localStorage.getItem(LEFT_SEEN) || '[]'); return Array.isArray(s) ? s : []; } catch { return []; } }
 function markLeftSeen(seen, ids){ try { localStorage.setItem(LEFT_SEEN, JSON.stringify([...seen.filter(id => !ids.includes(id)), ...ids].slice(-50))); } catch {} }
@@ -2016,6 +2158,7 @@ function renderPortrait(d){
   const nw = $('#portraitNew');
   nw.textContent = d.portrait_new ? `New this week: ${d.portrait_new}` : '';
   nw.hidden = !d.portrait_new;
+  $('#portraitDraft').hidden = !d.portrait || !d.portrait_draft; // a first draft, from what you've said so far (firstdraft.go)
   $('#portraitActs').hidden = !d.portrait || !!d.portrait_ack || (!!d.portrait_at && portraitAcked === d.portrait_at) || !may('chat');
 }
 $('#portraitActs .right').onclick = async e => {
@@ -2084,7 +2227,7 @@ async function load(){
   if (changed('tasks', [data.tasks, boardTasks(data.tasks, now).map(t => t.id), doneToday(data.tasks, now).map(t => t.id)])) keepFocus($('#tasks'), () => renderTasks(data));
   if (changed('left', [data.left_for_you, new Date().getHours() < 12])) renderLeft(data); // a briefing folds at noon
   if (changed('rest', [data.name, data.health, data.problems, data.ambient_after_seconds, data.recent])) renderRest(data);
-  if (changed('portrait', [data.portrait, data.portrait_new, data.portrait_at, data.portrait_ack, CAN])) renderPortrait(data);
+  if (changed('portrait', [data.portrait, data.portrait_new, data.portrait_at, data.portrait_ack, data.portrait_draft, CAN])) renderPortrait(data);
   if (changed('paused', [data.paused, data.paused_until, data.standing_by, needsCount()])) applyState(shownState);
   renderQuiet(data);
   if (data.state && data.state !== busState && !streaming) setState(data.state);
@@ -2099,7 +2242,7 @@ function connect(){
   if (es) es.close();
   es = null;
   if (unpaired) return;
-  const src = es = new EventSource('/events');
+  const src = es = new EventSource(ORB ? '/events?view=orb' : '/events'); // the orb isn't a screen: a page handed over opens one (browserlive.go)
   src.onopen = () => { esDelay = 1000; setOnline(true); };
   src.onmessage = (m) => {
     let ev; try { ev = JSON.parse(m.data); } catch { return; }
@@ -2127,8 +2270,10 @@ function connect(){
         if (ev.text === 'handover') handedOver((ev.data || {}).ask);
         else if (ev.text === 'active') { if (ORB) { orbBrowsing = true; renderStateWords(); } else browserPoll(); }
         break;
+      case 'portrait': load(); break; // a first draft just written: show it now
       case 'remembered': remembered(ev); break; // under the reply: "Noted: … · Undo"
       case 'react': react(ev.text); break; // a nod, a tilt or a glance, for something that happened
+      case 'show': showAnswer(ev.text); break; // a long answer said out loud, in full (#show)
     }
   };
   // EventSource can't see the status: ask /screen whether the daemon is down or this device was signed out.
@@ -2750,6 +2895,17 @@ $('#bTake').onclick = async () => {
   }
   renderSheet(); renderBrowserPanel(); renderChip();
 };
+// "Remember this page": the page kept in memory, as saying so would (browser_remember.go)
+$('#bRemember').onclick = async () => {
+  const b = $('#bRemember'); if (b.disabled) return;
+  sheet.touched = true; b.disabled = true;
+  try {
+    const r = await fetch('/browser/remember', {method: 'POST', headers: {Accept: 'application/json'}});
+    if (r.ok) bFlash((await r.json()).message, 8000);
+    else toast((await problem(r)).text, 'fail');
+  } catch { toast(offlineText(), 'fail'); }
+  b.disabled = false;
+};
 function bPoint(e){ const r = $('#bImg').getBoundingClientRect(); return {x: (e.clientX - r.left) / r.width * bFrame.w, y: (e.clientY - r.top) / r.height * bFrame.h}; }
 // The twin took the page back (409): say so, and show where things are.
 function bSend(ev){
@@ -2814,8 +2970,8 @@ function renderThemeBtn(){
 }
 $('#themeBtn').onclick = () => {
   const next = {auto: 'light', light: 'dark', dark: 'auto'}[themeMode()] || 'auto';
-  if (next === 'auto') { delete document.documentElement.dataset.theme; try { localStorage.removeItem('antbot.theme'); } catch {} }
-  else { document.documentElement.dataset.theme = next; try { localStorage.setItem('antbot.theme', next); } catch {} }
+  if (next === 'auto') { delete document.documentElement.dataset.theme; try { localStorage.removeItem('mirrin.theme'); } catch {} }
+  else { document.documentElement.dataset.theme = next; try { localStorage.setItem('mirrin.theme', next); } catch {} }
   renderThemeBtn();
 };
 renderThemeBtn();
@@ -2888,10 +3044,10 @@ function useCharacter(id){
     o.classList.toggle('nyra', want === 'nyra'); o.classList.toggle('maverick', want === 'maverick');
   }
   shownChar = want;
-  try { localStorage.setItem('antbot.character', want); } catch {}
+  try { localStorage.setItem('mirrin.character', want); } catch {}
 }
 // the last character shown, at once: Nyra or Mirrin don't flash in as a penguin
-useCharacter((() => { try { return localStorage.getItem('antbot.character'); } catch { return ''; } })());
+useCharacter((() => { try { return localStorage.getItem('mirrin.character'); } catch { return ''; } })());
 /* ---------- night: on the clock, the character dozes in the corner ---------- */
 // Quiet hours (data.quiet_hours) are local HH:MM-HH:MM that may run past
 // midnight, read as the twin reads them (push.InQuiet): "off", or what
@@ -2974,6 +3130,38 @@ async function offerVoiceSetup(){
   } catch {}
 }
 offerVoiceSetup();
+
+/* ---------- a long answer said out loud, in full ---------- */
+// The twin said the gist and "It's all on your screen" (voice spoken.go):
+// the whole answer comes up here, over the screen, to read or copy. A screen
+// opened for it (/ui#show) asks /show what it was.
+function showAnswer(text){
+  if (ORB || unpaired || !text) return;
+  const d = $('#showCard');
+  $('#showText').textContent = String(text).replace(/\*\*|__/g, '').replace(/^[ \t]*#{1,6}[ \t]*/gm, '');
+  $('#showCopy').textContent = 'Copy';
+  if (!d.open) { try { d.showModal(); } catch { d.setAttribute('open', ''); } }
+  $('#showText').scrollTop = 0;
+  $('#showClose').focus();
+}
+async function showFromHash(){
+  if (location.hash !== '#show') return;
+  try { history.replaceState(history.state, '', location.pathname + location.search); } catch {}
+  if (ORB) return;
+  try {
+    const r = await fetch('/show', {cache: 'no-store', headers: {Accept: 'application/json'}});
+    if (r.ok) { const j = await r.json(); showAnswer(j.text); }
+  } catch {}
+}
+$('#showClose').onclick = () => $('#showCard').close();
+$('#showCopy').onclick = async () => {
+  try { await navigator.clipboard.writeText($('#showText').textContent); $('#showCopy').textContent = 'Copied'; }
+  catch { $('#showCopy').textContent = 'Select the text to copy it'; }
+};
+// keys in the card are the card's, not a new message behind it
+$('#showCard').addEventListener('keydown', e => { if (e.key !== 'Escape') e.stopPropagation(); });
+addEventListener('hashchange', showFromHash);
+showFromHash();
 </script>
 </body>
 </html>

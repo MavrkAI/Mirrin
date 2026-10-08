@@ -37,6 +37,8 @@
 /* after a restore: the twin, its welcome beside it */
 .back{display:flex;align-items:center;gap:16px}.back .pic{flex:none}#backline{color:#f1f4f5}
 #todo{padding-left:1.2em;line-height:1.6}#report,#notes{white-space:pre-wrap}summary{cursor:pointer;color:#c9d3da}
+/* the first hello's offer of a morning briefing */
+.offer{background:#141a20;border:1px solid #43515c;border-radius:16px;padding:14px 16px;margin:16px 0 0}.offer p{margin:0 0 8px;color:#f1f4f5}.offer select{width:auto}
 </style>
 <h1>A twin of your own.</h1><p>Give your twin a way to think, choose your names, and say hello. No Mirrin account needed.</p>
 <div id="notice" role="status" aria-live="polite"></div>
@@ -45,7 +47,9 @@
 <p><a id="keylink" href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer">Get an API key</a> from your provider. Their usage charges may apply.</p>
 <label for="key">API key</label><input id="key" type="password" autocomplete="off" required><small>Your key stays on this computer. Checking it sends a short hello to your provider.</small><button>Check and save key</button></form></section>
 <section id="names" hidden><h2 id="castq">2. Who would you like?</h2><form id="nameform"><div class="cast" id="cast" role="radiogroup" aria-labelledby="castq"></div><label for="you">Your name</label><input id="you" maxlength="100" autocomplete="given-name" required><label for="twin">Your twin's name</label><input id="twin" value="Mirrin" maxlength="100" required><label for="address" id="addressq">How should Mirrin address you?</label><select id="address"><option value="name">By my name</option><option value="sir" selected>Sir</option><option value="ma'am">Ma'am</option></select><label><input id="speak" type="checkbox" checked> <span id="speaklabel">Say it out loud (your Mac's standard voice until voice is set up)</span></label><button>Meet my twin</button></form><p class="later">You can change any of this later from the menu bar.</p></section>
-<section id="hello" hidden><h2>Hello.</h2><div id="reply" role="status" aria-live="polite"></div><p id="fine" hidden></p><button id="retry" hidden>Try hello again</button><p><a href="/ui?hello=1">Keep talking →</a></p></section>
+<section id="cal" hidden><h2 id="calq">Connect your calendar?</h2><p>Then I can tell you what's left of your day when I say hello. It's optional, and you can do it later from Accounts.</p>
+<button type="button" id="calconnect">Connect Google Calendar</button><p id="calnext" hidden>Sign in on the <a href="/accounts" target="mirrin-accounts">Accounts page</a> (it opens in its own window), then come back here.</p><p id="calok" role="status" hidden>Your calendar is connected.</p><button type="button" id="calgo">Skip for now</button></section>
+<section id="hello" hidden><h2>Hello.</h2><div id="reply" role="status" aria-live="polite"></div><p id="fine" hidden></p><button id="retry" hidden>Try hello again</button><div id="offer" class="offer" role="group" aria-labelledby="offerq" hidden><p id="offerq"></p><label for="offertime">At</label><select id="offertime"><option>06:00</option><option>06:30</option><option selected>07:00</option><option>07:30</option><option>08:00</option><option>08:30</option><option>09:00</option></select> <button type="button" id="offeryes">Yes</button><button type="button" id="offerlater">Later</button></div><p id="offersaid" role="status" hidden></p><p><a href="/ui?hello=1">Keep talking →</a></p></section>
 <section id="reach" hidden><h2 id="reachq">3. When you're away from this Mac, where should I reach you?</h2><div class="ways" role="group" aria-labelledby="reachq">
 <button type="button" class="way" data-way="telegram" aria-pressed="false" hidden><b>Telegram</b><small>Messages arrive like any chat and buzz your phone.</small></button>
 <button type="button" class="way" data-way="whatsapp" aria-pressed="false" hidden><b>WhatsApp</b><small>Links as one of your WhatsApp devices through an unofficial client. Some people prefer Telegram.</small></button>
@@ -78,10 +82,31 @@ async function hello(){
  if(event==='error')throw data;
  if(event==='done'){done=data;$('reply').textContent=data}
  if(event==='spoke')spoke=true;
+ if(event==='offer')offer(data);
  }}if(done===null)throw {};
  if(speak&&!spoke&&'speechSynthesis'in window)speechSynthesis.speak(new SpeechSynthesisUtterance(done)) }catch(e){if(!words)$('reply').textContent='';notice(e);$('retry').hidden=false}
  reach();
 }
+// Before the first hello, and always skippable: connect a calendar so the
+// hello can say what's left of the day. Connecting happens on the Accounts
+// page in a window of its own; coming back here checks again. Skipped when
+// a calendar is connected already, or this twin can't say.
+async function calendarStep(){
+ let c=null;try{c=await call('calendar')}catch(e){}
+ if(!c||c.connected)return hello();
+ $('cal').hidden=false;$('calconnect').focus();
+}
+async function calCheck(){try{if((await call('calendar')).connected){$('calok').hidden=false;$('calnext').hidden=true;$('calconnect').hidden=true;$('calgo').textContent='Continue'}}catch(e){}}
+$('calconnect').onclick=()=>{$('calnext').hidden=false;window.open('/accounts','mirrin-accounts')};
+window.addEventListener('focus',()=>{if(!$('cal').hidden)calCheck()});
+$('calgo').onclick=()=>{$('cal').hidden=true;hello()};
+// After the first hello, once: "Want me to brief you at seven tomorrow?"
+// Yes sets it up at the time chosen; Later sets up nothing.
+let offered=false;
+function offer(o){if(offered||!o||!o.text)return;$('offerq').textContent=o.text;if(o.time)$('offertime').value=o.time;$('offer').hidden=false}
+async function answer(button,yes){await busy(button,async()=>{const r=await call('briefing',{Yes:yes,Time:$('offertime').value});offered=true;$('offer').hidden=true;$('offersaid').textContent=r.text;$('offersaid').hidden=false})}
+$('offeryes').onclick=()=>answer($('offeryes'),true);
+$('offerlater').onclick=()=>answer($('offerlater'),false);
 // Step 3, after the hello and always skippable: where to reach you away
 // from this Mac. Telegram and WhatsApp (in builds that have it) open the
 // Channels page, which pairs them, in a window of its own; Done never waits
@@ -128,7 +153,7 @@ function drawCast(){
 $('twin').addEventListener('input',()=>{named=$('twin').value.trim()!=='';ask()});
 $('address').addEventListener('change',()=>{addressed=true});
 (async()=>{try{const v=await fetch('/voice/setup/status',{headers:{Accept:'application/json'}});canSpeak=v.ok&&!!(await v.json()).ready}catch(e){}if(canSpeak)$('speaklabel').textContent='Say it out loud';try{cast=await call('personas');drawCast()}catch(e){notice(e)}})();
-$('nameform').onsubmit=e=>{e.preventDefault();busy(e.submitter,async()=>{const p=chosen();await call('names',{You:$('you').value,Twin:$('twin').value,Persona:p?p.id:'',Address:$('address').value});$('names').hidden=true;await hello()})};
+$('nameform').onsubmit=e=>{e.preventDefault();busy(e.submitter,async()=>{const p=chosen();await call('names',{You:$('you').value,Twin:$('twin').value,Persona:p?p.id:'',Address:$('address').value});$('names').hidden=true;await calendarStep()})};
 $('retry').onclick=hello;
 $('moving').onclick=()=>busy($('moving'),async()=>{$('restore').hidden=false;const sources=await call('restore/sources');$('source').replaceChildren();for(const source of sources){const option=document.createElement('option');option.value=source.Kind;option.textContent=source.Label;option.dataset.path=source.Path||'';$('source').append(option)}$('source').onchange=()=>{$('folder').value=$('source').selectedOptions[0].dataset.path;$('folder').disabled=$('source').value==='icloud'};$('source').onchange()});
 $('restoreform').onsubmit=e=>{e.preventDefault();busy(e.submitter,async()=>{const words=$('words').value;$('words').value='';const result=await call('restore',{Kind:$('source').value,Path:$('folder').value,Phrase:words,Confirm:$('confirm').checked});$('notice').textContent=result.message;$('restoreform').hidden=true})};

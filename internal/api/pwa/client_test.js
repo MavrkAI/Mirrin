@@ -44,7 +44,7 @@ function client(path='/ui',standalone=false, navigator={}) {
  assert.equal(decided.status,200);assert.equal((await decided.json()).reply,'Booked.');
  assert.deepEqual([...asked.challenge],[1,2,3]);assert.deepEqual([...asked.allowCredentials[0].id],[4,5,6]);assert.equal(asked.userVerification,'required');
  assert.equal(phone.calls.length,2);const again=phone.calls[1];
- assert.equal(again.method,'POST');assert.equal(again.url,'https://twin.test/approvals/12/approve');assert.equal(again.headers['antbot-stepup'],'su_abc');assert.equal(again.headers.accept,'application/json');
+ assert.equal(again.method,'POST');assert.equal(again.url,'https://twin.test/approvals/12/approve');assert.equal(again.headers['mirrin-stepup'],'su_abc');assert.equal(again.headers.accept,'application/json');
  assert.deepEqual(JSON.parse(again.body),{id:'AQID',rawId:'AQID',type:'public-key',authenticatorAttachment:'platform',clientExtensionResults:{},response:{clientDataJSON:'e30',authenticatorData:'CQ',signature:'CA',userHandle:'Bw'}});
  // Face ID cancelled: nothing is sent again.
 

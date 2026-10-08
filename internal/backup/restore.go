@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -17,7 +16,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/MavrkAI/Mirrin/internal/brand"
 	"github.com/MavrkAI/Mirrin/internal/config"
 	devreg "github.com/MavrkAI/Mirrin/internal/devices"
 	"github.com/MavrkAI/Mirrin/internal/identity"
@@ -353,19 +351,12 @@ func Future(m Manifest, now time.Time) bool { return m.ExportedAt.After(now.Add(
 
 // standbyKeys are the standby recipients this machine holds or held: in
 // the data folder of the twin in home, and in the twins earlier restores
-// here moved aside. Beside the default home, the twin from before the
-// rename (~/.antbot, left behind) and its asides count too: they were this
-// machine's. A snapshot naming one of them came from this machine.
+// here moved aside. A snapshot naming one of them came from this machine.
 func standbyKeys(home, dataDir string) []string {
 	dirs := []string{dataDir}
-	for i, name := range homeNames(home) {
-		if i > 0 {
-			dirs = append(dirs, filepath.Join(filepath.Dir(home), name, "data"))
-		}
-		asides, _ := filepath.Glob(filepath.Join(filepath.Dir(home), name) + ".before-restore-*")
-		for _, a := range asides {
-			dirs = append(dirs, filepath.Join(a, "data"))
-		}
+	asides, _ := filepath.Glob(home + ".before-restore-*")
+	for _, a := range asides {
+		dirs = append(dirs, filepath.Join(a, "data"))
 	}
 	var out []string
 	for _, d := range dirs {
@@ -377,36 +368,15 @@ func standbyKeys(home, dataDir string) []string {
 }
 
 // clearStaleStaging removes the decrypted copies restores that died midway
-// left beside home (.<home>.restore-…, and AntBot's beside its home), once
-// they are an hour old: a restore running now has a newer one.
+// left beside home (.<home>.restore-…), once they are an hour old: a
+// restore running now has a newer one.
 func clearStaleStaging(home string) {
-	for _, name := range homeNames(home) {
-		old, _ := filepath.Glob(filepath.Join(filepath.Dir(home), "."+name+".restore-*"))
-		for _, d := range old {
-			if st, err := os.Lstat(d); err == nil && st.IsDir() && time.Since(st.ModTime()) > time.Hour {
-				_ = os.RemoveAll(d)
-			}
+	old, _ := filepath.Glob(filepath.Join(filepath.Dir(home), "."+filepath.Base(home)+".restore-*"))
+	for _, d := range old {
+		if st, err := os.Lstat(d); err == nil && st.IsDir() && time.Since(st.ModTime()) > time.Hour {
+			_ = os.RemoveAll(d)
 		}
 	}
-}
-
-// isDefaultHome is config.IsDefaultHome; tests point it at a temporary home.
-var isDefaultHome = config.IsDefaultHome
-
-// homeNames are the names of home and of the homes beside it that held this
-// machine's twin before: home's own first, then, for the default home, the
-// homes from before the rename (.antbot, .openhuman).
-func homeNames(home string) []string {
-	names := []string{filepath.Base(home)}
-	if !isDefaultHome(home) {
-		return names
-	}
-	for _, n := range append([]string{brand.HomeDirName}, brand.LegacyHomeDirs...) {
-		if !slices.Contains(names, n) {
-			names = append(names, n)
-		}
-	}
-	return names
 }
 
 // leaveHandover leaves the marker where the machine the snapshot came from
@@ -579,15 +549,6 @@ func relocateConfig(path string, m Manifest, home, stage string) ([]string, erro
 	if m.Zone != "" && layeredVersionOf(root) < config.LayeredVersion {
 		if tz := find(root, []string{"user", "timezone"}); tz != nil && tz.Kind == yaml.ScalarNode && strings.TrimSpace(tz.Value) == m.Zone {
 			tz.Value, tz.Style, changed = "Local", 0, true
-		}
-	}
-	// A config from before the rename names the home as ~/.antbot (copied
-	// from the example config, say): that is this home now.
-	for _, d := range brand.LegacyHomeDirs {
-		for _, sep := range []string{"/", `\`} {
-			if config.RebasePaths(root, "~"+sep+d, home) {
-				changed = true
-			}
 		}
 	}
 	user, _ := os.UserHomeDir()

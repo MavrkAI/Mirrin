@@ -2,8 +2,7 @@
   'use strict';
   const nativeFetch = window.fetch.bind(window);
   const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-  // A page cached before the rename names the twin under the old meta name.
-  const twin = () => document.querySelector('meta[name="mirrin-name"],meta[name="antbot-name"]')?.content || 'your twin'; // rename:keep
+  const twin = () => document.querySelector('meta[name="mirrin-name"]')?.content || 'your twin';
   let installPrompt;
   addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; });
   function say(text) {
@@ -12,7 +11,7 @@
     el.textContent = text;
   }
   function saved(key, value) { try { if (value !== undefined) localStorage.setItem(key,value); return localStorage.getItem(key); } catch { return null; } }
-  function ticket(value) { try { if(value) sessionStorage.setItem('antbot-install-ticket',value); return sessionStorage.getItem('antbot-install-ticket'); } catch { return null; } }
+  function ticket(value) { try { if(value) sessionStorage.setItem('mirrin-install-ticket',value); return sessionStorage.getItem('mirrin-install-ticket'); } catch { return null; } }
   function manifest(t) {
     const iosSafari = (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(navigator.userAgent);
     if (!iosSafari) return;
@@ -57,7 +56,7 @@
     catch { say('Face ID didn’t finish, so nothing was approved. Try again.'); return false; }
     if (!cred) return false;
     const headers = new Headers(retry.headers);
-    headers.set('AntBot-Stepup', body.session);
+    headers.set('Mirrin-Stepup', body.session);
     headers.set('Content-Type', 'application/json');
     return nativeFetch(new Request(retry.url, {method: retry.method, headers, body: JSON.stringify(credentialJSON(cred)), credentials: 'same-origin'}));
   }
@@ -75,7 +74,7 @@
     let cred;
     try { cred = await navigator.credentials.create({publicKey: creationOptions(publicKey)}); }
     catch { say('Face ID setup didn’t finish. Try again.'); return false; }
-    const finish = await nativeFetch('/stepup/register/finish', {method: 'POST', headers: {'Content-Type': 'application/json', Accept: 'application/json', 'AntBot-Stepup': session}, body: JSON.stringify(credentialJSON(cred))});
+    const finish = await nativeFetch('/stepup/register/finish', {method: 'POST', headers: {'Content-Type': 'application/json', Accept: 'application/json', 'Mirrin-Stepup': session}, body: JSON.stringify(credentialJSON(cred))});
     if (!finish.ok) { say(await problemText(finish, 'Couldn’t set up Face ID. Try again.')); return false; }
     say('Face ID is set up. You can approve from this device now.');
     return true;
@@ -116,7 +115,7 @@
       const result=await response.clone().json();
       if(result.ticket) {ticket(result.ticket);manifest(result.ticket);}
     }
-    if (u.pathname === '/screen' && response.ok) saved('antbot-last-seen', String(Date.now()));
+    if (u.pathname === '/screen' && response.ok) saved('mirrin-last-seen', String(Date.now()));
     if (response.status === 428 && typeof window.mirrinPWA.stepUp === 'function') {
       const out = await window.mirrinPWA.stepUp(response.clone(), retry.clone());
       if (out && typeof out === 'object' && 'status' in out) return out;
@@ -150,7 +149,7 @@
       return;
     }
     if (document.title.endsWith(' is offline')) {
-      const seen=Number(saved('antbot-last-seen'));
+      const seen=Number(saved('mirrin-last-seen'));
       say('Can’t reach '+twin()+' — last seen '+(seen ? new Date(seen).toLocaleString() : 'not yet on this device')+'.');
     }
     function approval() {

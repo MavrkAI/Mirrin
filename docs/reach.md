@@ -74,8 +74,7 @@ mirrin reach use relay wss://relay.example.org/v1/tunnel --hostname twin.example
 ```
 
 It prints the line to add to the relay's `relay.yaml`, and the DNS records to
-publish for your name: A/AAAA (never a CNAME), a `_mirrin` TXT record (an
-`_antbot` one published before the rename can stay), and a CAA record that
+publish for your name: A/AAAA (never a CNAME), a `_mirrin` TXT record, and a CAA record that
 pins the name to this computer's own Let's Encrypt account and the
 TLS-ALPN-01 method. With that CAA record, nobody else can get a
 certificate for your name, whoever runs the relay. Options: `--acme

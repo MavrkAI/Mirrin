@@ -12,8 +12,6 @@
 #   MIRRIN_NO_MODIFY_PATH=1   leave PATH alone
 #   MIRRIN_REPO=owner/name    install from a fork
 #   MIRRIN_DOWNLOAD_URL=URL   where the releases live (a mirror)
-# The same settings named ANTBOT_..., from before Mirrin was renamed, still
-# work; the MIRRIN_ name wins when both are set.
 
 # Everything runs inside this block, so a download cut off halfway runs nothing,
 # and a failure never closes the window it was pasted into.
@@ -22,11 +20,9 @@
     $ProgressPreference = 'SilentlyContinue' # the progress bar slows Windows PowerShell downloads badly
     [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
-    # A setting by its name after MIRRIN_, or under its name from before the rename.
+    # A setting by its name after MIRRIN_.
     function Get-Setting([string]$name) {
-        $v = [Environment]::GetEnvironmentVariable("MIRRIN_$name")
-        if (-not $v) { $v = [Environment]::GetEnvironmentVariable("ANTBOT_$name") } # rename:keep
-        return $v
+        return [Environment]::GetEnvironmentVariable("MIRRIN_$name")
     }
 
     $repo = if (Get-Setting 'REPO') { Get-Setting 'REPO' } else { 'MavrkAI/Mirrin' }
@@ -63,8 +59,8 @@
     }
 
     # The newest release tag, from where releases/latest redirects (no API token, no rate limit).
-    # A renamed repository (AntBot's is now Mirrin's) first sends releases/latest to the new
-    # name's, on the same server; that is followed, a few times at most.
+    # A renamed repository first sends releases/latest to the new name's, on the
+    # same server; that is followed, a few times at most.
     function Get-LatestTag {
         $url = [Uri]"$releases/latest"
         for ($moves = 0; $moves -le 3; $moves++) {
@@ -192,13 +188,6 @@
                 $env:Path = "$env:Path;$dest"
                 Write-Host "added $dest to your PATH; new terminals pick it up."
             }
-        }
-        # AntBot, from before the rename, stays where it is: its sign-in entry may still start it.
-        $oldExe = Get-Command antbot.exe -ErrorAction SilentlyContinue | Select-Object -First 1 # rename:keep
-        $oldStartup = Join-Path ([Environment]::GetFolderPath('Startup')) 'AntBot.cmd' # rename:keep
-        if ($oldExe -or (Test-Path $oldStartup)) {
-            $where = if ($oldExe) { " ($($oldExe.Source))" } else { '' }
-            Write-Host "note: the old AntBot is still installed$where. Mirrin doesn't use it; once ``mirrin service install`` has replaced its sign-in entry, you can delete it." # rename:keep
         }
         Write-Host ''
         Write-Host 'Next:'

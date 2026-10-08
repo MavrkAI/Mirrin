@@ -188,6 +188,8 @@ func init() {
 		}
 		return nil
 	}})
+	// "Why did you say that?": which facts each reply drew on (why.go).
+	Register(Migration{Version: 6, Name: "reply-why", Up: migrateWhy})
 }
 
 // prepare checks memory.db and brings its schema up to date. Two processes

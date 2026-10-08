@@ -9,6 +9,7 @@ import (
 	"github.com/MavrkAI/Mirrin/internal/approvals"
 	"github.com/MavrkAI/Mirrin/internal/config"
 	"github.com/MavrkAI/Mirrin/internal/llm"
+	"github.com/MavrkAI/Mirrin/internal/memory"
 )
 
 // SetConfig swaps the configuration. Turns already under way finish with the
@@ -113,27 +114,31 @@ func (a *Agent) memoryBlock(ctx context.Context) string {
 	if a.root != nil && a.facts.ok && a.facts.version == v {
 		return a.facts.block
 	}
-	block, err := a.listFacts(ctx)
+	p, err := a.store.PickFacts(ctx, a.query, factBudget)
 	if err != nil {
 		return ""
 	}
+	block := factsBlock(p)
 	if a.root != nil { // only a turn's own copy; the live agent is shared
-		a.facts = factsCache{version: v, block: block, ok: true}
+		a.facts = factsCache{version: v, block: block, ok: true, matched: p.Matched, everything: p.Everything}
 	}
 	return block
 }
 
-// factsCache is a turn's memory block and the facts version it was made from.
+// factsCache is a turn's memory block and the facts version it was made from,
+// with which facts matched the message (for "Why?", why.go).
 type factsCache struct {
-	version int64
-	block   string
-	ok      bool
+	version    int64
+	block      string
+	ok         bool
+	matched    []int64
+	everything bool
 }
 
-func (a *Agent) listFacts(ctx context.Context) (string, error) {
-	facts, total, err := a.store.PromptFacts(ctx, a.query, factBudget)
-	if err != nil || len(facts) == 0 {
-		return "", err
+func factsBlock(p memory.Picked) string {
+	facts, total := p.Facts, p.Total
+	if len(facts) == 0 {
+		return ""
 	}
 	var b strings.Builder
 	b.WriteString("\nWhat you remember (id: subject: fact; higher ids are newer, and a newer fact wins over an older one it contradicts):\n")
@@ -143,7 +148,7 @@ func (a *Agent) listFacts(ctx context.Context) (string, error) {
 	if len(facts) < total {
 		fmt.Fprintf(&b, "(That is %d of the %d facts you hold: the ones that look related to this message, then the newest. Use recall to search the rest before saying you don't know something.)\n", len(facts), total)
 	}
-	return b.String(), nil
+	return b.String()
 }
 
 // factBudget is how much of the prompt remembered facts may take, in

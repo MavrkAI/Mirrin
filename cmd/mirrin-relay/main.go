@@ -22,7 +22,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/MavrkAI/Mirrin/internal/brand"
 	"github.com/MavrkAI/Mirrin/internal/entitle"
 	"github.com/MavrkAI/Mirrin/internal/relay/server"
 	"github.com/MavrkAI/Mirrin/internal/relay/wire"
@@ -73,11 +72,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 	return 0
 }
 
-// The relay's settings, and where a relay set up before the rename keeps them.
-const (
-	defaultConfig = "/etc/mirrin-relay/relay.yaml"
-	legacyConfig  = "/etc/antbot-relay/relay.yaml" // rename:keep
-)
+// defaultConfig is the relay's settings when --config doesn't name them.
+const defaultConfig = "/etc/mirrin-relay/relay.yaml"
 
 func configFlag(name string, args []string) (string, error) {
 	fs := flag.NewFlagSet(name, flag.ContinueOnError)
@@ -90,23 +86,9 @@ func configFlag(name string, args []string) (string, error) {
 		return "", fmt.Errorf("unexpected %q", fs.Arg(0))
 	}
 	if *path == "" {
-		return defaultConfigPath(fileExists), nil
+		return defaultConfig, nil
 	}
 	return *path, nil
-}
-
-// defaultConfigPath is the relay's settings when --config doesn't name
-// them: Mirrin's place, or AntBot's when only that one is there.
-func defaultConfigPath(exists func(string) bool) string {
-	if !exists(defaultConfig) && exists(legacyConfig) {
-		return legacyConfig
-	}
-	return defaultConfig
-}
-
-func fileExists(p string) bool {
-	st, err := os.Stat(p)
-	return err == nil && !st.IsDir()
 }
 
 func serve(args []string, stderr io.Writer) error {
@@ -119,7 +101,7 @@ func serve(args []string, stderr io.Writer) error {
 		return err
 	}
 	level := slog.LevelInfo
-	if brand.Env("RELAY_DEBUG") != "" {
+	if os.Getenv("MIRRIN_RELAY_DEBUG") != "" {
 		level = slog.LevelDebug
 	}
 	log := slog.New(slog.NewJSONHandler(stderr, &slog.HandlerOptions{Level: level}))

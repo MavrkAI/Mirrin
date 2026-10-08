@@ -12,7 +12,6 @@ import (
 
 	"github.com/kardianos/service"
 
-	"github.com/MavrkAI/Mirrin/internal/brand"
 	"github.com/MavrkAI/Mirrin/internal/config"
 )
 
@@ -63,9 +62,6 @@ func TestEnvCarriesNoSecrets(t *testing.T) {
 	if env["MIRRIN_HOME"] != home || env[config.ServiceEnv] != "1" {
 		t.Fatalf("MIRRIN_HOME = %q, want %q so the service finds this home on every OS (env %v)", env["MIRRIN_HOME"], home, env)
 	}
-	if _, ok := env["ANTBOT_HOME"]; ok {
-		t.Fatal("a new service is written with AntBot's variable")
-	}
 }
 
 func TestInstallKeepsSecretsStartsAndWaits(t *testing.T) {
@@ -73,10 +69,10 @@ func TestInstallKeepsSecretsStartsAndWaits(t *testing.T) {
 	t.Setenv("MIRRIN_HOME", home)
 	t.Setenv("OPENAI_API_KEY", "sk-openai")
 	t.Setenv("DISCORD_BOT_TOKEN", "")
-	writeFile(t, config.SecretsPathIn(home), "ANTBOT_S3_ACCESS_KEY_ID=\"kept\"\n")
+	writeFile(t, config.SecretsPathIn(home), "MIRRIN_S3_ACCESS_KEY_ID=\"kept\"\n")
 
 	// An older install wrote keys into its plist; the shell's value wins over it.
-	plist := filepath.Join(t.TempDir(), "openhuman.plist")
+	plist := filepath.Join(t.TempDir(), "mirrin.plist")
 	writeFile(t, plist, `<?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0"><dict>
 	<key>Disabled</key><false/>
@@ -85,26 +81,24 @@ func TestInstallKeepsSecretsStartsAndWaits(t *testing.T) {
 		<key>HOME</key><string>/Users/me</string>
 		<key>ANTHROPIC_API_KEY</key><string>sk-ant-&amp;old</string>
 		<key>OPENAI_API_KEY</key><string>sk-openai-stale</string>
-		<key>OPENHUMAN_EMAIL_PASSWORD</key><string>app-pass</string>
+		<key>MIRRIN_EMAIL_PASSWORD</key><string>app-pass</string>
 	</dict>
-	<key>Label</key><string>openhuman</string>
+	<key>Label</key><string>mirrin</string>
 </dict></plist>`)
-	// AntBot's unit, which the same install replaces. A key the secrets file
-	// already has under AntBot's name isn't overwritten.
-	antbotUnit := filepath.Join(t.TempDir(), "antbot.service")
-	writeFile(t, antbotUnit, "[Service]\nExecStart=/usr/bin/antbot run\nEnvironment=ANTBOT_S3_ACCESS_KEY_ID=stale\nEnvironment=ANTBOT_S3_SECRET_ACCESS_KEY=s3-secret\n")
+	// A systemd unit with keys too. A key the secrets file already has isn't
+	// overwritten.
+	unitFile := filepath.Join(t.TempDir(), "mirrin.service")
+	writeFile(t, unitFile, "[Service]\nExecStart=/usr/bin/mirrin run\nEnvironment=MIRRIN_S3_ACCESS_KEY_ID=stale\nEnvironment=MIRRIN_S3_SECRET_ACCESS_KEY=s3-secret\n")
 
 	svc := &fakeUnit{installed: true, running: true} // reinstall over an existing one
-	legacy := &fakeUnit{installed: true, running: true}
-	antbot := &fakeUnit{installed: true, running: true}
 	started := false
 	var out strings.Builder
 	in := installer{
-		svc: svc, legacy: map[string]unit{"openhuman": legacy, "antbot": antbot}, out: &out, wait: time.Second,
+		svc: svc, out: &out, wait: time.Second,
 		start:      func() error { started = true; return svc.Start() },
 		up:         func() bool { return started },
 		secretEnvs: []string{"OPENAI_API_KEY", "DISCORD_BOT_TOKEN"},
-		unitFiles:  []string{plist, antbotUnit},
+		unitFiles:  []string{plist, unitFile},
 	}
 	if err := in.run(); err != nil {
 		t.Fatalf("install: %v\n%s", err, out.String())
@@ -115,14 +109,6 @@ func TestInstallKeepsSecretsStartsAndWaits(t *testing.T) {
 	if got := strings.Join(svc.calls, ","); got != "stop,uninstall,install,start" {
 		t.Fatalf("existing service not replaced cleanly: %s", got)
 	}
-	if legacy.installed || legacy.running || antbot.installed || antbot.running {
-		t.Fatal("an old service was left running")
-	}
-	for _, want := range []string{"old AntBot background service", "old openHuman background service"} {
-		if !strings.Contains(out.String(), want) {
-			t.Errorf("output lacks %q:\n%s", want, out.String())
-		}
-	}
 	st, err := os.Stat(config.SecretsPath())
 	if err != nil || runtime.GOOS != "windows" && st.Mode().Perm() != 0o600 {
 		t.Fatalf("secrets file: %v %v", st, err)
@@ -131,7 +117,7 @@ func TestInstallKeepsSecretsStartsAndWaits(t *testing.T) {
 	want := map[string]string{
 		"OPENAI_API_KEY": "sk-openai", "ANTHROPIC_API_KEY": "sk-ant-&old",
 		"MIRRIN_EMAIL_PASSWORD": "app-pass", "MIRRIN_S3_SECRET_ACCESS_KEY": "s3-secret",
-		"ANTBOT_S3_ACCESS_KEY_ID": "kept", "MIRRIN_S3_ACCESS_KEY_ID": "",
+		"MIRRIN_S3_ACCESS_KEY_ID": "kept",
 	}
 	for k, v := range want {
 		if got[k] != v {
@@ -146,38 +132,6 @@ func TestInstallKeepsSecretsStartsAndWaits(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "running in the background") {
 		t.Fatalf("no success line:\n%s", out.String())
-	}
-}
-
-// A key the settings name under one name and the shell exports under
-// another (a moved config naming ANTBOT_EMAIL_PASSWORD with
-// MIRRIN_EMAIL_PASSWORD exported, or the other way round) is still saved
-// for the service, under the name the settings use, and a copy saved
-// earlier under the other name doesn't shadow it.
-func TestInstallKeepsAKeyExportedUnderAnotherName(t *testing.T) {
-	for _, c := range []struct{ named, exported string }{
-		{"ANTBOT_EMAIL_PASSWORD", "MIRRIN_EMAIL_PASSWORD"},
-		{"MIRRIN_S3_ACCESS_KEY_ID", "ANTBOT_S3_ACCESS_KEY_ID"},
-	} {
-		t.Run(c.named, func(t *testing.T) {
-			home := t.TempDir()
-			t.Setenv("MIRRIN_HOME", home)
-			for _, n := range brand.EnvAliases(c.named) {
-				t.Setenv(n, "")
-			}
-			writeFile(t, config.SecretsPathIn(home), c.exported+"=\"stale\"\n")
-			t.Setenv(c.exported, "fresh")
-			if err := (installer{out: io.Discard, secretEnvs: []string{c.named}}).keepSecrets(); err != nil {
-				t.Fatal(err)
-			}
-			if got, _ := config.ReadSecretsIn(home); got[c.named] != "fresh" {
-				t.Fatalf("saved %v, want %s=fresh", got, c.named)
-			}
-			t.Setenv(c.exported, "") // the service's own environment
-			if got := config.Secret(c.named); got != "fresh" {
-				t.Fatalf("the service reads %s = %q", c.named, got)
-			}
-		})
 	}
 }
 
@@ -272,7 +226,7 @@ func TestTidyUnitMovesKeysOutOfAnOldUnit(t *testing.T) {
 </dict>
 </plist>
 `
-	unit := "[Unit]\nDescription=Mirrin\n\n[Service]\nExecStart=/usr/bin/mirrin run\nEnvironment=HOME=/home/me\nEnvironment=MIRRIN_HOME=" + home + "\nEnvironment=ANTBOT_EMAIL_PASSWORD=app pass\nRestart=always\n\n[Install]\nWantedBy=default.target\n"
+	unit := "[Unit]\nDescription=Mirrin\n\n[Service]\nExecStart=/usr/bin/mirrin run\nEnvironment=HOME=/home/me\nEnvironment=MIRRIN_HOME=" + home + "\nEnvironment=MIRRIN_EMAIL_PASSWORD=app pass\nRestart=always\n\n[Install]\nWantedBy=default.target\n"
 	for _, c := range []struct{ name, body string }{{"mirrin.plist", plist}, {"mirrin.service", unit}} {
 		t.Run(c.name, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), c.name)
@@ -327,13 +281,13 @@ func TestTidyUnitMovesKeysOutOfAnOldUnit(t *testing.T) {
 		t.Fatal("a test's home rewrote the owner's service")
 	}
 
-	// A unit with AntBot's marker has one: it isn't rewritten on every start.
+	// A unit with the marker and no keys isn't rewritten on every start.
 	marked := filepath.Join(t.TempDir(), "mirrin.service")
-	writeFile(t, marked, "[Service]\nExecStart=/usr/bin/mirrin run\nEnvironment=ANTBOT_HOME="+home+"\nEnvironment=ANTBOT_SERVICE=1\n")
+	writeFile(t, marked, "[Service]\nExecStart=/usr/bin/mirrin run\nEnvironment=MIRRIN_HOME="+home+"\nEnvironment=MIRRIN_SERVICE=1\n")
 	before, _ = os.ReadFile(marked)
 	tidyUnit(marked, io.Discard)
 	if after, _ := os.ReadFile(marked); string(after) != string(before) {
-		t.Fatalf("a unit with AntBot's marker was rewritten:\n%s", after)
+		t.Fatalf("a unit with the marker was rewritten:\n%s", after)
 	}
 }
 
@@ -350,20 +304,15 @@ func TestOwnUnit(t *testing.T) {
 		want     bool
 	}{
 		{"same home", home, map[string]string{"MIRRIN_HOME": home}, true},
-		{"same home, named the way AntBot did", home, map[string]string{"ANTBOT_HOME": home}, true},
 		{"another profile's service", home, map[string]string{"MIRRIN_HOME": "/Users/someone-else/twin"}, false},
 		{"an older unit, default home", "", map[string]string{"HOME": "/Users/me"}, true},
 		{"an older unit, but this command uses another home", home, map[string]string{"HOME": "/Users/me"}, false},
-		// Every unit AntBot installed spells out its default home; it is the
-		// default home's, which is now ~/.mirrin.
-		{"AntBot's unit for the default home", "", map[string]string{"ANTBOT_HOME": filepath.Join(uh, ".antbot")}, true},
-		{"openHuman's unit for the default home", "", map[string]string{"OPENHUMAN_HOME": filepath.Join(uh, ".openhuman")}, true},
-		{"AntBot's unit, but this command uses another home", home, map[string]string{"ANTBOT_HOME": filepath.Join(uh, ".antbot")}, false},
+		// A unit that spells out the default home is the default home's.
+		{"a unit for the default home", "", map[string]string{"MIRRIN_HOME": filepath.Join(uh, ".mirrin")}, true},
+		{"a unit for the default home, but this command uses another home", home, map[string]string{"MIRRIN_HOME": filepath.Join(uh, ".mirrin")}, false},
 	}
 	for _, c := range cases {
 		t.Setenv("MIRRIN_HOME", c.procHome)
-		t.Setenv("ANTBOT_HOME", "")
-		t.Setenv("OPENHUMAN_HOME", "")
 		if got := ownUnit(c.unit); got != c.want {
 			t.Errorf("%s: ownUnit = %v", c.name, got)
 		}
@@ -371,8 +320,8 @@ func TestOwnUnit(t *testing.T) {
 }
 
 func TestUnitEnvReadsSystemd(t *testing.T) {
-	p := filepath.Join(t.TempDir(), "antbot.service")
-	writeFile(t, p, "[Service]\nExecStart=/usr/bin/antbot run\nEnvironment=HOME=/home/me\nEnvironment=\"GEMINI_API_KEY=abc=def\"\n")
+	p := filepath.Join(t.TempDir(), "mirrin.service")
+	writeFile(t, p, "[Service]\nExecStart=/usr/bin/mirrin run\nEnvironment=HOME=/home/me\nEnvironment=\"GEMINI_API_KEY=abc=def\"\n")
 	env := unitEnv(p)
 	if env["HOME"] != "/home/me" || env["GEMINI_API_KEY"] != "abc=def" {
 		t.Fatalf("env = %v", env)
@@ -381,12 +330,12 @@ func TestUnitEnvReadsSystemd(t *testing.T) {
 
 func TestUnitPath(t *testing.T) {
 	cases := []struct{ goos, want string }{
-		{"darwin", "/h/Library/LaunchAgents/openhuman.plist"},
-		{"linux", "/h/.config/systemd/user/openhuman.service"},
+		{"darwin", "/h/Library/LaunchAgents/mirrin.plist"},
+		{"linux", "/h/.config/systemd/user/mirrin.service"},
 		{"windows", ""},
 	}
 	for _, c := range cases {
-		if got := filepath.ToSlash(unitPath(c.goos, "/h", "openhuman")); got != c.want {
+		if got := filepath.ToSlash(unitPath(c.goos, "/h", "mirrin")); got != c.want {
 			t.Errorf("%s: %q, want %q", c.goos, got, c.want)
 		}
 	}

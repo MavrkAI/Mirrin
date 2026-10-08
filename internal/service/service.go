@@ -24,7 +24,6 @@ import (
 
 	"github.com/MavrkAI/Mirrin/internal/brand"
 	"github.com/MavrkAI/Mirrin/internal/config"
-	"github.com/MavrkAI/Mirrin/internal/homelock"
 	"github.com/MavrkAI/Mirrin/internal/llm"
 )
 
@@ -36,10 +35,6 @@ var Mode = "run"
 
 // Name is what launchd, systemd and Windows know the service as.
 const Name = brand.Name
-
-// legacyNames are the services the project installed under its old names
-// (AntBot's, then openHuman's).
-var legacyNames = brand.LegacyNames
 
 type program struct {
 	run    Run
@@ -121,7 +116,6 @@ const macApp = "/Applications/Mirrin.app/Contents/MacOS/mirrin"
 
 // serviceProgram is the program the service runs: on macOS the installed
 // app bundle, which permissions and the icon attach to, else this program.
-// Never AntBot.app: no update ever reaches it, so it only holds older code.
 func serviceProgram(goos, exe string, exists func(string) bool) string {
 	if goos == "darwin" && exists(macApp) {
 		return macApp
@@ -178,24 +172,11 @@ func Control(cfg *config.Config, action string, up func() bool, out io.Writer) e
 	if up == nil {
 		up = func() bool { st, _ := s.Status(); return st == service.StatusRunning }
 	}
-	// Nothing is set up or started in a home from before the rename while a
-	// twin still runs from it (homeInUse). A running service is most likely
-	// that twin, and reinstalling or restarting it is what moves the home.
-	oldTwinHolds := func() error {
-		if _, running := stateOf(s.Status()); running {
-			return nil
-		}
-		return homeInUse(config.Home(), userHome(), action, homelock.InUse)
-	}
 	switch action {
 	case "install":
-		if err := oldTwinHolds(); err != nil {
-			return err
-		}
 		in := installer{
 			svc: s, start: func() error { return startUnit(s) }, up: up, wait: 20 * time.Second,
-			out: out, secretEnvs: cfg.SecretEnvs(), unitFiles: unitFiles(append([]string{Name}, legacyNames...)...),
-			legacy: ownLegacyUnits(),
+			out: out, secretEnvs: cfg.SecretEnvs(), unitFiles: unitFiles(Name),
 		}
 		return in.run()
 	case "uninstall":
@@ -212,9 +193,6 @@ func Control(cfg *config.Config, action string, up func() bool, out io.Writer) e
 	case "start", "restart":
 		if !installed(s) {
 			return errors.New("the background service isn't installed yet; run `mirrin service install`")
-		}
-		if err := oldTwinHolds(); err != nil {
-			return err
 		}
 		var err error
 		if action == "restart" && runtime.GOOS == "darwin" {
@@ -265,7 +243,6 @@ func Control(cfg *config.Config, action string, up func() bool, out io.Writer) e
 // installer is the install flow, separated from kardianos so it can be tested.
 type installer struct {
 	svc        unit
-	legacy     map[string]unit // this home's services under old names, by name
 	start      func() error
 	up         func() bool
 	wait       time.Duration
@@ -278,14 +255,6 @@ type installer struct {
 func (in installer) run() error {
 	if err := in.keepSecrets(); err != nil {
 		return err
-	}
-	for _, name := range sortedNames(in.legacy) {
-		if old := in.legacy[name]; installed(old) {
-			_ = old.Stop()
-			if err := old.Uninstall(); err == nil {
-				fmt.Fprintf(in.out, "Stopped the old %s background service; Mirrin takes over from here.\n", brand.LegacyDisplayName(name))
-			}
-		}
 	}
 	// Reinstalling replaces the old definition, so a new binary or mode takes effect.
 	if installed(in.svc) {
@@ -309,12 +278,7 @@ func (in installer) run() error {
 
 // keepSecrets moves the secrets the service needs into the secrets file: from
 // this shell's environment, and from any unit file an older version wrote them
-// into. The environment wins, then what the file already holds, under any of
-// a key's names (an AntBot unit's ANTBOT_EMAIL_PASSWORD is saved as
-// MIRRIN_EMAIL_PASSWORD, unless the file has it under either name). A key
-// the settings name is found in the environment under any of its names too,
-// and saved under the one the settings use, which config.Secret reads
-// first.
+// into. The environment wins, then what the file already holds.
 func (in installer) keepSecrets() error {
 	home := in.home
 	if home == "" {
@@ -327,18 +291,14 @@ func (in installer) keepSecrets() error {
 	vals := map[string]string{}
 	for _, f := range in.unitFiles {
 		for k, v := range unitEnv(f) {
-			k = brand.CurrentEnv(k)
-			if !looksSecret(k) || saved(have, k) {
+			if !looksSecret(k) || have[k] != "" {
 				continue
 			}
 			vals[k] = v
 		}
 	}
 	for _, k := range in.secretEnvs {
-		if _, v := config.Exported(k); v != "" {
-			for _, n := range brand.EnvAliases(k) {
-				delete(vals, n) // a unit's older copy
-			}
+		if v := os.Getenv(k); v != "" {
 			vals[k] = v
 		}
 	}
@@ -357,17 +317,6 @@ func (in installer) keepSecrets() error {
 	sort.Strings(changed)
 	fmt.Fprintf(in.out, "Saved %s for the background twin in %s (only you can read it).\n", strings.Join(changed, ", "), config.SecretsPathIn(home))
 	return nil
-}
-
-// saved reports whether the secrets file holds a value for name under any
-// of its names.
-func saved(have map[string]string, name string) bool {
-	for _, n := range brand.EnvAliases(name) {
-		if have[n] != "" {
-			return true
-		}
-	}
-	return false
 }
 
 // looksSecret reports whether a variable in a unit file holds a key, token
@@ -451,23 +400,14 @@ func stateOf(st service.Status, err error) (installed, running bool) {
 }
 
 // LastError is the last error the background service logged since it last
-// started properly, in plain words, or "". A service still running under an
-// old name logs under that name (antbot.err.log), which counts until this
-// one has logged anything.
+// started properly, in plain words, or "".
 func LastError() string { return lastError(logDir()) }
 
 func lastError(dir string) string {
-	for _, svc := range append([]string{Name}, legacyNames...) {
-		files := []string{filepath.Join(dir, svc+".err.log"), filepath.Join(dir, svc+".err")}
-		if !fileExists(files[0]) && !fileExists(files[1]) {
-			continue
+	for _, f := range []string{filepath.Join(dir, Name+".err.log"), filepath.Join(dir, Name+".err")} {
+		if line := lastErrorLine(f); line != "" {
+			return line
 		}
-		for _, f := range files {
-			if line := lastErrorLine(f); line != "" {
-				return line
-			}
-		}
-		return ""
 	}
 	return ""
 }
@@ -580,8 +520,7 @@ func RunUnderManager(run Run) error {
 // nothing to do, and only reads a file unless there is.
 func TidyUnit(out io.Writer) {
 	if runtime.GOOS == "windows" {
-		tidyStartup(out)
-		return
+		return // the Startup entry carries no keys
 	}
 	if path := unitPath(runtime.GOOS, userHome(), Name); path != "" && fileExists(path) {
 		tidyUnit(path, out)
@@ -600,14 +539,6 @@ func tidyUnit(path string, out io.Writer) {
 	env := unitEnv(path)
 	if !ownUnit(env) {
 		return
-	}
-	// One set up while the home's move waited still names the old home.
-	if moved, err := rehomeUnit(path, userHome(), config.Home()); err != nil {
-		fmt.Fprintf(out, "warning: couldn't update %s: %v\n", path, err)
-	} else if moved {
-		reloadUnits()
-		env = unitEnv(path)
-		fmt.Fprintf(out, "Pointed the background service at %s, where your twin moved.\n", config.Home())
 	}
 	var secrets []string
 	for k := range env {
@@ -645,8 +576,8 @@ func tidyUnit(path string, out io.Writer) {
 
 // ownUnit reports whether a service definition runs this home's twin, so a
 // command run with another MIRRIN_HOME (a second profile, a test) never
-// touches the owner's service. A definition naming no home, or a default one
-// (AntBot's units spell out ANTBOT_HOME=~/.antbot), runs the default home.
+// touches the owner's service. A definition naming no home, or the default
+// one, runs the default home.
 func ownUnit(env map[string]string) bool {
 	return sameHome(config.HomeEnv(func(k string) string { return env[k] }), config.HomeEnv(os.Getenv))
 }
@@ -668,15 +599,8 @@ func sameHome(a, b string) bool {
 }
 
 // hasServiceMarker reports whether a service definition's environment sets
-// the service marker, under its current name or AntBot's.
-func hasServiceMarker(env map[string]string) bool {
-	for _, k := range brand.EnvAliases(config.ServiceEnv) {
-		if env[k] != "" {
-			return true
-		}
-	}
-	return false
-}
+// the service marker.
+func hasServiceMarker(env map[string]string) bool { return env[config.ServiceEnv] != "" }
 
 func userHome() string {
 	h, _ := os.UserHomeDir()

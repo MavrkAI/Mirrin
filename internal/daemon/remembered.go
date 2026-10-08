@@ -33,6 +33,7 @@ const undoFor = 10 * time.Minute
 // watchRemembered has the screens told about what the twin keeps.
 func (d *Daemon) watchRemembered() {
 	d.store.OnRemembered(d.remembered)
+	d.store.OnRemembered(d.draftOnRemembered) // firstdraft.go: a first portrait in week one
 }
 
 // remembered tells the screens about a fact the twin just kept, when it is
@@ -43,7 +44,11 @@ func (d *Daemon) remembered(f memory.Fact) {
 	}
 	// Only the screens open now: none opened later, nor /screen's recent
 	// lines, keeps the fact, so an Undo or a forget leaves no copy there.
-	d.bus.Flash(events.Event{Kind: "remembered", Text: f.Content, Data: map[string]any{"id": f.ID, "subject": f.Subject}})
+	data := map[string]any{"id": f.ID, "subject": f.Subject}
+	if o, ok := d.dateOffer(f); ok { // datereminder.go: "Remind me on the 11th?"
+		data["remind"] = o.Ask
+	}
+	d.bus.Flash(events.Event{Kind: "remembered", Text: f.Content, Data: data})
 }
 
 // UndoFact forgets a fact a screen showed as just noted (api.FactUndoer):

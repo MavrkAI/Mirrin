@@ -124,8 +124,6 @@ func pairedNotice(e api.PairEvent, inChat bool) string {
 	shared := "It came in with the old shared key. If you don't recognise it, " + revoke +
 		": I'll cut it off and change that key, so anything else still paired the old way will need pairing again."
 	switch e.How {
-	case api.HowLegacyScreen:
-		return fmt.Sprintf("A screen set up before devices had their own keys (%q%s) now has a key of its own. %s\n%s", e.Device.Name, where, can, shared)
 	case api.HowLegacyCode:
 		return fmt.Sprintf("A computer paired with an old-style code (%q%s) now has a key of its own. %s\n%s", e.Device.Name, where, can, shared)
 	}

@@ -40,7 +40,7 @@ func (d *Daemon) showTurn(in channels.Inbound) *turnShow {
 // say shows a line of the turn: a "note" while it works, or what it "said".
 func (s *turnShow) say(kind, text string) {
 	if s != nil && text != "" {
-		s.bus.Publish(events.Event{Kind: kind, Text: text, Data: s.from})
+		s.bus.Publish(events.Event{Kind: kind, Text: text, Data: onScreenOnly(kind, text, s.from)}) // showanswer.go
 	}
 }
 

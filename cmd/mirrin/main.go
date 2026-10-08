@@ -96,15 +96,6 @@ func main() {
 		licensesCmd(os.Stdout)
 		return
 	}
-	// A service from before the rename that runs an older program stops
-	// before anything settles the home, so a home from before the rename
-	// can move into place once that twin has quit. While one is still
-	// installed (other commands leave it), the home doesn't move.
-	config.HoldHomeMove = service.LegacyHold
-	switch os.Args[1] {
-	case "run", "tray", "chat", "voice", "init", "service":
-		service.RetireLegacy(os.Stderr)
-	}
 	// Keys saved for the background twin work in every terminal too.
 	if err := config.LoadSecrets(); err != nil {
 		fmt.Fprintln(os.Stderr, "warning: can't read", config.SecretsPath()+":", err)

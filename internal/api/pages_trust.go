@@ -44,6 +44,8 @@ func OutboundCatalog() []Outbound {
 			Data: "The requests any browser sends. Chrome's own background services may also contact Google."},
 		{ID: "voice", What: "ElevenLabs and Twilio", When: "Only if you set up online voice or phone calls",
 			Data: "Text to speak (ElevenLabs); calls and numbers (Twilio). Local voice sends nothing."},
+		{ID: "jev", What: "TypeSafe (Jev), for quick judgments", When: "Only if you add a TypeSafe key: a test when you check the key, and, with it switched on, when mail that looks like a bill arrives, and when you answer a reminder or a note in words your twin doesn't already know",
+			Data: "A fixed test question, the sender and subject of new mail that looks like a bill, and your short reply with the reminder or offer it answers (with names left out). Never your memories or other mail."},
 		{ID: "backup", What: "Your backup destination", When: "Nightly at 03:30, and soon after a device or passkey changes",
 			Data: "Encrypted snapshots only. The 12 words that open them never leave your paper."},
 		{ID: "push", What: "Apple, Google, Mozilla or Microsoft push services", When: "When a paired phone has notifications on",

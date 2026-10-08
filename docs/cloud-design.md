@@ -62,7 +62,7 @@ Every paid convenience has a free, documented route that ships first. Using Mirr
 | Fact | Where | Consequence |
 |---|---|---|
 | `mirrin pair` prints the master `api.token` inside every code (base64url of `addr\|token\|name`, no prefix) | `cmd/mirrin/main.go` showPairing/connectRemote | Pairing v2 uses single-use offers. Legacy codes are detected by decoding and still work on plain-HTTP `api.remote`, with a warning. |
-| The page cookie `antbot_token` *is* the master token (SameSite Lax on `/ui`, Strict on `/memory` and `/health`). Auth compares with `!=` | `internal/api/memory.go`, `api.go` | Any page on another `127.0.0.1`/`localhost` port is same-site, so it can POST `/approvals/{id}/approve`. `/message/stream` decodes a `text/plain` body. Loopback gets Host, Origin and Sec-Fetch-Site checks plus constant-time compares. DNS rebinding cannot obtain the cookie, so the Host check is defence in depth. Fix `docs/threat-model.md` ("derived from"). |
+| The page cookie *is* the master token (SameSite Lax on `/ui`, Strict on `/memory` and `/health`). Auth compares with `!=` | `internal/api/memory.go`, `api.go` | Any page on another `127.0.0.1`/`localhost` port is same-site, so it can POST `/approvals/{id}/approve`. `/message/stream` decodes a `text/plain` body. Loopback gets Host, Origin and Sec-Fetch-Site checks plus constant-time compares. DNS rebinding cannot obtain the cookie, so the Host check is defence in depth. Fix `docs/threat-model.md` ("derived from"). |
 | The Docker `HEALTHCHECK` calls `/health` without a token and always gets 401 | `packaging/docker/Dockerfile` | Add a public `/healthz`. |
 | The `approvals` table has no risk column; risk is computed at execute time | `internal/memory/store.go`, `agent.execute` | WP-02 adds a persisted risk. |
 | `events.Bus.Publish` drops events for slow subscribers | `internal/events/events.go` | Push and security alarms use a direct hook. |
@@ -147,7 +147,7 @@ A household plan and one-off wake training may come after launch, driven by dema
 Trust comes from **which listener** a request arrived on, never from the Host header or the source address.
 
 **Loopback listener** (plain HTTP, `api.listen`, default `127.0.0.1:7742`):
-- The master token, `?token=` bootstrap and the legacy `antbot_token` cookie work here only.
+- The master token and the `?token=` bootstrap work here only.
 - Host must be `127.0.0.1:p`, `localhost:p` or `[::1]:p`, else 421.
 - Unsafe methods need `Origin` equal to the request origin (or absent when a bearer token is used), and `Sec-Fetch-Site` ∈ {same-origin, none}.
 - Requests carrying `Forwarded`, `X-Forwarded-*`, `Via` or `Tailscale-*` get 421.
@@ -182,7 +182,7 @@ Comparisons are constant-time.
 
 Defaults: PWA view+chat+approve, kiosk view, CLI view+chat+approve.
 
-Browsers get `__Host-mirrin` (Secure, HttpOnly, SameSite=Lax, Path=/, 180 days sliding). One set before the rename, `__Host-antbot`, still works and is replaced on the next request. CLIs store the token in `remote.yaml` and pin the SPKI set.
+Browsers get `__Host-mirrin` (Secure, HttpOnly, SameSite=Lax, Path=/, 180 days sliding). CLIs store the token in `remote.yaml` and pin the SPKI set.
 
 Revocation is instant and local. It deletes push subscriptions and passkeys and schedules a backup.
 
@@ -251,22 +251,22 @@ ember-otter-42.TZ.  300 CAA   0 iodef "mailto:security@OZ"
 
 **What the CAA pin buys.** An attacker who compromises a relay, steals the entitlement key or BGP-hijacks relay IPs can steer routing, but cannot obtain a certificate. The operator, or whoever holds the DNS account or registrar, can rewrite CAA. On the default zone that is **detected, not prevented** (§6.5). **BYOD makes it impossible:**
 - A/AAAA to the relay IPs, never a CNAME.
-- `_mirrin TXT "v=mirrin1; acct=<id>"`. Whatever checks it must also accept `_antbot TXT "v=antbot1; acct=<id>"`, published before the rename.
+- `_mirrin TXT "v=mirrin1; acct=<id>"`.
 - The user's own CAA accounturi.
 
 BYOD is free today with a self-hosted relay, and on the managed relays in v1.1.
 
 Let's Encrypt allows 50 new certificates per registered domain per week (renewals are exempt). Until an adjustment is granted, new activations are capped at 40 a week. A second CA with per-account EAB comes later (WP-28). No CA is listed in CAA without its accounturi.
 
-### 6.3 Tunnel protocol (`antbot.tunnel.v1`)
+### 6.3 Tunnel protocol (`mirrin.tunnel.v1`)
 The daemon dials `wss://r1.relay.OZ/v1/tunnel` and `wss://r2.relay.OZ/v1/tunnel`: every relay listed in its entitlement, or the one configured self-hosted relay. Each relay terminates only its own control name, on its own IP, with a local autocert certificate. There is no anycast.
 
 ```
 relay → {"t":"challenge","v":1,"relay":"r1","nonce":"<b64url 32B>"}
 daemon→ {"t":"hello","v":1,"key":"<b64url ed25519 pub>","sig":"<b64url>","ent":"v4.public.…|null",
          "status_key_hash":"<b64url sha256(k)>","client":"mirrin/0.4.0 darwin/arm64"}
-        sig = Ed25519(key, "antbot-relay-tunnel-v1" 0x00 relay 0x00 nonce 0x00 exporter)
-        exporter = tls.ConnectionState.ExportKeyingMaterial("EXPORTER-antbot-tunnel", nil, 32)
+        sig = Ed25519(key, "mirrin-relay-tunnel-v1" 0x00 relay 0x00 nonce 0x00 exporter)
+        exporter = tls.ConnectionState.ExportKeyingMaterial("EXPORTER-mirrin-tunnel", nil, 32)
 relay → {"t":"welcome","hostnames":["ember-otter-42.TZ"],"gen":3,"keepalive":25,"max_streams":64}
       | {"t":"error","code":"entitlement_expired|bad_signature|hostname_not_allowed|denied|superseded|superseded_retry|rate_limited|upgrade_required",
          "message":"<sentence shown verbatim>","retry_after":3600}
@@ -399,8 +399,8 @@ The daemon's relay listener yields these as `net.Conn`s whose `RemoteAddr` is th
 
 ```
 POST /approvals/12/approve            → 428 {"stepup":<PublicKeyCredentialRequestOptions>,"session":"su_…"}
-challenge = SHA-256("antbot-approval-v1" 0x00 id(8B BE) "approve" SHA-256(stored input) nonce(32B))
-POST /approvals/12/approve  AntBot-Stepup: su_…  {assertion}  → 200 {"reply":…} | 409 {"decided_by":…,"at":…}
+challenge = SHA-256("mirrin-approval-v1" 0x00 id(8B BE) "approve" SHA-256(stored input) nonce(32B))
+POST /approvals/12/approve  Mirrin-Stepup: su_…  {assertion}  → 200 {"reply":…} | 409 {"decided_by":…,"at":…}
 ```
 
 Sessions are single use and expire after 2 minutes.
@@ -492,7 +492,7 @@ Mirrin Cloud mechanics:
 **Request signing.** RFC 9421:
 - alg `ed25519`
 - covered components `@method @target-uri content-digest` (RFC 9530 sha-256)
-- params `created`, `expires` (+300 s), `nonce` (16 B), `keyid` (`dev:<b64url sha256(pub)[:16]>`), `tag` (`antbot-cloud-v1`)
+- params `created`, `expires` (+300 s), `nonce` (16 B), `keyid` (`dev:<b64url sha256(pub)[:16]>`), `tag` (`mirrin-cloud-v1`)
 
 The server allows 300 s of clock skew and keeps a 10-minute nonce cache.
 
@@ -514,7 +514,7 @@ The server allows 300 s of clock skew and keeps a 10-minute nonce cache.
 **Entitlement** (PASETO v4.public, footer `{"kid":"ent-2026a"}`):
 
 ```json
-{"iss":"cloud.OZ","sub":"acct_…","aud":"antbot","iat":…,"nbf":…,"exp":…,"gen":3,"plan":"cloud","feat":["reach","backup"],
+{"iss":"cloud.OZ","sub":"acct_…","aud":"mirrin","iat":…,"nbf":…,"exp":…,"gen":3,"plan":"cloud","feat":["reach","backup"],
  "handle":"ember-otter-42","hosts":["ember-otter-42.TZ"],"cnf":"<b64url device pub>",
  "relays":[{"id":"r1","url":"wss://r1.relay.OZ/v1/tunnel","ips":["…"]}],"bq":21474836480,"wk":0,"paid_through":…}
 ```

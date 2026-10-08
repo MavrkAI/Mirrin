@@ -29,11 +29,3 @@ func TestInUseSeesTheClaim(t *testing.T) {
 		t.Fatal("still in use after the claim was given back")
 	}
 }
-
-// The file keeps its AntBot name, so an AntBot twin and a Mirrin one on the
-// same data folder still keep each other out.
-func TestNameIsFrozen(t *testing.T) {
-	if Name != "antbot.lock" {
-		t.Fatalf("Name = %q; renaming it lets an old and a new twin share a home", Name)
-	}
-}

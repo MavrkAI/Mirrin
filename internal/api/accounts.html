@@ -53,6 +53,11 @@ code{background:var(--bg);padding:1px 5px;border-radius:4px}
 <div class="blurb">The model your twin thinks with. The key stays on this computer; only its first and last few characters are ever shown.</div>
 <div class="grid"><div><label for="modelProvider">Provider</label><select id="modelProvider"></select></div><div><label for="modelKey">API key</label><input id="modelKey" type="password" autocomplete="off" spellcheck="false" autocapitalize="off"></div></div>
 <div class="actions"><button type="button" id="modelTest">Test</button><button type="button" class="primary" id="modelSave">Save</button></div><div class="msg" id="modelMsg" role="status"></div></section>
+<section class="card" id="jev" aria-labelledby="jevH" hidden><div class="head"><h2 class="n" id="jevH" style="margin:0">Quick judgments (optional)</h2><span class="status" id="jevNow"></span></div>
+<div class="blurb">With a TypeSafe key, your twin can use Jev to understand short replies like “paid it” or “stop sending these”, and to skip receipts that only look like bills (coming soon). It sends just those few words, never your memories. Off until you add a key.</div>
+<div class="grid"><div><label for="jevKey">TypeSafe key</label><input id="jevKey" type="password" autocomplete="off" spellcheck="false" autocapitalize="off"></div></div>
+<div class="feat"><label><input type="checkbox" id="jevOn"> Use quick judgments</label></div>
+<div class="actions"><button type="button" class="primary" id="jevSave">Check and save</button><button type="button" class="danger" id="jevForget" hidden>Remove key</button></div><div class="msg" id="jevMsg" role="status"></div></section>
 <div id="list"><div class="state loading">Loading your accounts…</div></div>
 <p class="more">Other services (Notion, GitHub, Slack, Home Assistant…) can connect as add-on tools: list them in the settings file under <code>mcp.servers</code> (menu bar → Open settings file), or ask your twin to write a tool for one.</p>
 <script>
@@ -60,7 +65,7 @@ code{background:var(--bg);padding:1px 5px;border-radius:4px}
 // Every request goes through api(), which puts each way a request can fail
 // into plain words, and shows "This device isn't paired" when that is why.
 const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function twinName(){try{const n=localStorage.getItem('antbot.name');if(n)return n}catch{}const m=document.querySelector('meta[name="mirrin-name"]');return (m&&m.content)||'Mirrin'}
+function twinName(){try{const n=localStorage.getItem('mirrin.name');if(n)return n}catch{}const m=document.querySelector('meta[name="mirrin-name"]');return (m&&m.content)||'Mirrin'}
 for(const el of document.querySelectorAll('[data-name]'))el.textContent=twinName();
 const PAGE_TITLE=document.title=twinName()+' · '+document.title;
 const FRIENDLY={not_paired:"This device isn't paired.",passkey_required:'This needs Face ID or Touch ID, which this device has not set up.',forbidden:"This device isn't allowed to do that."};
@@ -177,8 +182,27 @@ $('#modelTest').onclick=async()=>{const b=$('#modelTest');b.disabled=true;say($(
 $('#modelSave').onclick=async()=>{const b=$('#modelSave');b.disabled=true;say($('#modelMsg'),'Checking and saving…');
   try{await post('/accounts/model',modelBody());await loadModel();say($('#modelMsg'),'Saved. '+twinName()+' uses it from the next reply.','ok')}
   catch(e){if(!e.unpaired)say($('#modelMsg'),"Couldn't save it: "+e.message,'err')}finally{b.disabled=false}};
+// The quick judgments card (/accounts#jev): an optional TypeSafe key. A twin without it (404) hides the card.
+async function loadJev(){
+  let j;try{j=await getJSON('/accounts/jev')}catch(e){if(e.status===404){$('#jev').hidden=true;return}if(!e.unpaired)say($('#jevMsg'),e.message,'err');return}
+  $('#jev').hidden=false;
+  $('#jevNow').textContent=j.on?'on':(j.has_key?'off':'no key');$('#jevNow').className='status'+(j.on?' on':'');
+  $('#jevKey').value='';$('#jevKey').placeholder=j.has_key?'Saved: '+j.masked+' (paste a new one to change it)':'Paste your TypeSafe key';
+  $('#jevOn').checked=!!j.on;$('#jevForget').hidden=!j.has_key;
+  if(j.problem)say($('#jevMsg'),j.problem,'err');
+  if(location.hash==='#jev'&&!loadJev.shown){loadJev.shown=true;$('#jev').scrollIntoView();$('#jevKey').focus({preventScroll:true})}
+}
+async function saveJev(body,busy,doing,done){busy.disabled=true;say($('#jevMsg'),doing);
+  try{await post('/accounts/jev',body);await loadJev();say($('#jevMsg'),done(body),'ok')}
+  catch(e){if(busy.type==='checkbox')busy.checked=!body.on;if(body.forget&&!e.unpaired)await loadJev();if(!e.unpaired)say($('#jevMsg'),e.message,'err')}finally{busy.disabled=false}}
+const jevDone=b=>b.forget?'Removed. Quick judgments are off.':b.on?'Saved. Quick judgments are on.':'Saved. Quick judgments are off.';
+$('#jevKey').oninput=()=>{if($('#jevKey').value.trim())$('#jevOn').checked=true};
+$('#jevSave').onclick=()=>saveJev({key:$('#jevKey').value.trim(),on:$('#jevOn').checked},$('#jevSave'),'Checking and saving…',jevDone);
+$('#jevOn').onchange=()=>{if(!$('#jevKey').value.trim())saveJev({on:$('#jevOn').checked},$('#jevOn'),'Saving…',jevDone)};
+$('#jevForget').onclick=()=>{if(!confirm('Remove the TypeSafe key? Quick judgments switch off, and your twin carries on as usual.'))return;
+  saveJev({forget:true,on:false},$('#jevForget'),'Removing…',jevDone)};
 async function loadAll(){
-  loadModel();
+  loadModel();loadJev();
   try{
     const l=await getJSON('/accounts/list');recovered();
     const box=$('#list');box.innerHTML='';

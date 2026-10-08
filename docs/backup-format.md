@@ -266,7 +266,7 @@ a snapshot.
 `mirrin restore [--from <folder> | icloud | s3://<bucket>/<folder> | cloud] [--snapshot <name>] [--with-sessions] [--force] [--yes]`
 
 1. Refuse while a twin runs from this home (it answers on the local API or
-   holds `data/antbot.lock`), unless `--force`.
+   holds `data/mirrin.lock`), unless `--force`.
 2. Take the 12 words; derive the keys.
 3. List snapshots by decrypting only as much of each as its manifest needs
    (normally the first 64 KiB chunk), newest first by the authenticated date.

@@ -1,11 +1,9 @@
 package main
 
-// mirrin uninstall takes Mirrin off this machine: the background service (and
-// AntBot's or openHuman's, from before the rename), the program where the
-// installers put it, Mirrin.app, and leftovers of updates, under the old
-// names too. Only what is Mirrin's goes: programs that answer as Mirrin (or
-// as AntBot or openHuman did), apps with its bundle identifiers, and nothing
-// another twin's service still runs. The twin itself, in ~/.mirrin,
+// mirrin uninstall takes Mirrin off this machine: the background service, the
+// program where the installers put it, Mirrin.app, and leftovers of updates.
+// Only what is Mirrin's goes: programs that answer as Mirrin, apps with its
+// bundle identifier, and nothing another twin's service still runs. The twin itself, in ~/.mirrin,
 // is kept unless its owner types "delete", and a copy is offered first.
 
 import (
@@ -37,8 +35,6 @@ const uninstallUsage = "usage: mirrin uninstall [--yes]"
 type uninstallServices interface {
 	Installed() bool // this home's Mirrin service
 	Remove() error
-	LegacyInstalled() bool // AntBot's or openHuman's, from before the rename
-	RemoveLegacy(out io.Writer) error
 	// Foreign is a background service installed for another twin (another
 	// MIRRIN_HOME): where its definition is, and the program it keeps
 	// running ("" when that can't be read).
@@ -54,7 +50,7 @@ type uninstaller struct {
 	userHome string    // where a copy of the twin is saved
 	goos     string
 	exe      string   // this program, links resolved
-	others   []string // other mirrin programs on PATH, under the old names too, links resolved
+	others   []string // other mirrin programs on PATH, links resolved
 	appDirs  []string // where Mirrin.app may be (macOS)
 	svc      uninstallServices
 	// command runs `<program> version`, which tells Mirrin's programs from
@@ -121,11 +117,9 @@ func uninstallCmd(args []string) error {
 	if isTerminal() {
 		u.ask = newPrompter(os.Stdin, os.Stdout)
 	}
-	for _, name := range append([]string{brand.Name}, brand.LegacyNames...) {
-		if p, err := exec.LookPath(name); err == nil {
-			if r, err := filepath.EvalSymlinks(p); err == nil {
-				u.others = append(u.others, r)
-			}
+	if p, err := exec.LookPath(brand.Name); err == nil {
+		if r, err := filepath.EvalSymlinks(p); err == nil {
+			u.others = append(u.others, r)
 		}
 	}
 	if runtime.GOOS == "darwin" {
@@ -139,24 +133,17 @@ func uninstallCmd(args []string) error {
 
 func (u *uninstaller) say(format string, a ...any) { fmt.Fprintf(u.out, format+"\n", a...) }
 
-// Where Mirrin's apps are, by name, and their bundle identifiers: the
-// current one first, then those from before the rename. An app that only
-// shares the name (AntBot and OpenHuman are other products' names too) is
-// someone else's and stays.
+// Where Mirrin's app is, by name, and its bundle identifier. An app that
+// only shares the name is someone else's and stays.
 var appNames = []struct{ name, id, label string }{
 	{"Mirrin.app", "com.mirrin.mavrk", "the app"},
-	{"AntBot.app", "com.antbot.mavrk", "the old AntBot app"}, // rename:keep
-	{"OpenHuman.app", "com.openhuman.mavrk", "the old openHuman app"},
 }
 
 // updateLeftovers are what an interrupted update leaves beside the program,
-// and what Windows updates move aside, under each name the program has had.
+// and what Windows updates move aside.
 func updateLeftovers() []string {
-	var out []string
-	for _, n := range append([]string{brand.Name}, brand.LegacyNames...) {
-		out = append(out, "."+n+".new", n+".new.exe", n+".old*.exe")
-	}
-	return out
+	n := brand.Name
+	return []string{"." + n + ".new", n + ".new.exe", n + ".old*.exe"}
 }
 
 // plan lists what will be removed, and what can only be removed another way.
@@ -200,7 +187,6 @@ func (u *uninstaller) plan() (items []removal, notes []string, shared bool) {
 	}
 
 	program := func(p string) {
-		old := oldProgramName(p)
 		switch {
 		case homebrewPath(p):
 			note := "Homebrew installed " + p + ". Remove it with: brew uninstall " + strings.TrimSuffix(filepath.Base(p), ".exe")
@@ -212,8 +198,6 @@ func (u *uninstaller) plan() (items []removal, notes []string, shared bool) {
 			add(removal{path: appBundle(p), label: "the app"})
 		case u.goos == "windows" && fileExists(filepath.Join(filepath.Dir(p), "unins000.exe")):
 			add(removal{path: filepath.Dir(p), label: "the Mirrin folder, with its own uninstaller", inno: true, onPath: true})
-		case old != "":
-			add(removal{path: p, label: "the old " + brand.LegacyDisplayName(old) + " program", onPath: true})
 		default:
 			add(removal{path: p, label: "the program", onPath: true})
 		}
@@ -235,25 +219,12 @@ func (u *uninstaller) plan() (items []removal, notes []string, shared bool) {
 	return items, notes, false
 }
 
-// ours reports whether a program found on PATH is Mirrin, or AntBot or
-// openHuman from before the rename, rather than another program with the
-// same name: asked its version, it must answer as Mirrin does ("mirrin
-// v0.3.0", "antbot v0.3.0" or "openhuman dev").
+// ours reports whether a program found on PATH is Mirrin rather than another
+// program with the same name: asked its version, it must answer as Mirrin
+// does ("mirrin v0.3.0" or "mirrin dev").
 func (u *uninstaller) ours(p string) bool {
 	name, v := reportedVersion(context.Background(), u.command, p, 5*time.Second)
 	return ourName(name) && (v == "dev" || strings.HasPrefix(v, "v"))
-}
-
-// oldProgramName is the name from before the rename a program is called by
-// ("antbot" for antbot.exe), or "" for Mirrin's own name and any other.
-func oldProgramName(p string) string {
-	base := strings.TrimSuffix(strings.ToLower(filepath.Base(p)), ".exe")
-	for _, n := range brand.LegacyNames {
-		if strings.HasPrefix(base, n) {
-			return n
-		}
-	}
-	return ""
 }
 
 // bundleID is a macOS app's CFBundleIdentifier, or "". command reads a
@@ -351,10 +322,9 @@ func (u *uninstaller) pathNotes(dirs []string) []string {
 }
 
 // installerMarkers are the comment lines install.sh writes above its PATH
-// line: Mirrin's, and AntBot's from before the rename.
+// line.
 var installerMarkers = []string{
 	"# Added by the Mirrin installer",
-	"# Added by the AntBot installer", // rename:keep
 }
 
 // pathAdd is a line install.sh added to a shell startup file, below marker.
@@ -425,10 +395,9 @@ func (u *uninstaller) tidyPath(dirs []string) {
 	}
 }
 
-// removeInstallerPath deletes, from rc, install.sh's marker line (Mirrin's
-// or AntBot's) and the line after it that puts dir on PATH (and the blank
-// line it wrote before them), after copying rc to backup (unless backup is
-// ""). Everything else stays as it was, and the file keeps its mode. When
+// removeInstallerPath deletes, from rc, install.sh's marker line and the
+// line after it that puts dir on PATH (and the blank line it wrote before
+// them), after copying rc to backup (unless backup is ""). Everything else stays as it was, and the file keeps its mode. When
 // rc is a symlink (into a dotfiles repo, say), the file it points to
 // changes and the link stays.
 func removeInstallerPath(rc, dir, backup string) error {
@@ -500,7 +469,7 @@ func installerAddedPath(rc, dir string) string {
 
 func (u *uninstaller) run() error {
 	items, notes, shared := u.plan()
-	svc, legacy := u.svc.Installed(), u.svc.LegacyInstalled()
+	svc := u.svc.Installed()
 	haveTwin := isDir(u.home) && !emptyDir(u.home)
 	keepTwin := "" // why the twin's folder can't be deleted from here
 	if haveTwin {
@@ -509,7 +478,7 @@ func (u *uninstaller) run() error {
 	keepNote := func() {
 		u.say("Your twin is set to be in %s, which %s, so Mirrin won't delete that folder. If you want your twin's files gone, delete them yourself.", u.home, keepTwin)
 	}
-	if !svc && !legacy && len(items) == 0 {
+	if !svc && len(items) == 0 {
 		for _, n := range notes {
 			u.say("%s", n)
 		}
@@ -525,9 +494,6 @@ func (u *uninstaller) run() error {
 	u.say("This removes Mirrin from this computer:")
 	if svc {
 		u.say("  - the background service")
-	}
-	if legacy {
-		u.say("  - the old background service from before the rename")
 	}
 	for _, it := range items {
 		u.say("  - %s: %s", it.label, it.path)
@@ -588,11 +554,6 @@ func (u *uninstaller) run() error {
 			return fmt.Errorf("couldn't remove the background service (%v), so nothing else was removed.%s", err, hint)
 		}
 		u.say("Removed the background service.")
-	}
-	if legacy {
-		if err := u.svc.RemoveLegacy(u.out); err != nil {
-			u.say("The old background service from before the rename is still installed (%v).", err)
-		}
 	}
 	if u.stillRunning() {
 		done := ""
@@ -819,21 +780,5 @@ func (localServices) Remove() error {
 	return service.Control(config.Default(), "uninstall", nil, io.Discard)
 }
 
-// Foreign is another twin's background service: Mirrin's, or one from
-// before the rename.
-func (localServices) Foreign() (unit, program string, ok bool) {
-	if unit, program, ok = service.ForeignUnit(); ok {
-		return unit, program, ok
-	}
-	return service.ForeignLegacyUnit()
-}
-
-func (localServices) LegacyInstalled() bool {
-	if _, _, foreign := service.ForeignLegacyUnit(); foreign {
-		return false // another twin's; Foreign reports it
-	}
-	return service.LegacyInstalled()
-}
-
-// RemoveLegacy also keeps any keys the old services' definitions held.
-func (localServices) RemoveLegacy(out io.Writer) error { return service.RemoveLegacy(out) }
+// Foreign is another twin's background service.
+func (localServices) Foreign() (unit, program string, ok bool) { return service.ForeignUnit() }

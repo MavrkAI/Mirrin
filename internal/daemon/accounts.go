@@ -264,6 +264,7 @@ func (d *Daemon) googleConnected() error {
 		d.googleEmail(pctx)
 		d.syncGoogleWatch(false) // the address is known now: IMAP may already watch this inbox
 	}()
+	d.startInboxFirst() // inbox_first.go: the first connect gets one look at the inbox
 	return nil
 }
 

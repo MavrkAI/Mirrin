@@ -18,7 +18,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -92,6 +91,10 @@ type Session struct {
 	// address would be a dead link.
 	OnHandOver func(url, ask string) (phoned bool)
 	ScreenURL  func(chatKey string) string
+	// ShowScreen brings the presence screen up at the page on this
+	// computer for a chat here (a voice chat has nothing on screen to
+	// click), and says whether it did.
+	ShowScreen func(chatKey string) bool
 	// OnActive hears that the twin started using its browser after a while
 	// idle (a new run), so the screen can offer to watch it.
 	OnActive func()
@@ -641,6 +644,9 @@ func (s *Session) handedOver(chatKey, here, ask string) string {
 		screen = s.ScreenURL(chatKey)
 	}
 	const next = " When they say done, carry on with browse_page / browser_act."
+	if screen != "" && s.ShowScreen != nil && s.ShowScreen(chatKey) {
+		return "The page " + here + " is open in front of the user now, on the presence screen (" + screen + "), under their control. Tell them in one short message what to do there and to say when it's done." + next
+	}
 	if screen != "" {
 		return "The page " + here + " is on the presence screen (" + screen + "), under the user's control, and the orb is showing. Tell them in one short message what to do there and to say when it's done; they can also click the orb to get there." + next
 	}
@@ -869,24 +875,8 @@ func (s *Session) paymentRisk(ctx context.Context, call tools.Call) tools.Risk {
 	s.mu.Lock()
 	tab := s.ctx
 	s.mu.Unlock()
-	if tab == nil {
-		return tools.RiskWrite
-	}
-	for _, st := range steps {
-		if st.Type != "click" && st.Type != "submit" {
-			continue
-		}
-		sel, err := target(st.Ref, st.Selector)
-		if err != nil {
-			continue
-		}
-		var label string
-		tctx, cancel := context.WithTimeout(tab, 3*time.Second)
-		err = chromedp.Run(tctx, chromedp.Evaluate(labelJS+"("+strconv.Quote(sel)+")", &label))
-		cancel()
-		if err == nil && rePayment.MatchString(label) {
-			return tools.RiskDangerous
-		}
+	if stepsCommit(tab, in.URL, steps) { // commit.go: Send, Submit order, Book, Pay
+		return tools.RiskDangerous
 	}
 	return tools.RiskWrite
 }

@@ -29,9 +29,7 @@ func (r Record) String() string {
 // BYODRecords are the records for host: A and AAAA to the relay (never a
 // CNAME, which would hand the name's CAA to the relay's DNS), the _mirrin
 // TXT naming the ACME account, and CAA pinning that account to
-// TLS-ALPN-01 with wildcards forbidden. Nothing checks the TXT record yet;
-// owners who published it before the rename have _antbot "v=antbot1; …",
-// which whatever checks it later must accept too.
+// TLS-ALPN-01 with wildcards forbidden. Nothing checks the TXT record yet.
 func BYODRecords(host, accountURI string, relayIPs []netip.Addr) []Record {
 	host = strings.ToLower(strings.TrimSuffix(host, "."))
 	var out []Record

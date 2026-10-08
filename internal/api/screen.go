@@ -74,7 +74,10 @@ func (s *Server) screenRoutes(mux *http.ServeMux, a authz) {
 	s.tipsRoutes(mux, a)         // screen_tips.go: a tip card's "No more tips"
 	s.factUndoRoutes(mux, a)     // screen_memory.go: a noted fact's Undo
 	s.reminderDoneRoutes(mux, a) // screen_memory.go: a reminder's tick
+	s.factRemindRoutes(mux, a)   // screen_factremind.go: a noted date's "Remind me…?"
 	s.portraitAckRoutes(mux, a)  // screen_memory.go: the portrait's "That's you"
+
+	s.browserRememberRoutes(mux, a) // browser_remember.go: "Remember this page"
 	mux.HandleFunc("GET /events", a.Require(devices.View, func(w http.ResponseWriter, r *http.Request) {
 		fl, ok := w.(http.Flusher)
 		if !ok {
@@ -88,6 +91,9 @@ func (s *Server) screenRoutes(mux *http.ServeMux, a authz) {
 		look := viewOnly(PeerFrom(r.Context())) // screen_private.go
 		ch, stop := bus.Subscribe()
 		defer stop()
+		if p := PeerFrom(r.Context()); p.Loopback && r.URL.Query().Get("view") != "orb" {
+			defer bus.ScreenOpen()() // a screen on this computer, not the orb
+		}
 		// current state first
 		b, _ := json.Marshal(map[string]any{"kind": "state", "text": bus.State(), "at": time.Now()})
 		fmt.Fprintf(w, "data: %s\n\n", b)

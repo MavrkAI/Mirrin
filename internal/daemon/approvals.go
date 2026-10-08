@@ -64,11 +64,12 @@ var clock = time.Now
 // reScratch matches the suffix a background run adds to its home chat's key
 // ("whatsapp:X#task-09271", "...#protocol-20260927-150405", a scheduled
 // run's "...#protocol-20260927-150405-3", a call summary's
-// "...#call-20260927-150405.000", a follow-up's "...#followup-42"), and not
+// "...#call-20260927-150405.000", a follow-up's "...#followup-42", a bill
+// read from the mail's "...#watch-bills-20260927-150405-1"), and not
 // a room that merely has a similar name ("irc:#watch-party"). A live call's
 // own conversation ("voice:phone#call-<id>") is not a run of any chat: see
 // isCall.
-var reScratch = regexp.MustCompile(`#(?:task-\d+|phone-\d+|followup-\d+|(?:protocol|watch|patterns|nudge|portrait|firstlook|call)-\d{8}-\d{6}(?:\.\d{3})?(?:-\d+)?)$`)
+var reScratch = regexp.MustCompile(`#(?:task-\d+|phone-\d+|followup-\d+|(?:protocol|watch|watch-bills|patterns|nudge|portrait|firstlook|call)-\d{8}-\d{6}(?:\.\d{3})?(?:-\d+)?)$`)
 
 // homeKey is the conversation a chat key belongs to: itself, or the chat a
 // background run was started from.
@@ -986,7 +987,9 @@ func (d *Daemon) pendingFor(ctx context.Context, key string) []memory.Approval {
 // is what the history keeps of text.
 func (d *Daemon) noticed(ctx context.Context, where, text, record string) {
 	d.conv(homeKey(where)).noteSpoke("", text, true)
+	d.conv(homeKey(where)).spokeOwn()
 	d.record(ctx, where, llm.Text(llm.RoleAssistant, record))
+	d.noteNotice(ctx, where, record) // notice_replies.go: what "stop sending these" would answer
 }
 
 // approvalNews is the data of an "approval" event: one was raised or decided.
@@ -1038,6 +1041,7 @@ func (d *Daemon) approvalEvent(_ context.Context, e agent.ApprovalEvent) {
 		return
 	case "denied", "superseded", "expired":
 		d.forgetPage(&ap)
+		d.briefingSettled(e) // briefing_offer.go: a no to the first hello's offer
 	}
 	d.publishApproval(&ap, e.Status, e.Why)
 }

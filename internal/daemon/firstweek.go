@@ -22,6 +22,9 @@ type Connected struct {
 	Calendar bool `json:"calendar"`
 	Mail     bool `json:"mail"`
 	Voice    bool `json:"voice"`
+	// Browser: the twin has a browser of its own, so the screen can offer
+	// to show it doing a web chore (try_this in ui.html).
+	Browser bool `json:"browser"`
 }
 
 // connected is what the twin can reach now. A calendar or Gmail turned on
@@ -33,8 +36,13 @@ func (d *Daemon) connected() Connected {
 		Calendar: google && d.calendar.Load() != nil,
 		Mail:     (google && cfg.Skills.Gmail.Enabled) || (d.email != nil && cfg.Skills.Email.Enabled),
 		Voice:    voice.SetUp(cfg.Channels.Voice),
+		Browser:  d.browser != nil,
 	}
 }
+
+// nudgeRemindersOnly is day one's tip when the first hello has offered the
+// morning briefing already, answered with Later or not yet: no second offer.
+const nudgeRemindersOnly = "Day 1: tell the user, in two lines, that you can set reminders for anything, and give one example they could say. Don't mention or offer a morning briefing: they've been asked about that already."
 
 // nudgeTask is what the model is asked for on day (1 to 7) of the tour, or
 // false when the day has nothing for this owner.
@@ -42,6 +50,13 @@ func (d *Daemon) nudgeTask(day int) (string, bool) {
 	tip := nudges[day-1]
 	c := d.connected()
 	switch day {
+	case 1:
+		switch state, _ := d.store.Get(context.Background(), briefingOfferKey); state {
+		case "yes": // said yes at the first hello (briefing_offer.go)
+			return "", false
+		case "offered", "later": // asked already: once is enough
+			tip = nudgeRemindersOnly
+		}
 	case 3:
 		var missing []string
 		if !c.Calendar {

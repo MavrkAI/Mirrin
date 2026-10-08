@@ -133,6 +133,28 @@ func (d *Daemon) browserHandedOver(url, ask string) bool {
 	return d.pushHandOver()
 }
 
+// showScreen opens the presence screen at the twin's browser when a page
+// is handed over in a chat at this computer with no screen open here: by
+// voice, or in the terminal, there is nothing on screen to click, and
+// "it's on the presence screen" left the owner looking for it. A screen
+// already open shows the page itself; a messaging chat's owner may be
+// anywhere, so nothing opens on an empty desk.
+func (d *Daemon) showScreen(chatKey string) bool {
+	if isCall(chatKey) || d.bus.ScreensOpen() > 0 {
+		return false
+	}
+	switch channelOf(homeKey(chatKey)) {
+	case "voice", "cli":
+	default:
+		return false
+	}
+	if err := d.OpenScreen(context.Background()); err != nil {
+		d.log.Warn("browser: open the screen for a hand-over", "err", err)
+		return false
+	}
+	return true
+}
+
 // screenAddress is the presence screen's address on this computer, without
 // its key: said in chat, it must not carry a credential. Only a chat at this
 // computer gets it; from a messaging chat or a call the owner may be anywhere,
@@ -155,13 +177,16 @@ func (d *Daemon) screenAddress(chatKey string) string {
 
 // OpenScreen opens the presence screen in this computer's own browser, at
 // the twin's browser when a page is waiting there (a click on the orb).
-func (d *Daemon) OpenScreen(context.Context) error {
+func (d *Daemon) OpenScreen(context.Context) error { return d.openScreenAt("#browser") }
+
+// openScreenAt opens the presence screen at a part of it ("#show").
+func (d *Daemon) openScreenAt(hash string) error {
 	u := d.UIURL()
 	if u == "" {
 		return errors.New("the screen isn't available")
 	}
 	if !strings.Contains(u, "#") {
-		u += "#browser"
+		u += hash
 	}
 	var cmd *exec.Cmd
 	switch runtime.GOOS {

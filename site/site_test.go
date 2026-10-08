@@ -542,17 +542,17 @@ func TestProductNameStaysInItsToken(t *testing.T) {
 	}
 }
 
-// The old name is gone from the pages, comments included: with the token
-// test looking for "Mirrin", a leftover /AntBot link or `antbot` command
-// would pass it. The branch the work happens on isn't named either: what
-// is built but not released is "coming in the next release".
+// The product's earlier names are gone from the pages, comments included:
+// the token test looks for "Mirrin" and would miss a leftover link or
+// command. The branch the work happens on isn't named either: what is built
+// but not released is "coming in the next release".
 func TestOldNameIsGone(t *testing.T) {
-	reOld := regexp.MustCompile(`(?i)antbot`)
+	reOld := regexp.MustCompile(`(?i)antbot|openhuman`)
 	for _, p := range append(append([]string{}, pages...), "assets/og-card.html", "site.css") {
 		s := page(t, p)
 		if loc := reOld.FindStringIndex(s); loc != nil {
 			lo, hi := max(0, loc[0]-60), min(len(s), loc[1]+60)
-			t.Errorf("%s still names AntBot: %q. The product is Mirrin now.", p, s[lo:hi])
+			t.Errorf("%s still names an earlier name of the product: %q. It is Mirrin now.", p, s[lo:hi])
 		}
 	}
 }

@@ -54,7 +54,7 @@ func unhex(t testing.TB, s string) []byte {
 
 // devPriv derives a private key by the dev-key recipe in keys.go.
 func devPriv(kid string) ed25519.PrivateKey {
-	seed := sha256.Sum256([]byte("antbot dev key " + kid))
+	seed := sha256.Sum256([]byte("mirrin dev key " + kid))
 	return ed25519.NewKeyFromSeed(seed[:])
 }
 
@@ -452,7 +452,7 @@ func TestEntitlementRejects(t *testing.T) {
 		"case-folded claim":      {edited(t, `"gen":`, `"GEN":`), ErrMalformed, `unknown object member name "GEN"`},
 		"trailing data":          {resigned(t, payload+" {}", entFooter), ErrMalformed, "after top-level value"},
 		"payload not object":     {resigned(t, `[]`, entFooter), ErrMalformed, "unmarshal JSON array"}, // json/v2 says "cannot" or "unable to"
-		"wrong aud":              {edited(t, `"aud":"antbot"`, `"aud":"other"`), ErrMalformed, "aud is not antbot"},
+		"wrong aud":              {edited(t, `"aud":"mirrin"`, `"aud":"other"`), ErrMalformed, "aud is not mirrin"},
 		"gen zero":               {edited(t, `"gen":3`, `"gen":0`), ErrMalformed, "gen starts at 1"},
 		"lowercase z":            {edited(t, `"iat":"2026-09-27T12:00:00Z"`, `"iat":"2026-09-27T12:00:00z"`), ErrMalformed, "iat is not an RFC 3339 time"},
 		"unix time":              {edited(t, `"iat":"2026-09-27T12:00:00Z"`, `"iat":1790510400`), ErrMalformed, `within "/iat"`},

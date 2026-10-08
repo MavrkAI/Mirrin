@@ -114,6 +114,10 @@ type Channel struct {
 	// OnStop is the legacy cancellation hook, used when OnInterrupt is nil.
 	OnStop func()
 
+	// Screen puts long answers on the presence screen (spoken.go).
+	Screen ScreenHooks
+	shown  shownText
+
 	stopMu     sync.Mutex
 	stopNotice func() string // guarded by stopMu
 	handling   atomic.Bool   // the handler is answering a turn
@@ -395,7 +399,9 @@ func (c *Channel) converse(ctx context.Context, handler channels.Handler, text s
 		}
 		fmt.Fprintf(c.out, "You: %s\n", text)
 		c.handling.Store(true)
-		handler(ctx, channels.Inbound{Channel: "voice", ChatID: "local", Sender: "owner", Text: text, IsOwner: true})
+		if !c.screenCommand(ctx, text) { // spoken.go: "just read it to me"
+			handler(ctx, channels.Inbound{Channel: "voice", ChatID: "local", Sender: "owner", Text: text, IsOwner: true})
+		}
 		c.stopMu.Lock()
 		c.handling.Store(false)
 		notice := c.stopNotice

@@ -17,17 +17,6 @@ import (
 // there it reports none.
 func ForeignUnit() (path, program string, ok bool) { return foreignUnit(Name) }
 
-// ForeignLegacyUnit is ForeignUnit for the services from before the rename
-// (AntBot's, openHuman's).
-func ForeignLegacyUnit() (path, program string, ok bool) {
-	for _, name := range legacyNames {
-		if path, program, ok = foreignUnit(name); ok {
-			return path, program, ok
-		}
-	}
-	return "", "", false
-}
-
 func foreignUnit(name string) (string, string, bool) {
 	return foreignUnitAt(unitPath(runtime.GOOS, userHome(), name))
 }

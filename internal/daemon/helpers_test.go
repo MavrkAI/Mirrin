@@ -140,6 +140,8 @@ func newTestDaemon(t *testing.T, brain func(last string, req llm.Request) llm.Re
 	t.Cleanup(func() { d.store.Close() })
 	// The first hello on a new channel has tests of its own (firstchannel_test.go).
 	_ = d.store.Set(context.Background(), firstHelloKey, "already")
+	// So does the first look at the inbox (inbox_first_test.go).
+	_ = d.store.Set(context.Background(), inboxFirstKey, "already")
 	run, stop := context.WithCancel(context.Background()) // as Run sets it
 	d.runCtx = run
 	t.Cleanup(stop)

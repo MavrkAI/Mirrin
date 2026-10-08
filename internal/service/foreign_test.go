@@ -37,20 +37,15 @@ func TestForeignUnit(t *testing.T) {
 	writeFile(t, current, testPlist("mirrin", "/Users/me/.local/bin/mirrin", "MIRRIN_HOME", "/Users/me/twins/work"))
 	currentUnit := filepath.Join(dir, "mirrin.service")
 	writeFile(t, currentUnit, "[Service]\nExecStart=/home/me/.local/bin/mirrin run\nEnvironment=MIRRIN_HOME=/home/me/twins/work\n")
-	// AntBot's, from before the rename.
-	plist := filepath.Join(dir, "antbot.plist")
-	writeFile(t, plist, testPlist("antbot", "/Users/me/.local/bin/antbot", "ANTBOT_HOME", "/Users/me/.antbot"))
-	unit := filepath.Join(dir, "antbot.service")
-	writeFile(t, unit, "[Service]\nExecStart=/home/me/my\\x20apps/antbot run\nEnvironment=ANTBOT_HOME=/home/me/.antbot\n")
-	older := filepath.Join(dir, "openhuman.service")
-	writeFile(t, older, "[Service]\nExecStart=/usr/local/bin/openhuman run\nEnvironment=HOME=/home/me\n")
+	spaced := filepath.Join(dir, "spaced.service")
+	writeFile(t, spaced, "[Service]\nExecStart=/home/me/my\\x20apps/mirrin run\nEnvironment=MIRRIN_HOME=/home/me/twins/work\n")
+	older := filepath.Join(dir, "older.service")
+	writeFile(t, older, "[Service]\nExecStart=/usr/local/bin/mirrin run\nEnvironment=HOME=/home/me\n")
 
-	t.Setenv("OPENHUMAN_HOME", "")
-	t.Setenv("ANTBOT_HOME", "")
 	t.Setenv("MIRRIN_HOME", t.TempDir())
 	for path, want := range map[string]string{
 		current: "/Users/me/.local/bin/mirrin", currentUnit: "/home/me/.local/bin/mirrin",
-		plist: "/Users/me/.local/bin/antbot", unit: "/home/me/my apps/antbot", older: "/usr/local/bin/openhuman",
+		spaced: "/home/me/my apps/mirrin", older: "/usr/local/bin/mirrin",
 	} {
 		got, program, ok := foreignUnitAt(path)
 		if !ok || got != path || program != want {
@@ -64,15 +59,10 @@ func TestForeignUnit(t *testing.T) {
 		t.Error("no definition (Windows) is foreign")
 	}
 
-	// Run for the home the service was installed for, it's this home's own,
-	// whichever name the definition gives the home.
+	// Run for the home the service was installed for, it's this home's own.
 	t.Setenv("MIRRIN_HOME", "/Users/me/twins/work")
 	if _, _, ok := foreignUnitAt(current); ok {
 		t.Error("this home's own service is foreign")
-	}
-	t.Setenv("MIRRIN_HOME", "/Users/me/.antbot")
-	if _, _, ok := foreignUnitAt(plist); ok {
-		t.Error("this home's own AntBot service is foreign")
 	}
 	t.Setenv("MIRRIN_HOME", "")
 	if _, _, ok := foreignUnitAt(older); ok {
@@ -84,19 +74,18 @@ func TestUnitProgram(t *testing.T) {
 	dir := t.TempDir()
 	for body, want := range map[string]string{
 		"[Service]\nExecStart=\"/opt/My Apps/mirrin\" run\n": "/opt/My Apps/mirrin",
-		"[Service]\nExecStart=\"/opt/Ant Bot/antbot\" run\n": "/opt/Ant Bot/antbot",
-		"[Service]\nExecStart=-/usr/bin/antbot run\n":        "/usr/bin/antbot",
+		"[Service]\nExecStart=-/usr/bin/mirrin run\n":        "/usr/bin/mirrin",
 		"[Service]\nRestart=always\n":                        "",
 	} {
-		p := filepath.Join(dir, "antbot.service")
+		p := filepath.Join(dir, "mirrin.service")
 		writeFile(t, p, body)
 		if got := unitProgram(p); got != want {
 			t.Errorf("unitProgram(%q) = %q, want %q", body, got, want)
 		}
 	}
 	for name, program := range map[string]string{
-		"mirrin": "/Applications/Mirrin.app/Contents/MacOS/mirrin",
-		"antbot": "/Applications/AntBot.app/Contents/MacOS/antbot",
+		"mirrin":     "/Applications/Mirrin.app/Contents/MacOS/mirrin",
+		"mirrin-cli": "/usr/local/bin/mirrin",
 	} {
 		p := filepath.Join(dir, name+".plist")
 		writeFile(t, p, `<plist><dict><key>Label</key><string>`+name+`</string><key>Program</key><string>`+program+`</string></dict></plist>`)

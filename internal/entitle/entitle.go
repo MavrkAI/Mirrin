@@ -15,7 +15,7 @@ import (
 )
 
 // Audience is the aud of every entitlement.
-const Audience = "antbot" // rename:keep: a wire value every issued token carries
+const Audience = "mirrin"
 
 var (
 	// ErrExpired means now is at or past exp.

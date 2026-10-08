@@ -15,9 +15,26 @@ import (
 // fact it replaces. The result is oldest first; total is how many facts are
 // stored, so the caller can tell the model when it isn't seeing everything.
 func (s *Store) PromptFacts(ctx context.Context, query string, budget int) ([]Fact, int, error) {
+	p, err := s.PickFacts(ctx, query, budget)
+	return p.Facts, p.Total, err
+}
+
+// Picked is what PromptFacts chose for one message, and why (see why.go).
+type Picked struct {
+	Facts []Fact // what goes in the prompt, oldest first
+	Total int    // how many facts are stored
+	// Matched are the ids of the facts picked because they share words with
+	// the message, best match first. When everything fitted (Everything),
+	// they are the closest of all the facts instead.
+	Matched    []int64
+	Everything bool
+}
+
+// PickFacts is PromptFacts, saying which facts matched the message.
+func (s *Store) PickFacts(ctx context.Context, query string, budget int) (Picked, error) {
 	all, err := s.queryFacts(ctx, `SELECT id, subject, content, source, created_at FROM facts ORDER BY id ASC`)
 	if err != nil {
-		return nil, 0, err
+		return Picked{}, err
 	}
 	total := len(all)
 	used := 0
@@ -25,7 +42,13 @@ func (s *Store) PromptFacts(ctx context.Context, query string, budget int) ([]Fa
 		used += factCost(f)
 	}
 	if used <= budget {
-		return all, total, nil
+		p := Picked{Facts: all, Total: total, Everything: true}
+		if terms := keywords(query); len(terms) > 0 {
+			for _, f := range ranked(all, terms, whyClosest) {
+				p.Matched = append(p.Matched, f.ID)
+			}
+		}
+		return p, nil
 	}
 
 	picked := map[int64]bool{}
@@ -39,9 +62,12 @@ func (s *Store) PromptFacts(ctx context.Context, query string, budget int) ([]Fa
 		used += c
 		return true
 	}
+	var matched []int64
 	if terms := keywords(query); len(terms) > 0 {
 		for _, f := range ranked(all, terms, len(all)) {
-			take(f, budget/2)
+			if take(f, budget/2) {
+				matched = append(matched, f.ID)
+			}
 		}
 	}
 	for i := len(all) - 1; i >= 0; i-- {
@@ -53,7 +79,7 @@ func (s *Store) PromptFacts(ctx context.Context, query string, budget int) ([]Fa
 			out = append(out, f)
 		}
 	}
-	return out, total, nil
+	return Picked{Facts: out, Total: total, Matched: matched}, nil
 }
 
 // factCost is the size of a fact's line in the prompt.

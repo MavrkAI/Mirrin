@@ -76,19 +76,6 @@ func TestNewDeviceIsAnnouncedWithAWayToRevokeIt(t *testing.T) {
 	}
 }
 
-func TestOldScreenNoticeSaysWhatHappened(t *testing.T) {
-	e := api.PairEvent{Device: devices.Device{ID: "0123456789abcdef", Name: "Chrome on Linux", Kind: devices.KindPWA, Scopes: devices.DefaultScopes(devices.KindPWA), SharedKey: true}, IP: "192.168.1.9", Via: "lan", How: api.HowLegacyScreen}
-	msg := pairedNotice(e, true)
-	for _, want := range []string{"set up before devices had their own keys", "on your network", "old shared key", "reply /revoke 01234567", "change that key"} {
-		if !strings.Contains(msg, want) {
-			t.Errorf("notice lacks %q: %s", want, msg)
-		}
-	}
-	if msg := pairedNotice(e, false); !strings.Contains(msg, "`mirrin devices revoke 01234567`") {
-		t.Errorf("notice without a chat: %s", msg)
-	}
-}
-
 // Revoking a device that came in with the old shared key changes that key,
 // and says so.
 func TestRevokingAnOldScreenChangesTheSharedKey(t *testing.T) {

@@ -403,7 +403,7 @@ func TestRegistryPackFollowsTheIndex(t *testing.T) {
 	}
 }
 
-// .antbot-pack.json travels with identity exports, and its ref was handed to
+// .mirrin-pack.json travels with identity exports, and its ref was handed to
 // git fetch as it was.
 func TestProvenanceRefIsCheckedBeforeGit(t *testing.T) {
 	src, git := gitRepo(t)
@@ -505,15 +505,14 @@ func TestGitErrorSpeaksPlainly(t *testing.T) {
 	}
 }
 
-// The default index's address from before the rename (MavrkAI/AntBot) still
-// means the default: the signed index, with the built-in copy behind it,
-// never an unsigned fetch of whatever that address serves.
-func TestTheOldDefaultRegistryIsTheDefault(t *testing.T) {
+// The default index's address means the default: the signed index, with the
+// built-in copy behind it, never an unsigned fetch of whatever that address
+// serves.
+func TestTheDefaultRegistryAddressIsTheDefault(t *testing.T) {
 	for url, want := range map[string]bool{
 		"":                 true,
 		DefaultRegistryURL: true,
-		"https://raw.githubusercontent.com/MavrkAI/AntBot/main/registry/index.json": true,
-		"https://raw.githubusercontent.com/MavrkAI/AntBot/main/registry/other.json": false,
+		"https://raw.githubusercontent.com/MavrkAI/Mirrin/main/registry/other.json": false,
 		"https://example.com/index.json":                                            false,
 	} {
 		if got := IsDefaultRegistry(url); got != want {
@@ -538,12 +537,12 @@ func TestTheOldDefaultRegistryIsTheDefault(t *testing.T) {
 	registryClient = &http.Client{Transport: onlyHost{strings.TrimPrefix(srv.URL, "http://")}}
 	defer func() { registryURL, registryClient = oldURL, oldClient }()
 
-	r, err := FetchRegistry(context.Background(), "https://raw.githubusercontent.com/MavrkAI/AntBot/main/registry/index.json")
+	r, err := FetchRegistry(context.Background(), DefaultRegistryURL)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, ok := r.Find("live"); !ok {
-		t.Fatalf("the old default address wasn't read as the signed default index: %+v", r)
+		t.Fatalf("the default address wasn't read as the signed default index: %+v", r)
 	}
 }
 

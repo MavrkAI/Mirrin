@@ -6,7 +6,7 @@ set -eu
 cd "$(dirname "$0")/.."
 TAG=${1:-}
 [ -n "$TAG" ] || { echo "usage: scripts/release-notes.sh <tag>" >&2; exit 2; }
-REPO=${MIRRIN_REPO:-${ANTBOT_REPO:-MavrkAI/Mirrin}} # rename:keep
+REPO=${MIRRIN_REPO:-MavrkAI/Mirrin}
 CHANGELOG=${CHANGELOG:-CHANGELOG.md}
 
 # The section under "## 0.3.0 — date" (or "## [0.3.0]"), up to the next "## ".

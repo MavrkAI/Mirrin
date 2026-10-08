@@ -121,7 +121,7 @@ func TestSignedRequestShape(t *testing.T) {
 	r := signed(t, "POST", "https://cloud.mirrin.app/v1/link/start", `{"device_pub":"x"}`, priv, t0)
 	in := r.Header.Get("Signature-Input")
 	want := fmt.Sprintf(`sig1=("@method" "@target-uri" "content-digest");created=%d;expires=%d;nonce="`, t0.Unix(), t0.Unix()+300)
-	if !strings.HasPrefix(in, want) || !strings.HasSuffix(in, `";keyid="`+idOf(priv)+`";tag="antbot-cloud-v1"`) {
+	if !strings.HasPrefix(in, want) || !strings.HasSuffix(in, `";keyid="`+idOf(priv)+`";tag="mirrin-cloud-v1"`) {
 		t.Fatalf("Signature-Input: %s", in)
 	}
 	if d := r.Header.Get("Content-Digest"); !strings.HasPrefix(d, "sha-256=:") {
@@ -248,11 +248,11 @@ func TestVerifyRejects(t *testing.T) {
 		}, t0, ErrUnsigned, ""},
 		{"second mirrin input, unsigned", func(r *http.Request) {
 			r.Header.Add("Signature-Input", strings.Replace(r.Header.Get("Signature-Input"), "sig1=", "sig2=", 1))
-		}, t0, ErrSignature, "two antbot-cloud-v1 signatures"},
+		}, t0, ErrSignature, "two mirrin-cloud-v1 signatures"},
 		// Each of these two would verify on its own.
 		{"two valid mirrin signatures", func(r *http.Request) {
 			signRaw(t, r, "sig2", priv, components(covered...), profileParams(priv))
-		}, t0, ErrSignature, "two antbot-cloud-v1 signatures"},
+		}, t0, ErrSignature, "two mirrin-cloud-v1 signatures"},
 		{"repeated label", func(r *http.Request) { r.Header.Add("Signature-Input", r.Header.Get("Signature-Input")) }, t0, ErrSignature, `repeated key "sig1"`},
 		// Content-Digest is covered, so these are signed after the edit and
 		// fail on the digest rules, not the signature.

@@ -144,14 +144,15 @@ func saidAloud(kind, data any) bool {
 	default:
 		return false
 	}
-	var ch string
+	var ch, shown string
 	switch d := data.(type) {
 	case map[string]string:
-		ch = d["channel"]
+		ch, shown = d["channel"], d["shown"]
 	case map[string]any:
 		ch, _ = d["channel"].(string)
+		shown, _ = d["shown"].(string)
 	}
-	return ch == "voice"
+	return ch == "voice" && shown == "" // a long answer put on the screen wasn't said (show.go)
 }
 
 // pick is m with only keys.
