@@ -250,7 +250,10 @@ func TestStreamFloodBounded(t *testing.T) {
 	close(stop)
 	<-sampled
 	t.Logf("%d streams flooded; the daemon held at most %d at once (bound %d)", flood, peak, bound)
-	if peak > bound {
+	// A dropped stream's place is released when yamux's close timer ends
+	// its lingering read, a moment before yamux forgets the stream, so
+	// the count can show one more than the bound for an instant.
+	if peak > bound+1 {
 		t.Fatalf("the daemon held %d streams at once, want at most %d", peak, bound)
 	}
 	if peak < bound/2 {
