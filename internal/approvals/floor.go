@@ -11,7 +11,7 @@ func SafetyFloor(name string, risk tools.Risk) string {
 		return "payment"
 	case "run_shell":
 		return "shell command"
-	case "browser_act":
+	case "browser_act", "browser_run":
 		if risk >= tools.RiskDangerous {
 			return "payment-looking browser action"
 		}

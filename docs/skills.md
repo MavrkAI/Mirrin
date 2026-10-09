@@ -148,6 +148,16 @@ skills:
     idle_minutes: 10
 ```
 
+### Fast browsing with Jev (optional)
+
+With a checkout of [Jev Ultrafast](https://github.com/browser-use/jev-ultrafast) at `~/jev-ultrafast` (set up with its own `.env` and [uv](https://docs.astral.sh/uv/)), the twin also gets `browser_run`: it hands Jev a whole goal ("search for flats in Fitzroy under $600 a week, stop when the results show") and Jev clicks and types its way there in seconds, in a tab of the twin's own browser, so it has the same logins and goes through the same guard. The twin then reads the page it reached and carries on. Nothing to switch on: the tool appears when the checkout is there, and only then does the twin's Chrome listen for Jev, on a port of its own on this computer. Jev is never used to pay, book, send or submit anything personal; those stay with `browser_act` and your approval, and a goal that reads like a payment always asks. Point `jev_dir` at a checkout somewhere else, or set it to `off`.
+
+```yaml
+skills:
+  browser:
+    jev_dir: off   # or a path; default ~/jev-ultrafast when it exists
+```
+
 ## Google account (Calendar, Gmail, Drive)
 
 Menu bar → **Accounts…** → Google. One sign-in covers Calendar (read and write), Gmail (search, read, send, reply, archive) and Drive (search and read Docs, Sheets, Slides and text files). The first time on a computer you need an OAuth client so Google knows the app: Cloud console → Credentials → OAuth client ID → Desktop app, enable the Calendar, Gmail and Drive APIs, then paste the client id and secret into the card (or drop the JSON). Publish the app on its Audience page before you connect: while it is in Testing, Google ends every sign-in after 7 days (the twin tells you when it does, with the fix). Press Connect on the computer the twin runs on (Google returns the sign-in there, whatever address the twin also listens on), approve in the browser, and you land back on the page with the three services switched on. Each can be toggled; Disconnect forgets the token. `mirrin calendar login` is the terminal route to the same sign-in: save the Desktop-app client JSON as `~/.mirrin/google-credentials.json` first. The sign-in is kept in `~/.mirrin/google-token.json`, readable only by you.

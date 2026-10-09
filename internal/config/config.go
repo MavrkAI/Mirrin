@@ -606,6 +606,10 @@ type Browser struct {
 	// HandOver is where the owner takes a page over: "screen" (default), in
 	// the presence screen's live view, or "window", a separate Chrome window.
 	HandOver string `yaml:"handover,omitempty"`
+	// JevDir is a checkout of Jev Ultrafast (browser-use's fast browsing
+	// agent). With one at ~/jev-ultrafast, or named here, the twin gets
+	// browser_run and hands it whole goals; "off" leaves it out.
+	JevDir string `yaml:"jev_dir,omitempty"`
 }
 
 // System exposes the local machine (files, shell).

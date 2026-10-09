@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -85,6 +86,10 @@ type Session struct {
 	forceHeadless bool
 	live          liveHub      // the live view and take-over (live.go)
 	plain         *plainWindow // the sign-in window nobody drives (signinwindow.go)
+	jevRun        jevRunner    // runs Jev for browser_run (jev.go); tests fake it
+	jevCDP        func(context.Context) (string, error)
+	jevPortOnce   sync.Once
+	jevPort       int
 	// OnHandOver hears that a page was handed to the owner on the screen
 	// (the daemon shows the orb and tells their phone), and says whether a
 	// phone was told. ScreenURL is the screen's address for the chat that
@@ -313,6 +318,9 @@ func (s *Session) startChrome(headed bool, proxy, ua string) (context.Context, c
 	for name, value := range s.chromeFlags(headed, proxy, ua) {
 		opts = append(opts, chromedp.Flag(name, value))
 	}
+	if port := s.jevDebugPort(); port != 0 { // jev.go: a port Jev can find
+		opts = append(opts, chromedp.Flag("remote-debugging-port", strconv.Itoa(port)))
+	}
 	if p := findChrome(); p != "" {
 		opts = append(opts, chromedp.ExecPath(p))
 	}
@@ -465,7 +473,7 @@ func (s *Session) Tools() []tools.Tool {
 			"url":   {Type: "string", Description: "Optional URL to open first"},
 			"steps": {Type: "string", Description: "JSON array of steps: {\"type\":\"click\",\"ref\":12} | {\"type\":\"type\",\"ref\":3,\"text\":\"...\"} (replaces whatever the field holds, and checks it; add \"enter\":true to press Enter after; never type into a field again to fix it, this already replaces) | {\"type\":\"select\",\"ref\":5,\"value\":\"...\"} | {\"type\":\"press\",\"key\":\"Enter|Tab|Escape|ArrowDown|Backspace\"} (a combination like \"Meta+a\" or \"Shift+Tab\" presses the keys together) | {\"type\":\"scroll\",\"direction\":\"down|up\"} | {\"type\":\"wait\",\"selector\":\"css\"} | {\"type\":\"sleep\",\"ms\":1000} | {\"type\":\"submit\",\"ref\":9}. \"selector\" may replace \"ref\" in any step.", Required: true},
 		}), tools.RiskWrite, s.runAct).WithRiskFor(s.paymentRisk)
-	return append(s.teachTools(),
+	return append(append(s.teachTools(), s.jevTools()...),
 		tools.New("browse_page",
 			"Open a URL in the twin's real browser (stays signed in to the user's sites) or read the current page. Returns the page text, numbered elements and a screenshot you can see. Use for anything JavaScript-heavy, anything behind a login, and as the first step of any task on a website. Addresses on this computer or the local network are refused unless the user allowed them.",
 			tools.Schema(map[string]tools.Prop{

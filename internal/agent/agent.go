@@ -515,7 +515,7 @@ func caption(tool string, input json.RawMessage) string {
 			return "Looking at " + hostOf(u) + "."
 		}
 		return "Looking that up."
-	case "browse_page", "browser_act", "browser_inspect", "screenshot_page":
+	case "browse_page", "browser_act", "browser_inspect", "screenshot_page", "browser_run":
 		return "Opening the site."
 	case "browser_signin":
 		return "Handing you the browser to sign in."

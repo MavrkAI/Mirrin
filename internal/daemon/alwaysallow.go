@@ -44,7 +44,7 @@ type alwaysOffer struct {
 var neverAlways = map[string]bool{
 	"create_tool": true, "create_protocol": true, "update_protocol": true, "install_pack": true, "remove_pack": true,
 	"resolve_approval": true, "answer_task": true, "ask_before": true,
-	"browser_act": true, "remember_sensitive": true,
+	"browser_act": true, "browser_run": true, "remember_sensitive": true,
 }
 
 // reAlways finds the owner saying not to ask again.

@@ -13,7 +13,7 @@ func TestSafetyFloorCannotBeConfiguredAway(t *testing.T) {
 		risk tools.Risk
 	}{
 		{"check_spend", tools.RiskRead},
-		{"run_shell", tools.RiskDangerous}, {"browser_act", tools.RiskDangerous},
+		{"run_shell", tools.RiskDangerous}, {"browser_act", tools.RiskDangerous}, {"browser_run", tools.RiskDangerous},
 		{"read_file", tools.RiskDangerous}, {"write_file", tools.RiskDangerous}, {"list_dir", tools.RiskDangerous},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
