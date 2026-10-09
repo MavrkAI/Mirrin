@@ -24,7 +24,7 @@ You don't need a paid key: with Ollama running and a model pulled, the first run
 
 ## Before a pull request
 
-- `make build`, `make test` and `make lint` (vet, gofmt, a tidy `go.mod`, plus staticcheck and shellcheck when they're installed). `make test-race` if you touched anything concurrent.
+- `make build`, `make test` and `make lint` (vet, gofmt, a tidy `go.mod`, staticcheck, plus shellcheck when it's installed). `make test-race` if you touched anything concurrent.
 - A few staticcheck findings predate the check and are listed in `docs/maintainers-release.md`; please don't add new ones.
 - Tests never touch the real `~/.mirrin`. Call `t.Setenv("MIRRIN_HOME", t.TempDir())`, or set it in `TestMain`, before anything reaches package `config`; a test in `internal/config` fails when a package forgets.
 - Changing an installer, `scripts/` or `packaging/`? `go test ./scripts/... ./packaging/...` runs them against a local fake release, and the `packaging` workflow builds the app, the setup program and the Docker image on your PR.

@@ -136,8 +136,13 @@ jobs:
       - name: Known vulnerabilities (govulncheck)
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
       # Any finding fails CI, as it fails `make lint` (docs/maintainers-release.md, "Lint").
+      # Built from scripts/lint, which pins staticcheck and the x/tools it
+      # reads compiled packages with: a staticcheck release can lag a Go
+      # patch release's export format, as v0.8.1 did Go 1.27.2.
       - name: staticcheck
-        run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.1 ./...
+        run: |
+          go build -C scripts/lint -o "$RUNNER_TEMP/staticcheck" honnef.co/go/tools/cmd/staticcheck
+          "$RUNNER_TEMP/staticcheck" ./...
 
   # The S3 backup target against a real S3-compatible store (MinIO on
   # loopback, nothing outside the runner), including a 200 MiB multipart

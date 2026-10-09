@@ -73,7 +73,8 @@ func TestAddrScrubber(t *testing.T) {
 func TestLimiter(t *testing.T) {
 	l := newLimiter[string](2)
 	now := time.Date(2026, 9, 27, 0, 0, 0, 0, time.UTC)
-	if !l.allow("a", now) || !l.allow("a", now) || l.allow("a", now) {
+	first, second, third := l.allow("a", now), l.allow("a", now), l.allow("a", now)
+	if !first || !second || third {
 		t.Error("a bucket of two gave three")
 	}
 	if !l.allow("b", now) {

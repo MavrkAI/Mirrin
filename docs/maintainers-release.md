@@ -143,7 +143,7 @@ The `packaging` workflow builds it on every change and checks that it turns heal
 
 ## Lint
 
-staticcheck (0.8.1, pinned) fails both CI and `make lint` on any finding. The backlog it once had (the voice channel's `strings.Title` and `strings.Index` calls, and three numeric HTTP status codes) was cleared on 2026-09-27, so a new finding is fixed where it is added.
+staticcheck (0.8.1, pinned in `scripts/lint/go.mod` together with the `golang.org/x/tools` it reads compiled packages with, because a staticcheck release can lag a Go patch release's export format, as 0.8.1 did Go 1.27.2) fails both CI and `make lint` on any finding. The backlog it once had (the voice channel's `strings.Title` and `strings.Index` calls, and three numeric HTTP status codes) was cleared on 2026-09-27, so a new finding is fixed where it is added.
 
 ST1005, lower-case error strings, is off in `staticcheck.conf`, because many errors here are shown to the user as they are and are written as sentences.
 

@@ -124,9 +124,12 @@ func TestBillGateOffSendsNothing(t *testing.T) {
 func TestBillGateFailuresRunAsBefore(t *testing.T) {
 	lines := []string{receiptLine, "unread from Shop: Your invoice"}
 	for name, script := range map[string]func(*testing.T, *billMail, *jevtest.Server){
-		"401":  func(_ *testing.T, _ *billMail, s *jevtest.Server) { s.Fail(401, 5) },
-		"500":  func(_ *testing.T, _ *billMail, s *jevtest.Server) { s.Fail(500, 5) },
-		"slow": func(_ *testing.T, _ *billMail, s *jevtest.Server) { s.Delay(4 * time.Second) },
+		"401": func(_ *testing.T, _ *billMail, s *jevtest.Server) { s.Fail(401, 5) },
+		"500": func(_ *testing.T, _ *billMail, s *jevtest.Server) { s.Fail(500, 5) },
+		// Far longer than the client's 2 s: the poll must give up on Jev,
+		// not wait for it, however slow the runner (Windows CI has taken
+		// 13 s over the same work).
+		"slow": func(_ *testing.T, _ *billMail, s *jevtest.Server) { s.Delay(30 * time.Second) },
 		"missing m1": func(t *testing.T, bm *billMail, _ *jevtest.Server) {
 			only := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
@@ -145,8 +148,8 @@ func TestBillGateFailuresRunAsBefore(t *testing.T) {
 			script(t, bm, srv)
 			start := time.Now()
 			rest := bm.claim(mailItems(lines...))
-			if took := time.Since(start); took > 3500*time.Millisecond {
-				t.Fatalf("the poll took %v", took)
+			if took := time.Since(start); took > 20*time.Second {
+				t.Fatalf("the poll took %v: it waited for Jev", took)
 			}
 			if bm.runs() != 2 || len(rest) != 0 {
 				t.Fatalf("runs=%d rest=%v, want every email run", bm.runs(), rest)

@@ -202,7 +202,7 @@ func newFakeProbe(t *testing.T, region, token string) *fakeProbe {
 	f := &fakeProbe{region: region, token: token}
 	f.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if f.token != "" && r.Header.Get("Authorization") != "Bearer "+f.token {
-			http.Error(w, "no", 401)
+			http.Error(w, "no", http.StatusUnauthorized)
 			return
 		}
 		f.mu.Lock()
@@ -238,7 +238,7 @@ func newFakePager(t *testing.T) *fakePager {
 		defer p.mu.Unlock()
 		if p.fail > 0 {
 			p.fail--
-			http.Error(w, "busy", 503)
+			http.Error(w, "busy", http.StatusServiceUnavailable)
 			return
 		}
 		var b map[string]any
@@ -493,7 +493,7 @@ func TestChecks(t *testing.T) {
 		case "/ok":
 			io.WriteString(w, "{}")
 		case "/down":
-			http.Error(w, "no", 502)
+			http.Error(w, "no", http.StatusBadGateway)
 		case "/denylist":
 			io.WriteString(w, tok+"\n")
 		}

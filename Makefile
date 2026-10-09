@@ -37,8 +37,8 @@ test:
 test-race:
 	go test -race ./...
 
-# The gates CI runs. shellcheck and staticcheck run when they're installed,
-# and any finding fails, as in CI.
+# The gates CI runs. shellcheck runs when it's installed; staticcheck is
+# built from scripts/lint, which pins it. Any finding fails, as in CI.
 lint:
 	go vet ./...
 	go vet -tags nowhatsapp ./...
@@ -49,8 +49,8 @@ lint:
 	go run ./scripts/licenses -tags nowhatsapp -mit >/dev/null
 	@if command -v shellcheck >/dev/null; then shellcheck install.sh scripts/*.sh packaging/docker/*.sh packaging/voice/*.sh; \
 	else echo "shellcheck is not installed, so the shell scripts weren't checked"; fi
-	@if command -v staticcheck >/dev/null; then staticcheck ./...; \
-	else echo "staticcheck is not installed, so it was skipped (go install honnef.co/go/tools/cmd/staticcheck@v0.8.1)"; fi
+	go build -C scripts/lint -o "$${TMPDIR:-/tmp}/mirrin-staticcheck" honnef.co/go/tools/cmd/staticcheck
+	"$${TMPDIR:-/tmp}/mirrin-staticcheck" ./...
 
 # THIRD_PARTY_NOTICES lists every module the release builds link, with its
 # licence. Run this after changing dependencies; `make lint` says when. Every
