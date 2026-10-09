@@ -112,7 +112,8 @@ func TestEnterGoesToTheLastField(t *testing.T) {
 	// filling in alone doesn't.
 	click, _ := parseSteps(`[{"type":"click","selector":"#send"}]`)
 	fill, _ := parseSteps(`[{"type":"type","selector":"#name","text":"Sam"}]`)
-	if !stepsCommit(nil, "https://example.test/contact", click) || stepsCommit(nil, "https://example.test/contact", fill) || stepsCommit(nil, "", click) {
+	var noTab context.Context
+	if !stepsCommit(noTab, "https://example.test/contact", click) || stepsCommit(noTab, "https://example.test/contact", fill) || stepsCommit(noTab, "", click) {
 		t.Fatal("no open tab: a press on a new page should ask, filling in shouldn't")
 	}
 }

@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -110,7 +111,7 @@ func TestForgetSecrets(t *testing.T) {
 	if !strings.Contains(string(b), "# a note of mine") {
 		t.Fatalf("other lines lost:\n%s", b)
 	}
-	if st, _ := os.Stat(SecretsPathIn(home)); st.Mode().Perm() != 0o600 {
+	if st, _ := os.Stat(SecretsPathIn(home)); runtime.GOOS != "windows" && st.Mode().Perm() != 0o600 {
 		t.Fatalf("mode %v", st.Mode())
 	}
 	if _, err := os.Stat(SecretsPathIn(home) + ".tmp"); !os.IsNotExist(err) {

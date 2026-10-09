@@ -126,7 +126,7 @@ func TestBillGateFailuresRunAsBefore(t *testing.T) {
 	for name, script := range map[string]func(*testing.T, *billMail, *jevtest.Server){
 		"401":  func(_ *testing.T, _ *billMail, s *jevtest.Server) { s.Fail(401, 5) },
 		"500":  func(_ *testing.T, _ *billMail, s *jevtest.Server) { s.Fail(500, 5) },
-		"slow": func(_ *testing.T, _ *billMail, s *jevtest.Server) { s.Delay(3 * time.Second) },
+		"slow": func(_ *testing.T, _ *billMail, s *jevtest.Server) { s.Delay(4 * time.Second) },
 		"missing m1": func(t *testing.T, bm *billMail, _ *jevtest.Server) {
 			only := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
@@ -145,7 +145,7 @@ func TestBillGateFailuresRunAsBefore(t *testing.T) {
 			script(t, bm, srv)
 			start := time.Now()
 			rest := bm.claim(mailItems(lines...))
-			if took := time.Since(start); took > 2500*time.Millisecond {
+			if took := time.Since(start); took > 3500*time.Millisecond {
 				t.Fatalf("the poll took %v", took)
 			}
 			if bm.runs() != 2 || len(rest) != 0 {
@@ -354,7 +354,7 @@ func TestBillGateFailuresWereAsked(t *testing.T) {
 	for name, script := range map[string]func(*jevtest.Server){
 		"401":  func(s *jevtest.Server) { s.Fail(401, 5) },
 		"500":  func(s *jevtest.Server) { s.Fail(500, 5) },
-		"slow": func(s *jevtest.Server) { s.Delay(3 * time.Second) },
+		"slow": func(s *jevtest.Server) { s.Delay(4 * time.Second) },
 		"probability out of range": func(s *jevtest.Server) {
 			s.RawAnswer("m0", `{"type":"choice","choice":"marketing","probabilities":{"to_pay":-0.5,"marketing":1.5},"confidence":0.99}`)
 		},

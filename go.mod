@@ -1,6 +1,6 @@
 module github.com/MavrkAI/Mirrin
 
-go 1.27.1
+go 1.27.2
 
 require (
 	filippo.io/age v1.3.2
@@ -18,7 +18,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	go.mau.fi/whatsmeow v0.0.0-20260916100317-2375e1751bbd
 	golang.org/x/crypto v0.57.0
-	golang.org/x/net v0.59.0
+	golang.org/x/net v0.60.0
 	golang.org/x/oauth2 v0.37.0
 	golang.org/x/sys v0.48.0
 	golang.org/x/term v0.46.0

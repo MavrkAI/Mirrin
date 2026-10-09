@@ -91,21 +91,40 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer, ready fun
 	return 0
 }
 
-// parse parses fs, allowing flags after positional arguments.
+// parse parses fs, allowing flags after positional arguments. A word that
+// starts with a dash but names no flag of fs is a positional argument (a
+// key in URL-safe base64 can begin with "-"), and "--" ends the flags.
 func parse(fs *flag.FlagSet, args []string) ([]string, error) {
 	fs.SetOutput(io.Discard)
 	var pos []string
-	for {
+	for len(args) > 0 {
+		if args[0] == "--" {
+			return append(pos, args[1:]...), nil
+		}
+		if !isFlag(fs, args[0]) {
+			pos = append(pos, args[0])
+			args = args[1:]
+			continue
+		}
 		if err := fs.Parse(args); err != nil {
 			return nil, err
 		}
 		args = fs.Args()
-		if len(args) == 0 {
-			return pos, nil
-		}
-		pos = append(pos, args[0])
-		args = args[1:]
 	}
+	return pos, nil
+}
+
+// isFlag reports whether arg is a flag fs defines (or help), as -name,
+// --name or -name=value.
+func isFlag(fs *flag.FlagSet, arg string) bool {
+	if len(arg) < 2 || arg[0] != '-' {
+		return false
+	}
+	name := strings.TrimLeft(arg, "-")
+	if i := strings.IndexByte(name, '='); i >= 0 {
+		name = name[:i]
+	}
+	return name == "h" || name == "help" || fs.Lookup(name) != nil
 }
 
 func serve(ctx context.Context, args []string, stderr io.Writer, ready func(string)) error {

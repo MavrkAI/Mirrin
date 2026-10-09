@@ -21,6 +21,11 @@ import (
 	"github.com/MavrkAI/Mirrin/internal/homelock"
 )
 
+// startupFolder is the per-user Startup folder under %APPDATA%.
+func startupFolder(appData string) string {
+	return filepath.Join(appData, "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
+}
+
 // newStartup is this user's Startup entry for this home and program.
 // dataDir holds the home's claim, which tells its twin from another
 // profile's.

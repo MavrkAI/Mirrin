@@ -27,11 +27,6 @@ import (
 // startupName is the script in the Startup folder.
 const startupName = "Mirrin.cmd"
 
-// startupFolder is the per-user Startup folder under %APPDATA%.
-func startupFolder(appData string) string {
-	return filepath.Join(appData, "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
-}
-
 // startupScript is the Startup entry that runs exe's tray for home. cmd
 // reads it as UTF-8 after chcp, so a home with accents works, and a % in a
 // path is doubled so cmd doesn't expand it.

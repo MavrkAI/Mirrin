@@ -123,14 +123,14 @@ func TestRememberPageKeepsNoInstructionsFromThePage(t *testing.T) {
 
 // A long or many-lined title, and a long note, are cut to one short line.
 func TestRememberPageKeepsItShort(t *testing.T) {
-	p := Page{URL: "https://news.example/a", Title: "Line one\n\n" + strings.Repeat("word ", 60) + "​\"quoted\""}
+	p := Page{URL: "https://news.example/a", Title: "Line one\n\n" + strings.Repeat("word ", 60) + "\u200b\"quoted\""}
 	store, reg := pageSetup(t, &p)
 	if _, err := rememberPage(t, reg, map[string]string{"note": strings.Repeat("long note ", 40)}); err != nil {
 		t.Fatal(err)
 	}
 	all, _ := store.AllFacts(context.Background(), 0)
 	c := all[0].Content
-	if strings.ContainsAny(c, "\n​") || len([]rune(c)) > 400 {
+	if strings.ContainsAny(c, "\n\u200b") || len([]rune(c)) > 400 {
 		t.Fatalf("not one short line (%d): %q", len([]rune(c)), c)
 	}
 }
