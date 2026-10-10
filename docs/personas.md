@@ -34,7 +34,7 @@ wake_aliases: [mirin, mirren]     # misrecognitions to accept
 wake_model: hey_mirrin.onnx       # optional openWakeWord model in ~/.mirrin/tts, used when it is there
 ```
 
-Only `name` and `character` are required. In `greeting` and `hellos`, `{name}` is the owner's first name, `{address}` how the twin addresses them, and `{, address}` is ", sir" or nothing. A wall screen paired only to look says a plain "Good morning" instead, without the name. Switching persona from the menu bar brings its own voice, pitch, pace and wake word. Quote a `style` line that contains a colon followed by a space, or YAML reads it as a key. Everything about behaviour that is not character (memory, approvals, discretion, safety) is the same for every persona; the persona shapes voice and manner.
+Only `name` and `character` are required. In `greeting` and `hellos`, `{name}` is the owner's first name, `{address}` how the twin addresses them, and `{, address}` is ", sir" or nothing. A wall screen paired only to look says a plain "Good morning" instead, without the name. Switching persona from the menu bar brings its own voice, pitch, pace and wake word; picking another voice from the menu is yours, plain, and picking the persona's own voice back brings its pitch and pace back with it. Quote a `style` line that contains a colon followed by a space, or YAML reads it as a key. Everything about behaviour that is not character (memory, approvals, discretion, safety) is the same for every persona; the persona shapes voice and manner.
 
 ## Where they live
 

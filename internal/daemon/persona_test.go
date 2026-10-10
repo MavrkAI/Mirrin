@@ -404,3 +404,42 @@ func TestACharacterVoiceBringsItsPitch(t *testing.T) {
 		t.Fatalf("butler: %+v", vc)
 	}
 }
+
+// Pickoo's voice is am_puck pitched up and a touch quicker. Trying another
+// voice from the menu is the owner's choice, plain; picking Pickoo's own
+// back is Pickoo's voice again, pitch and pace included, and config.yaml
+// holds nothing of it. A config.yaml that already holds it, as a release
+// before this one wrote when the owner picked it, reads the same way.
+func TestChoosingThePersonasOwnVoiceBringsItsCharacterBack(t *testing.T) {
+	r := newVoiceRig(t, nil)
+	r.restart()
+	r.update(choosePersona("pickoo", "Pickoo"))
+	character := func(step string) {
+		t.Helper()
+		r.want(step, "pickoo", "pickoo", "", "am_puck")
+		if vc := r.d.Config().Channels.Voice; vc.Pitch != 520 || vc.Speed != 1.06 {
+			t.Fatalf("%s: pitch %d speed %v, want Pickoo's", step, vc.Pitch, vc.Speed)
+		}
+	}
+	character("Pickoo")
+	r.update(func(c *config.Config) { c.Channels.Voice.Voice = "am_fenrir" }) // the menu
+	r.want("another voice", "pickoo", "pickoo", "", "am_fenrir")
+	if vc := r.d.Config().Channels.Voice; vc.Pitch != 0 {
+		t.Fatalf("another voice pitched: %+v", vc)
+	}
+	r.update(func(c *config.Config) { c.Channels.Voice.Voice = "am_puck" })
+	character("Pickoo's own voice picked back")
+	if b, _ := os.ReadFile(config.Path()); strings.Contains(string(b), "am_puck") {
+		t.Fatalf("config.yaml holds the persona's voice:\n%s", b)
+	}
+	r.restart()
+	character("after a restart")
+
+	// As an earlier release left it: the persona's voice in a clean config.yaml.
+	b, _ := os.ReadFile(config.Path())
+	if err := os.WriteFile(config.Path(), []byte(strings.Replace(string(b), "voice: bm_george", "voice: am_puck", 1)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	r.restart()
+	character("a config.yaml holding the persona's voice")
+}

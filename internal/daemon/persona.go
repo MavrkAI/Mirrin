@@ -72,7 +72,7 @@ const voiceCleanKey = "persona.voice.clean"
 // values earlier releases saved for a persona.
 func (d *Daemon) ownVoiceOf(vc config.Voice, pr persona.Persona, known []persona.Persona) voiceOverrides {
 	if d.voiceClean() {
-		return cleanVoice(vc)
+		return cleanVoice(vc, pr.Voice)
 	}
 	return ownVoice(vc, pr, known, d.legacyVoice())
 }
@@ -86,8 +86,10 @@ func formerStock(v string) bool {
 }
 
 // cleanVoice reads the owner's choices from a config.yaml saved clean:
-// every value other than empty or stock.
-func cleanVoice(vc config.Voice) voiceOverrides {
+// every value other than empty or stock. The persona's own voice is not a
+// choice either: picked from the menu, or saved by a release that wrote it,
+// it means the persona's voice, with its pitch and pace.
+func cleanVoice(vc config.Voice, personaVoice string) voiceOverrides {
 	stock := config.Default().Channels.Voice
 	chosen := func(cur, stock string) *string {
 		if cur == "" || cur == stock || formerStock(cur) {
@@ -95,11 +97,15 @@ func cleanVoice(vc config.Voice) voiceOverrides {
 		}
 		return &cur
 	}
-	return voiceOverrides{
+	own := voiceOverrides{
 		WakeWord:  chosen(vc.WakeWord, stock.WakeWord),
 		WakeModel: chosen(vc.WakeModel, stock.WakeModel),
 		Voice:     chosen(vc.Voice, stock.Voice),
 	}
+	if personaVoice != "" && vc.Voice == personaVoice {
+		own.Voice = nil
+	}
+	return own
 }
 
 // ownVoice reads the owner's choices from voice settings as config.yaml
@@ -214,8 +220,10 @@ func (o voiceOverrides) saved(vc *config.Voice) {
 // changedVoice is own after a settings change took the voice settings from
 // base (as config.yaml holds them) to next: a setting the change moved away
 // from both base and the live, resolved value is the owner's choice now;
-// setting it back to empty or stock follows the persona again.
-func changedVoice(own voiceOverrides, base, next, live config.Voice) voiceOverrides {
+// setting it back to empty or stock follows the persona again, and so does
+// picking the persona's own voice (personaVoice) from the menu after
+// another: the character's voice comes with its pitch and pace.
+func changedVoice(own voiceOverrides, base, next, live config.Voice, personaVoice string) voiceOverrides {
 	stock := config.Default().Channels.Voice
 	upd := func(o *string, b, n, l, stock string) *string {
 		if n == b || n == l {
@@ -229,6 +237,9 @@ func changedVoice(own voiceOverrides, base, next, live config.Voice) voiceOverri
 	own.WakeWord = upd(own.WakeWord, base.WakeWord, next.WakeWord, live.WakeWord, stock.WakeWord)
 	own.WakeModel = upd(own.WakeModel, base.WakeModel, next.WakeModel, live.WakeModel, stock.WakeModel)
 	own.Voice = upd(own.Voice, base.Voice, next.Voice, live.Voice, stock.Voice)
+	if personaVoice != "" && next.Voice == personaVoice {
+		own.Voice = nil
+	}
 	return own
 }
 
@@ -239,7 +250,7 @@ func changedVoice(own voiceOverrides, base, next, live config.Voice) voiceOverri
 func (d *Daemon) voiceToSave(base, next *config.Config) (persona.Persona, voiceOverrides) {
 	pr, known := d.pickPersona(next)
 	was, _ := persona.Pick(known, base.Persona, base.Name) // whose picks an old config.yaml may hold
-	own := changedVoice(d.ownVoiceOf(base.Channels.Voice, was, known), base.Channels.Voice, next.Channels.Voice, d.cfg.Channels.Voice)
+	own := changedVoice(d.ownVoiceOf(base.Channels.Voice, was, known), base.Channels.Voice, next.Channels.Voice, d.cfg.Channels.Voice, pr.Voice)
 	own.saved(&next.Channels.Voice)
 	dropInheritedAddress(base, next, was, pr)
 	return pr, own
