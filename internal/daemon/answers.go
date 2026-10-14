@@ -60,6 +60,7 @@ func (d *Daemon) answerTools() []tools.Tool {
 			}), tools.RiskRead, d.answerTaskTool), d},
 		ownersOnly{d.askBeforeTool(), d},
 		ownersOnly{d.setAddressTool(), d},  // address.go
+		ownersOnly{d.setUnhingedTool(), d}, // unhinged.go
 		ownersOnly{d.sendToOwnerTool(), d}, // taskshots.go
 		ownersOnly{d.openScreenTool(), d},  // openscreen.go
 	}

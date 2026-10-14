@@ -4,6 +4,9 @@ All notable changes are listed here. The format follows Keep a Changelog; versio
 
 ## Unreleased
 
+### Unhinged mode
+- Any persona can be turned all the way up: tick **Unhinged mode** under Persona in the menu bar, say "go unhinged" in chat, or put `unhinged: true` in config.yaml. Same name and voice, manners off. Money, privacy, health and anything that can't be undone still get the plain, careful version that asks first, and only you can switch it. "Calm down" or the tick again switches it off.
+
 ### The cast is Mirrin, Nyra and Pickoo
 - The bundled persona `plain`, drawn as the coral rover, has retired before release. Nothing to do: a config.yaml that chose it (`persona: plain`) means Mirrin now, by his name, answering to "Hey Mirrin" in his own voice, and the next save writes `mirrin`. A name you gave your twin yourself stays.
 

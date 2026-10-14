@@ -20,8 +20,12 @@ type Config struct {
 	Name string `yaml:"name"`
 	// Persona is the personality id (bundled: mirrin, nyra, pickoo, plain; or one in ~/.mirrin/personas).
 	Persona string `yaml:"persona"`
-	User    User   `yaml:"user"`
-	LLM     LLM    `yaml:"llm"`
+	// Unhinged turns the persona's character all the way up: theatrical,
+	// blunt and funny, with the same rules for money, privacy and safety
+	// (agent/unhinged.go). The Persona menu, or "go unhinged" in chat.
+	Unhinged bool `yaml:"unhinged,omitempty"`
+	User     User `yaml:"user"`
+	LLM      LLM  `yaml:"llm"`
 
 	Channels Channels `yaml:"channels"`
 	Autonomy Autonomy `yaml:"autonomy"`

@@ -36,6 +36,12 @@ wake_model: hey_mirrin.onnx       # optional openWakeWord model in ~/.mirrin/tts
 
 Only `name` and `character` are required. In `greeting` and `hellos`, `{name}` is the owner's first name, `{address}` how the twin addresses them, and `{, address}` is ", sir" or nothing. A wall screen paired only to look says a plain "Good morning" instead, without the name. Switching persona from the menu bar brings its own voice, pitch, pace and wake word; picking another voice from the menu is yours, plain, and picking the persona's own voice back brings its pitch and pace back with it. Quote a `style` line that contains a colon followed by a space, or YAML reads it as a key. Everything about behaviour that is not character (memory, approvals, discretion, safety) is the same for every persona; the persona shapes voice and manner.
 
+## Unhinged mode
+
+Any persona can be turned all the way up. Tick **Unhinged mode** under Persona in the menu bar, say "go unhinged" in chat, or put `unhinged: true` in config.yaml. The twin keeps its name and voice and loses its manners: theatrical, blunt, funny, with opinions about your calendar and tangents you didn't ask for. It is the same character, only more so, and the answer is still in there near the top.
+
+What it may do does not change. Money, privacy, health and anything that can't be undone get the plain, careful version that asks first; approvals, memory and the safety rules are untouched, and it is never cruel or unhinged at anyone other than you. "Calm down", "normal mode" or the tick again switches it off. The switch is yours, so it stays on through restarts and persona switches until you turn it off.
+
 ## Where they live
 
 - Bundled: `mirrin` (Mirrin, the gentleman-butler, drawn on the screen as a man in a dinner jacket; the default; `persona: mavrk`, his id before he took the product's name, still means him), `pickoo` (a cheerful penguin with a pitched-up voice, drawn as the penguin) and `nyra` (Nyra, warm and composed, drawn as a woman in a navy blazer). Any other persona is drawn as the penguin. The bundled persona `plain` has retired: a config.yaml that still names it means Mirrin, and the next save writes `mirrin`.

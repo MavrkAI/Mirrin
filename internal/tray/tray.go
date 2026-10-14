@@ -677,6 +677,7 @@ func buildSettings(ctx context.Context, name string, backend Backend) {
 				}
 			}, backend, name)
 	}
+	unhingedItem(ctx, pm, backend, name)
 
 	// ---- Time zone ----
 	zoneItem := systray.AddMenuItem(zoneTitle(backend.Config().User.Timezone, config.LocalTimezone()), "Pin the time zone reminders and routines keep, or follow this computer as it travels")
