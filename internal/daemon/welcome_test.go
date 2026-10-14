@@ -630,11 +630,12 @@ func helloWeather(t *testing.T) {
 }
 
 // The first hello is in character, with true things Go gathered for the
-// model to word: the part of the day, the weather where the owner's time
-// zone is, and when the routines run. It offers no tools, says what it is
-// looking at before any words, starts the first week, and opens the
-// screen's conversation.
-func TestHelloInCharacterWithOneTrueThing(t *testing.T) {
+// model to word, up to three of them: the part of the day, the weather
+// where the owner's time zone is, and when the routines run; nothing of
+// the inbox or the calendar when neither is connected. It offers no tools,
+// says what it is looking at before any words, starts the first week, and
+// opens the screen's conversation.
+func TestHelloInCharacterWithThreeTrueThings(t *testing.T) {
 	helloWeather(t)
 	var asked []llm.Request
 	td := newTestDaemon(t, func(_ string, req llm.Request) llm.Response {
@@ -670,7 +671,7 @@ func TestHelloInCharacterWithOneTrueThing(t *testing.T) {
 		t.Fatal(err)
 	}
 	part := dayPart(time.Now().In(td.location()))
-	if len(order) < 2 || order[0] != "status: "+lookingAt(part) || !strings.HasPrefix(order[1], "delta: ") {
+	if len(order) < 2 || order[0] != "status: "+lookingAt(part, false) || !strings.HasPrefix(order[1], "delta: ") {
 		t.Fatalf("the status should come before any words: %q", order)
 	}
 	if len(asked) != 1 {
@@ -679,18 +680,21 @@ func TestHelloInCharacterWithOneTrueThing(t *testing.T) {
 	req := asked[0]
 	facts := lastUserText(req)
 	for what, ok := range map[string]bool{
-		"the persona's name":         strings.Contains(req.System, "You are Nyra"),
-		"her character":              strings.Contains(req.System, strings.Fields(td.Persona().Character)[0]),
-		"how she addresses him":      strings.Contains(req.System, `as "Akshay"`),
-		"the ask":                    strings.Contains(req.System, fmt.Sprintf(helloAsk, "Akshay Kumar", helloEndTyping)),
-		"not listening, no name":     !strings.Contains(req.System, "say your name"),
-		"the part of the day":        strings.Contains(facts, "Time: "+part+", "),
-		"the weather":                strings.Contains(facts, "Weather: 14°C and clear in Melbourne."),
-		"the routine's time":         strings.Contains(facts, "Routines: morning briefing every day at 7:00."),
-		"no parked routine":          !strings.Contains(facts, "parked"),
-		"no calendar, none is there": !strings.Contains(strings.ToLower(facts), "calendar"),
-		"no tools":                   len(req.Tools) == 0,
-		"a short reply":              req.MaxTokens == 200,
+		"the persona's name":                 strings.Contains(req.System, "You are Nyra"),
+		"her character":                      strings.Contains(req.System, strings.Fields(td.Persona().Character)[0]),
+		"how she addresses him":              strings.Contains(req.System, `as "Akshay"`),
+		"the ask":                            strings.Contains(req.System, fmt.Sprintf(helloAsk, "Akshay Kumar", helloEndTyping)),
+		"up to three things":                 strings.Contains(req.System, "up to THREE") && !strings.Contains(req.System, "exactly ONE"),
+		"the calendar and inbox first":       strings.Contains(req.System, "calendar") && strings.Contains(req.System, "inbox"),
+		"not listening, no name":             !strings.Contains(req.System, "say your name"),
+		"the part of the day":                strings.Contains(facts, "Time: "+part+", "),
+		"the weather":                        strings.Contains(facts, "Weather: 14°C and clear in Melbourne."),
+		"the routine's time":                 strings.Contains(facts, "Routines: morning briefing every day at 7:00."),
+		"no parked routine":                  !strings.Contains(facts, "parked"),
+		"no calendar, none is there":         !strings.Contains(strings.ToLower(facts), "calendar"),
+		"no inbox, none is connected":        !strings.Contains(strings.ToLower(facts), "inbox"),
+		"no tools":                           len(req.Tools) == 0,
+		"room for three things, still short": req.MaxTokens > 200 && req.MaxTokens <= 300,
 	} {
 		if !ok {
 			t.Errorf("hello prompt: %s\nsystem: %s\nfacts: %s", what, req.System, facts)

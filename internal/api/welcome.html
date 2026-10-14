@@ -47,8 +47,8 @@
 <p><a id="keylink" href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer">Get an API key</a> from your provider. Their usage charges may apply.</p>
 <label for="key">API key</label><input id="key" type="password" autocomplete="off" required><small>Your key stays on this computer. Checking it sends a short hello to your provider.</small><button>Check and save key</button></form></section>
 <section id="names" hidden><h2 id="castq">2. Who would you like?</h2><form id="nameform"><div class="cast" id="cast" role="radiogroup" aria-labelledby="castq"></div><label for="you">Your name</label><input id="you" maxlength="100" autocomplete="given-name" required><label for="twin">Your twin's name</label><input id="twin" value="Mirrin" maxlength="100" required><label for="address" id="addressq">How should Mirrin address you?</label><select id="address"><option value="name">By my name</option><option value="sir" selected>Sir</option><option value="ma'am">Ma'am</option></select><label><input id="speak" type="checkbox" checked> <span id="speaklabel">Say it out loud (your Mac's standard voice until voice is set up)</span></label><button>Meet my twin</button></form><p class="later">You can change any of this later from the menu bar.</p></section>
-<section id="cal" hidden><h2 id="calq">Connect your calendar?</h2><p>Then I can tell you what's left of your day when I say hello. It's optional, and you can do it later from Accounts.</p>
-<button type="button" id="calconnect">Connect Google Calendar</button><p id="calnext" hidden>Sign in on the <a href="/accounts" target="mirrin-accounts">Accounts page</a> (it opens in its own window), then come back here.</p><p id="calok" role="status" hidden>Your calendar is connected.</p><button type="button" id="calgo">Skip for now</button></section>
+<section id="cal" hidden><h2 id="calq">Connect Google?</h2><p>Then I can say what's left of your day and what's waiting in your inbox when I say hello. It's optional, and you can do it later from Accounts.</p>
+<button type="button" id="calconnect">Connect Google</button><p id="calnext" hidden>Sign in on the <a href="/accounts" target="mirrin-accounts">Accounts page</a> (it opens in its own window), then come back here.</p><p id="calok" role="status" hidden>Google is connected.</p><button type="button" id="calgo">Skip for now</button></section>
 <section id="hello" hidden><h2>Hello.</h2><div id="reply" role="status" aria-live="polite"></div><p id="fine" hidden></p><button id="retry" hidden>Try hello again</button><div id="offer" class="offer" role="group" aria-labelledby="offerq" hidden><p id="offerq"></p><label for="offertime">At</label><select id="offertime"><option>06:00</option><option>06:30</option><option selected>07:00</option><option>07:30</option><option>08:00</option><option>08:30</option><option>09:00</option></select> <button type="button" id="offeryes">Yes</button><button type="button" id="offerlater">Later</button></div><p id="offersaid" role="status" hidden></p><p><a href="/ui?hello=1">Keep talking →</a></p></section>
 <section id="reach" hidden><h2 id="reachq">3. When you're away from this Mac, where should I reach you?</h2><div class="ways" role="group" aria-labelledby="reachq">
 <button type="button" class="way" data-way="telegram" aria-pressed="false" hidden><b>Telegram</b><small>Messages arrive like any chat and buzz your phone.</small></button>
@@ -87,10 +87,11 @@ async function hello(){
  if(speak&&!spoke&&'speechSynthesis'in window)speechSynthesis.speak(new SpeechSynthesisUtterance(done)) }catch(e){if(!words)$('reply').textContent='';notice(e);$('retry').hidden=false}
  reach();
 }
-// Before the first hello, and always skippable: connect a calendar so the
-// hello can say what's left of the day. Connecting happens on the Accounts
-// page in a window of its own; coming back here checks again. Skipped when
-// a calendar is connected already, or this twin can't say.
+// Before the first hello, and always skippable: connect Google so the
+// hello can say what's left of the day and what's waiting in the inbox.
+// Connecting happens on the Accounts page in a window of its own; coming
+// back here checks again. Skipped when Google is connected already, or
+// this twin can't say.
 async function calendarStep(){
  let c=null;try{c=await call('calendar')}catch(e){}
  if(!c||c.connected)return hello();

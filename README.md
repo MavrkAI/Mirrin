@@ -53,7 +53,7 @@ You need macOS, Windows or Linux, and a model to think with: a key for Claude, O
 
 Downloads are on the [Releases page](https://github.com/MavrkAI/Mirrin/releases).
 
-**On a Mac:** download `Mirrin-<version>-macos.dmg` (one app for Apple silicon and Intel), drag Mirrin into Applications and open it. It lives in the menu bar. A Welcome window finds or checks your model key, asks which persona you'd like, and can restore a twin from an encrypted backup. Until the Mac builds are notarized by Apple, macOS blocks the app the first time you open it: choose System Settings → Privacy & Security → Open Anyway.
+**On a Mac:** download `Mirrin-<version>-macos.dmg` (one app for Apple silicon and Intel), drag Mirrin into Applications and open it. It lives in the menu bar. A Welcome window finds or checks your model key, asks which persona you'd like, connects Google if you want it to, and can restore a twin from an encrypted backup. If you do connect it, your twin's first hello says what's next on your calendar and what's waiting in your inbox. Until the Mac builds are notarized by Apple, macOS blocks the app the first time you open it: choose System Settings → Privacy & Security → Open Anyway.
 
 **On Windows:** download `Mirrin-<version>-windows-setup.exe` and run it. It installs for you alone, so it needs no administrator, offers to run `mirrin init` when it finishes, and offers to start your twin in the system tray each time you sign in.
 

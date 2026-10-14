@@ -17,9 +17,10 @@ func helloWithOffer(w http.ResponseWriter, _ *http.Request) {
 		"event: offer\ndata: {\"id\":7,\"text\":\"Want me to brief you at seven tomorrow?\",\"time\":\"07:00\"}\n\n")
 }
 
-// Before the first hello, a calendar not yet connected is offered, and can
-// be skipped: Connect opens the Accounts page in a window of its own, and
-// coming back here notices it connected. Continue goes on to the hello.
+// Before the first hello, Google (calendar and inbox) not yet connected is
+// offered, and can be skipped: Connect opens the Accounts page in a window
+// of its own, and coming back here notices it connected. Continue goes on
+// to the hello.
 func TestWelcomeOffersTheCalendarFirst(t *testing.T) {
 	ctx, d, _ := welcomeStep2(t, false)
 	var connected atomic.Bool
@@ -30,8 +31,11 @@ func TestWelcomeOffersTheCalendarFirst(t *testing.T) {
 	run(t, ctx, chromedp.Evaluate(`window.__opened = []; window.open = (u, n) => { __opened.push(u + ' ' + n); return null }; speechSynthesis.speak = () => {}; true`, nil))
 	run(t, ctx, chromedp.SendKeys("#you", "Akshay", chromedp.ByQuery), chromedp.Click(`#nameform > button`, chromedp.ByQuery))
 	waitFor(t, ctx, visible("#cal")+` && document.activeElement === document.querySelector('#calconnect')`, "the calendar step")
-	if got := textOf(t, ctx, "#calq"); got != "Connect your calendar?" {
+	if got := textOf(t, ctx, "#calq"); got != "Connect Google?" {
 		t.Fatalf("the step asks %q", got)
+	}
+	if got := textOf(t, ctx, "#calconnect"); got != "Connect Google" {
+		t.Fatalf("the button says %q", got)
 	}
 	if d.count("POST /welcome/hello") != 0 || !eval[bool](t, ctx, `document.querySelector('#hello').hidden`) {
 		t.Fatal("the hello came before the calendar step")
@@ -45,6 +49,9 @@ func TestWelcomeOffersTheCalendarFirst(t *testing.T) {
 	connected.Store(true)
 	run(t, ctx, chromedp.Evaluate(`window.dispatchEvent(new Event('focus')); true`, nil))
 	waitFor(t, ctx, visible("#calok")+` && document.querySelector('#calgo').textContent === 'Continue' && document.querySelector('#calconnect').hidden`, "connected, noticed on coming back")
+	if got := textOf(t, ctx, "#calok"); got != "Google is connected." {
+		t.Fatalf("connected reads %q", got)
+	}
 	run(t, ctx, chromedp.Click("#calgo", chromedp.ByQuery))
 	waitFor(t, ctx, `document.querySelector('#cal').hidden && document.querySelector('#reply').textContent === 'Good afternoon, Akshay.'`, "the hello")
 }

@@ -4,6 +4,9 @@ All notable changes are listed here. The format follows Keep a Changelog; versio
 
 ## Unreleased
 
+### The first hello names three true things
+- The Welcome window's step before the hello now offers to connect Google, not only the calendar: one sign-in grants both. With it connected, the first hello says up to three true things, the next thing on your calendar and the email waiting on you first, then the weather, the time or a routine. Go reads the inbox and the model only words it: the newest unread email from a person, never a no-reply, and a health, money or relationship matter only as that, with no details. Skip the step and the hello says what it can see, as before.
+
 ### Unhinged mode
 - Any persona can be turned all the way up: tick **Unhinged mode** under Persona in the menu bar, say "go unhinged" in chat, or put `unhinged: true` in config.yaml. Same name and voice, manners off. Money, privacy, health and anything that can't be undone still get the plain, careful version that asks first, and only you can switch it. "Calm down" or the tick again switches it off.
 

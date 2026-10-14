@@ -28,6 +28,17 @@ type InboxMail struct {
 // to max (newest first). It lists and fetches headers; it never changes a
 // label or sends anything.
 func (a *Auth) RecentInbox(ctx context.Context, max int64) ([]InboxMail, error) {
+	return a.recent(ctx, triageQuery, max)
+}
+
+// RecentUnread is RecentInbox for the unread mail only: what is still
+// waiting on the owner, however much they have read since.
+func (a *Auth) RecentUnread(ctx context.Context, max int64) ([]InboxMail, error) {
+	return a.recent(ctx, triageQuery+" is:unread", max)
+}
+
+// recent is RecentInbox's work for one Gmail search.
+func (a *Auth) recent(ctx context.Context, query string, max int64) ([]InboxMail, error) {
 	if max <= 0 || max > 30 {
 		max = 20
 	}
@@ -35,7 +46,7 @@ func (a *Auth) RecentInbox(ctx context.Context, max int64) ([]InboxMail, error) 
 	if err != nil {
 		return nil, err
 	}
-	list, err := svc.Users.Messages.List("me").Q(triageQuery).MaxResults(max).Context(ctx).Do()
+	list, err := svc.Users.Messages.List("me").Q(query).MaxResults(max).Context(ctx).Do()
 	if err != nil {
 		return nil, a.Explain("gmail", err)
 	}
