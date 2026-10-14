@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/MavrkAI/Mirrin/internal/config"
 	"github.com/MavrkAI/Mirrin/internal/llm"
 	gauth "github.com/MavrkAI/Mirrin/internal/skills/google"
 	"github.com/MavrkAI/Mirrin/internal/skills/google/googletest"
@@ -103,6 +104,12 @@ func TestHelloNamesTheEmailWaiting(t *testing.T) {
 		return say("Evening, Akshay. Priya's asking about Saturday. Type to me whenever you like.")
 	}
 	connectWithoutWaiting(t, td)
+	// The weather is for the zone's city, and UTC, as on CI, has none. Saved,
+	// not only set in memory: SetNames below starts from the file the connect
+	// just wrote.
+	if err := td.UpdateConfig(func(c *config.Config) { c.User.Timezone = "Australia/Melbourne" }); err != nil {
+		t.Fatal(err)
+	}
 	now := time.Now()
 	for i := range 12 {
 		addDatedMail(fake, fmt.Sprintf("read%d", i), "Colleague <colleague@example.com>", fmt.Sprintf("Minutes %d", i), "Read already.", now.Add(-time.Duration(i+1)*time.Minute), true)
