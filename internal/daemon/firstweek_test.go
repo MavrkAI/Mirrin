@@ -55,11 +55,21 @@ func TestTheVoiceTipUsesThePersonasWakeWord(t *testing.T) {
 	if err := os.WriteFile(model, []byte("model"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := td.UpdateConfig(func(c *config.Config) { c.Channels.Voice.WhisperModel = model }); err != nil {
-		t.Fatal(err)
+	td.cmu.Lock()
+	td.cfg.Channels.Voice.WhisperModel = model
+	td.cmu.Unlock()
+	// Set up but not listening (the microphone not allowed yet, or push to
+	// talk chosen): "say my name" would be a lie, so no tip yet either.
+	onTourDay(t, td, 5)
+	td.nudge(ctx)
+	if heard, sent := td.llm.heard(), td.ch.messages(); len(heard) != 0 || len(sent) != 0 {
+		t.Fatalf("a voice tip while not listening: asked %q, sent %q", heard, sent)
 	}
+	td.chmu.Lock()
+	td.channels["voice"] = &fakeChannel{name: "voice", owner: "local", out: make(chan string, 8)}
+	td.chmu.Unlock()
 	if !td.connected().Voice {
-		t.Fatal("setup: voice isn't set up")
+		t.Fatal("listening, but voice doesn't count as connected")
 	}
 	onTourDay(t, td, 5)
 	td.nudge(ctx)

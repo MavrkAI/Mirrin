@@ -90,7 +90,7 @@ Then:
 
 - **Reach it from your phone:** menu bar → **Channels…**, and **Accounts…** to connect Google.
 - **Chat in the terminal:** `mirrin chat`. On Windows or Linux, `mirrin tray` puts it in the system tray.
-- **Talk to it:** run `mirrin voice setup` once (about 850 MB of models; on a Mac, `brew install whisper-cpp sox uv` first), then `mirrin voice --wake` and say its name.
+- **Talk to it:** run `mirrin voice setup` once (about 850 MB of models; on a Mac, `brew install whisper-cpp sox uv` first), then say its name: it listens for it on this computer from then on. Voice → Listening in the menu bar turns that off, and `mirrin voice` talks push-to-talk.
 - **Change who it is:** the Persona menu, or `mirrin persona list` and `mirrin persona use nyra` (the ids are `mirrin`, `nyra` and `pickoo`). Tick **Unhinged mode** there, or say "go unhinged", for the same character with the manners off; what it may do stays the same.
 - **Find routines:** `mirrin protocols search travel`, or ask your twin "is there a protocol for commuting?".
 - **Check on it:** `mirrin doctor` tests hearing, speaking, the model, connections, backups and spending, and offers repairs. `mirrin usage` shows what the model has cost this month.

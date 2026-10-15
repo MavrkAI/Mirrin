@@ -215,7 +215,7 @@ func (d *Daemon) Hello(ctx context.Context, onDelta, onStatus func(string)) (api
 	d.cmu.RLock() // usePersona writes it with cmu held
 	pr := d.persona
 	d.cmu.RUnlock()
-	listening := c.Channels.Voice.Enabled && c.Channels.Voice.Mode == "wake" // "say my name" works only then
+	listening := d.Listening() // "say my name" works only then: wanting to listen (the default) isn't listening
 	req := llm.Request{System: helloSystem(pr, c.User.Name, d.address(), listening), Messages: []llm.Message{llm.Text(llm.RoleUser, strings.Join(facts, "\n"))}, MaxTokens: helloMaxTokens}
 	busy := d.bus.Begin("thinking")
 	mctx, cancel := context.WithTimeout(ctx, 20*time.Second)

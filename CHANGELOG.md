@@ -4,6 +4,9 @@ All notable changes are listed here. The format follows Keep a Changelog; versio
 
 ## Unreleased
 
+### It listens for its name by default
+- A new twin listens for "Hey Mirrin" on this computer as soon as voice is set up, with no trip to the menu; Voice → Listening turns it off, and `mirrin voice` is still push-to-talk. Until `mirrin voice setup` has run, the Health page says voice is not set up rather than that listening failed, saving a setting never complains about it, and the first hello only invites you to say its name when it can really hear. A twin whose settings file names no listening mode picks this up on upgrade; one whose file says push-to-talk, as every file written before 0.2.1 does, stays as it is.
+
 ### The first hello names three true things
 - The Welcome window's step before the hello now offers to connect Google, not only the calendar: one sign-in grants both. With it connected, the first hello says up to three true things, the next thing on your calendar and the email waiting on you first, then the weather, the time or a routine. Go reads the inbox and the model only words it: the newest unread email from a person, never a no-reply, and a health, money or relationship matter only as that, with no details. Skip the step and the hello says what it can see, as before.
 

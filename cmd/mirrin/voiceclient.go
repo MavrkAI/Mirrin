@@ -9,6 +9,17 @@ import (
 	"github.com/MavrkAI/Mirrin/internal/config"
 )
 
+// sessionVoice sets the mode of a `mirrin voice` session: push to talk, or
+// always-on with --wake. The config's own mode is for the twin under the
+// service, where always-on is the default; a session is a conversation.
+func sessionVoice(cfg *config.Config, wake bool) {
+	if wake {
+		cfg.Channels.Voice.Mode = "wake"
+	} else {
+		cfg.Channels.Voice.Mode = "push"
+	}
+}
+
 // joinedVoice is the voice channel of a session joined to a running twin
 // (the menu bar's, or a paired one): it asks the twin whether an approval
 // is waiting, so a bare "yes" heard in the follow-up window is kept as the

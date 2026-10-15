@@ -3,10 +3,10 @@ package daemon
 import (
 	"context"
 	"errors"
-	"os"
 	"os/exec"
 	"runtime"
 
+	"github.com/MavrkAI/Mirrin/internal/channels/voice"
 	"github.com/MavrkAI/Mirrin/internal/health"
 	"github.com/MavrkAI/Mirrin/internal/transcribe"
 )
@@ -30,8 +30,8 @@ func (d *Daemon) mediaHealth(ctx context.Context) (health.State, string, string)
 				fix = "Run mirrin voice setup to download the speech-to-text model."
 			}
 			state, detail := health.Off, "Voice notes aren't set up yet."
-			_, modelErr := os.Stat(cfg.Channels.Voice.WhisperModel)
-			if cfg.Channels.Voice.Enabled || modelErr == nil || (options.Server != "" && options.Server != "off") {
+			// Listening is the default, so wanting voice isn't having set it up.
+			if voice.SetUp(cfg.Channels.Voice) || (options.Server != "" && options.Server != "off") {
 				state, detail = health.Warn, "Speech-to-text needs attention."
 			}
 			return state, detail, fix

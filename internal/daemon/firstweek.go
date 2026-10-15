@@ -35,7 +35,7 @@ func (d *Daemon) connected() Connected {
 	return Connected{
 		Calendar: google && d.calendar.Load() != nil,
 		Mail:     (google && cfg.Skills.Gmail.Enabled) || (d.email != nil && cfg.Skills.Email.Enabled),
-		Voice:    voice.SetUp(cfg.Channels.Voice),
+		Voice:    d.Listening(), // really hearing, not only set up or wanted (the default)
 		Browser:  d.browser != nil,
 	}
 }

@@ -77,6 +77,7 @@ type Options struct {
 type Daemon struct {
 	budgetWarned sync.Map // chat → when it was last told it's over budget (budget.go)
 	cfg          *config.Config
+	interactive  bool // a conversation in a terminal: never opens the microphone (voicestart.go)
 	log          *slog.Logger
 	store        *memory.Store
 	agent        *agent.Agent
@@ -164,7 +165,7 @@ func New(cfg *config.Config, opts Options) (*Daemon, error) {
 
 	provider := startingModel(cfg, log) // without a usable model it starts anyway and says why
 
-	d := &Daemon{cfg: cfg, log: log, store: store, channels: map[string]channels.Channel{}, loc: loc, version: opts.Version, bgSlots: make(chan struct{}, 2), bus: events.New()}
+	d := &Daemon{cfg: cfg, interactive: opts.Interactive, log: log, store: store, channels: map[string]channels.Channel{}, loc: loc, version: opts.Version, bgSlots: make(chan struct{}, 2), bus: events.New()}
 	d.watchRemembered() // remembered.go: what it learns shows under the reply
 
 	reg := tools.NewRegistry()
@@ -614,10 +615,14 @@ func (d *Daemon) Run(ctx context.Context) error {
 		d.watcher.Start(ctx)
 		d.log.Info("watching for changes", "every", time.Duration(d.cfg.Watch.IntervalMinutes)*time.Minute)
 	}
-	if d.cfg.Channels.Voice.Enabled && d.cfg.Channels.Voice.Mode == "wake" {
+	if d.listensOnStart() { // voicestart.go
 		if _, ok := d.channels["voice"]; !ok {
 			if err := d.StartVoice(); err != nil {
-				d.log.Warn("voice", "err", err)
+				if !voice.SetUp(d.cfg.Channels.Voice) { // the default wants to listen; setup comes later
+					d.log.Info("voice not set up yet; run mirrin voice setup to talk out loud")
+				} else {
+					d.log.Warn("voice", "err", err)
+				}
 			}
 		}
 	}
@@ -1634,8 +1639,12 @@ func (d *Daemon) updateConfig(mutate func(c *config.Config)) error {
 	d.agent.SetPolicy(approvals.New(next.Autonomy))
 	wantVoice := next.Channels.Voice.Enabled && next.Channels.Voice.Mode == "wake"
 	if wantVoice && !d.Listening() {
-		if err := d.StartVoice(); err != nil {
-			return fmt.Errorf("saved, but could not start listening: %w", err)
+		// Listening is the default, so before `mirrin voice setup` there is
+		// nothing to start and nothing to complain about.
+		if voice.SetUp(next.Channels.Voice) {
+			if err := d.StartVoice(); err != nil {
+				return fmt.Errorf("saved, but could not start listening: %w", err)
+			}
 		}
 	} else if !wantVoice && d.Listening() {
 		d.StopVoice()

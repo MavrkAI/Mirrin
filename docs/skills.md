@@ -21,8 +21,8 @@ macOS: `brew install whisper-cpp sox`. Linux: build whisper.cpp and `apt install
 ```yaml
 channels:
   voice:
-    enabled: false            # true to run alongside WhatsApp under the service
-    mode: push                # or wake
+    enabled: true             # listens for its name once voice is set up; false for push-to-talk only
+    mode: wake                # or push
     wake_word: mirrin
     whisper_model: ~/.mirrin/models/ggml-base.en.bin
     engine: auto              # auto | kokoro | elevenlabs | system | command

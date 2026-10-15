@@ -180,9 +180,7 @@ func main() {
 		}
 		wake := len(os.Args) > 2 && os.Args[2] == "--wake"
 		err = withConfig(func(cfg *config.Config) error {
-			if wake {
-				cfg.Channels.Voice.Mode = "wake"
-			}
+			sessionVoice(cfg, wake) // voiceclient.go: push to talk unless --wake
 			if c := remoteClient(); c != nil {
 				return runClient(ctx, joinedVoice(cfg, c), c)
 			}
@@ -193,9 +191,7 @@ func main() {
 				})
 			}
 			return withModel(false, func(cfg *config.Config) error {
-				if wake {
-					cfg.Channels.Voice.Mode = "wake"
-				}
+				sessionVoice(cfg, wake)
 				d, err := daemon.New(cfg, daemon.Options{Voice: true, Version: version, Log: log})
 				if err != nil {
 					return err

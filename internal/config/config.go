@@ -707,7 +707,8 @@ func Default() *Config {
 			Mail:       Mail{SubjectTag: "", PollSeconds: 30, SMTPPort: 587},
 			CLI:        CLI{Enabled: true},
 			Voice: Voice{
-				Mode:            "push",
+				Enabled:         true, // listens for its name once voice is set up (voice/health.go SetUp)
+				Mode:            "wake",
 				WakeWord:        "mirrin",
 				WhisperBin:      "whisper-cli",
 				WhisperModel:    filepath.Join(home, "models", "ggml-base.en.bin"),

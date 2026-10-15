@@ -161,6 +161,9 @@ func newTestDaemon(t *testing.T, brain func(last string, req llm.Request) llm.Re
 	// Nothing is held for quiet hours (held.go) unless a test asks for them:
 	// a run at night sees what a run by day does.
 	cfg.User.QuietHours = "off"
+	// Listening is the default, so a test that puts a hearing model on disk
+	// would start the real microphone on its next save: no whisper here.
+	cfg.Channels.Voice.WhisperBin = filepath.Join(t.TempDir(), "no-whisper")
 	d, err := New(cfg, Options{Headless: true})
 	if err != nil {
 		t.Fatal(err)

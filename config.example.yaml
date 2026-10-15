@@ -30,8 +30,8 @@ channels:
   cli:
     enabled: true
   voice:
-    enabled: false
-    mode: push                # push (Enter to talk) or wake (always listening)
+    enabled: true             # listens for its name once voice is set up (mirrin voice setup)
+    mode: wake                # wake (always listening) or push (Enter to talk)
     wake_word: mirrin
     whisper_model: ~/.mirrin/models/ggml-small.en.bin
     engine: auto              # auto | kokoro | elevenlabs | system | command

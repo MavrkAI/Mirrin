@@ -87,7 +87,7 @@ func runVoiceSetup(ctx context.Context, cfg *config.Config, w io.Writer, s voice
 		return exitCode(1)
 	}
 	if !running {
-		fmt.Fprintf(w, "All set. Talk to %s with mirrin voice (press Enter, then speak), or mirrin voice --wake and just say %q.\n", cfg.Name, phrase)
+		fmt.Fprintf(w, "All set. %s listens for %q from its next start; mirrin voice talks push to talk (press Enter, then speak).\n", cfg.Name, phrase)
 	} else {
 		fmt.Fprintf(w, "All set. Say %q.\n", phrase)
 	}

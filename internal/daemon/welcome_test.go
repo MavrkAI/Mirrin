@@ -733,14 +733,26 @@ func TestHelloInCharacterWithThreeTrueThings(t *testing.T) {
 		t.Fatalf("weather off: %+v %v\n%s", reply, err, lastUserText(asked[1]))
 	}
 
-	// Listening for its name on this Mac, it says they can say its name.
+	// Wanting to listen isn't listening: until always-on listening runs
+	// (voice set up, microphone allowed), it doesn't invite them to say
+	// its name, however the settings read.
 	td.cmu.Lock()
 	td.cfg.Channels.Voice.Enabled, td.cfg.Channels.Voice.Mode = true, "wake"
 	td.cmu.Unlock()
 	if _, err := td.Hello(ctx, func(string) {}, nil); err != nil {
 		t.Fatal(err)
 	}
-	if sys := asked[2].System; !strings.Contains(sys, "say your name") {
+	if sys := asked[2].System; strings.Contains(sys, "say your name") {
+		t.Fatalf("not listening yet, but says to say its name:\n%s", sys)
+	}
+	// Listening for its name on this Mac, it says they can say its name.
+	td.chmu.Lock()
+	td.channels["voice"] = &fakeChannel{name: "voice", owner: "local", out: make(chan string, 8)}
+	td.chmu.Unlock()
+	if _, err := td.Hello(ctx, func(string) {}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if sys := asked[3].System; !strings.Contains(sys, "say your name") {
 		t.Fatalf("listening, but no name to say:\n%s", sys)
 	}
 }

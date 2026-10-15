@@ -26,11 +26,10 @@ type Probe struct {
 	Start     func() error // starts always-on listening (the repair)
 }
 
-// SetUp reports whether voice is set up, or turned on, on this machine.
+// SetUp reports whether voice is set up on this machine: the hearing model
+// is there. Always-on listening is the default, so wanting to listen says
+// nothing about being able to; `mirrin voice setup` does.
 func SetUp(v config.Voice) bool {
-	if v.Enabled || v.Mode == "wake" {
-		return true
-	}
 	st, err := os.Stat(v.WhisperModel)
 	return err == nil && st.Size() > 0
 }
@@ -59,10 +58,10 @@ func Checks(p Probe) []health.Check {
 		health.Func("voice.speaking", "Speaking", gate(speakingState), nil),
 		health.Func("voice.listening", "Listening", func(context.Context) (health.State, string, string) {
 			v := p.Config()
+			if !SetUp(v) {
+				return health.Off, notSetUp, ""
+			}
 			if !(v.Enabled && v.Mode == "wake") {
-				if !SetUp(v) {
-					return health.Off, notSetUp, ""
-				}
 				return health.Off, "always-on listening is off; talk with mirrin voice (push-to-talk)", ""
 			}
 			if p.Listening != nil && !p.Listening() {

@@ -60,10 +60,20 @@ func TestMediaHealth(t *testing.T) {
 			t.Fatalf("%s installed: %s", name, state)
 		}
 	}
-	d.cfg.Channels.Voice.Enabled = true
+	// Listening is the default, so wanting voice says nothing: until the
+	// hearing model is on disk, voice notes are simply not set up yet.
+	d.cfg.Channels.Voice.Enabled, d.cfg.Channels.Voice.Mode = true, "wake"
+	d.cfg.Channels.Voice.WhisperModel = filepath.Join(dir, "ggml-base.en.bin")
 	checkErr = &transcribe.UnavailableError{Missing: "the whisper model"}
+	if state, _, _ := d.mediaHealth(context.Background()); state != health.Off {
+		t.Fatalf("voice wanted but never set up: %s", state)
+	}
+	if err := os.WriteFile(d.cfg.Channels.Voice.WhisperModel, []byte("model"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	checkErr = &transcribe.UnavailableError{Missing: "ffmpeg"}
 	if state, _, _ := d.mediaHealth(context.Background()); state != health.Warn {
-		t.Fatalf("broken configured voice: %s", state)
+		t.Fatalf("broken set-up voice: %s", state)
 	}
 	d.cfg.Channels.Voice.Enabled = false
 	t.Setenv("MIRRIN_WHISPER_URL", "http://127.0.0.1:8080")
