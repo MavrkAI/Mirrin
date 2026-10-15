@@ -174,7 +174,7 @@ func TestNumbersMatchTheCode(t *testing.T) {
 		{"internal/config/usage.go", "DefaultMonthlyBudget = 25", index, "US$25 out of the box"},
 		{"internal/daemon/usage.go", "sp.Used < 0.8", index, "warns you at 80% of a monthly budget"},
 		{"internal/daemon/timekeeping.go", `weatherURL = "https://api.open-meteo.com/v1/forecast"`, index + cloud, "The screen's weather still asks Open-Meteo, with your time zone's city, unless you set <code>ui.weather: false</code>"},
-		{"internal/channels/voice/voice.go", `"349.30 AUD" is said "$349.30"`, index, "“$349.30”, not “349.30 AUD”"},
+		{"internal/channels/voice/voice.go", `"349.30 AUD" is "$349.30", then said in words`, index, "“349 dollars and 30 cents”, not “349.30 AUD”"},
 		{"internal/channels/voice/dates.go", "the second of October", index, "“the second of October”, not “Oct 2”"},
 		{"internal/channels/voice/aloud.go", "is never\n// approved by voice", index, "a dangerous one is never approved by voice"},
 		{"internal/skills/spend/spend.go", `"Pay %.2f %s"`, index, "A payment reads “Pay 389.00 AUD for Jetstar MEL-SYD Tue 6am”"},

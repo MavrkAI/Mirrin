@@ -4,6 +4,9 @@ All notable changes are listed here. The format follows Keep a Changelog; versio
 
 ## Unreleased
 
+### Said the way people say it
+- Out loud, money is spelt out ("700 dollars a week", "349 dollars and 30 cents", "99 cents") instead of being left for the offline voice to read as "dollar seven hundred"; a weekday written short ("Sat 9am", "Mon.") is said in full; and a screenshot line or a picture's path is never read out, since it is for the screen.
+
 ### It listens for its name by default
 - A new twin listens for "Hey Mirrin" on this computer as soon as voice is set up, with no trip to the menu; Voice → Listening turns it off, and `mirrin voice` is still push-to-talk. Until `mirrin voice setup` has run, the Health page says voice is not set up rather than that listening failed, saving a setting never complains about it, and the first hello only invites you to say its name when it can really hear. A twin whose settings file names no listening mode picks this up on upgrade; one whose file says push-to-talk, as every file written before 0.2.1 does, stays as it is.
 

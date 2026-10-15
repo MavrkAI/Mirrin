@@ -1119,20 +1119,30 @@ func (c *Channel) speakSystem(ctx context.Context, spoken string) {
 // speakable rewrites text for the ear: the agent's name is pronounced,
 // markdown and URLs are dropped.
 var (
-	reURL        = regexp.MustCompile(`https?://\S+|\bwww\.\S+`)
-	reMDLink     = regexp.MustCompile(`\[([^\]]+)\]\([^)]*\)`)
-	reListMark   = regexp.MustCompile(`(?m)^[ \t]*(?:[-*•▪◦]|\d{1,2}[.)])[ \t]+`)
-	reHeading    = regexp.MustCompile(`(?m)^[ \t]*#{1,6}[ \t]*`)
-	reEmphasis   = regexp.MustCompile(`(\*\*|__|\*|_)([^*_\n]+?)(\*\*|__|\*|_)`)
-	reCurrency   = regexp.MustCompile(`\b(?:A|AU|US|NZ|CA)\$`)
-	reCurrCode   = regexp.MustCompile(`\b(?:AUD|USD|NZD|CAD)[ \t]?(\d)`)
-	reCurrAfter  = regexp.MustCompile(`\b(\d[\d,]*(?:\.\d{2})?)[ \t]?(?:AUD|USD|NZD|CAD)\b`)
-	reTimeAMPM   = regexp.MustCompile(`(?i)\b(\d{1,2}(?::\d{2})?)(am|pm)\b`)
+	reURL       = regexp.MustCompile(`https?://\S+|\bwww\.\S+`)
+	reMDLink    = regexp.MustCompile(`\[([^\]]+)\]\([^)]*\)`)
+	reListMark  = regexp.MustCompile(`(?m)^[ \t]*(?:[-*•▪◦]|\d{1,2}[.)])[ \t]+`)
+	reHeading   = regexp.MustCompile(`(?m)^[ \t]*#{1,6}[ \t]*`)
+	reEmphasis  = regexp.MustCompile(`(\*\*|__|\*|_)([^*_\n]+?)(\*\*|__|\*|_)`)
+	reCurrency  = regexp.MustCompile(`\b(?:A|AU|US|NZ|CA)\$`)
+	reCurrCode  = regexp.MustCompile(`\b(?:AUD|USD|NZD|CAD)[ \t]?(\d)`)
+	reCurrAfter = regexp.MustCompile(`\b(\d[\d,]*(?:\.\d{2})?)[ \t]?(?:AUD|USD|NZD|CAD)\b`)
+	reTimeAMPM  = regexp.MustCompile(`(?i)\b(\d{1,2}(?::\d{2})?)(am|pm)\b`)
+	// Money is spelt out: the offline voice's phonemiser (espeak-ng) reads
+	// "$700" as "dollar seven hundred".
+	reMoney = regexp.MustCompile(`\$(\d[\d,]*)(?:\.(\d+))?([kKmMbB])?\b`)
+	// A weekday written short and capitalised ("Sat 9am", "Mon."); "I sat"
+	// is a verb. The dates in dates.go take the ones a date follows.
+	reWeekdayAlone = regexp.MustCompile(`\b(Mon|Tues|Tue|Wed|Thurs|Thur|Thu|Fri|Sat|Sun)\b`)
+	// A screenshot line and a picture's path are for the screen, never read.
+	reShotLine   = regexp.MustCompile(`(?im)^[ \t]*screenshot:[ \t]*\S+[ \t]*$`)
+	reImagePath  = regexp.MustCompile(`(?i)(?:~|/)\S*\.(?:png|jpe?g|gif|webp)\b`)
 	reEmoji      = regexp.MustCompile(`[\x{1F000}-\x{1FAFF}\x{2600}-\x{27BF}\x{2B00}-\x{2BFF}\x{FE0F}\x{200D}]`)
 	reSpaces     = regexp.MustCompile(`[ \t]+`)
 	reSpaceComma = regexp.MustCompile(`[ \t]+([,.;:!?])`)
-	reAbbrevs    = strings.NewReplacer("e.g.", "for example", "i.e.", "that is", "etc.", "and so on", "vs.", "versus", " vs ", " versus ", "approx.", "about", "w/", "with ")
-	reSymbols    = strings.NewReplacer("→", " to ", "←", " from ", "&", " and ", "°C", " degrees", "°", " degrees", "≈", "about ", "%", " percent", "…", "...")
+	reAbbrevs    = strings.NewReplacer("e.g.", "for example", "i.e.", "that is", "etc.", "and so on", "vs.", "versus", " vs ", " versus ", "approx.", "about", "w/", "with ",
+		"/week", " a week", "/wk", " a week", "/month", " a month", "/mo", " a month", "/year", " a year", "/yr", " a year", "/hour", " an hour", "/hr", " an hour", "/night", " a night", "/day", " a day")
+	reSymbols = strings.NewReplacer("→", " to ", "←", " from ", "&", " and ", "°C", " degrees", "°", " degrees", "≈", "about ", "%", " percent", "…", "...")
 )
 
 // speakable turns model output into something a voice can read aloud:
@@ -1140,6 +1150,8 @@ var (
 // and each line ends as a sentence so the voice pauses where the eye would.
 func speakable(s string) string {
 	s = speakableName(s)
+	s = reShotLine.ReplaceAllString(s, "")
+	s = reImagePath.ReplaceAllString(s, "")
 	s = reEmoji.ReplaceAllString(s, "")
 	s = reMDLink.ReplaceAllString(s, "$1")
 	s = reURL.ReplaceAllString(s, "a link")
@@ -1149,9 +1161,11 @@ func speakable(s string) string {
 	s = reEmphasis.ReplaceAllString(s, "$2")
 	s = reCurrency.ReplaceAllString(s, "$$")
 	s = reCurrCode.ReplaceAllString(s, "$$$1")
-	s = reCurrAfter.ReplaceAllString(s, "$$$1") // "349.30 AUD" is said "$349.30"
+	s = reCurrAfter.ReplaceAllString(s, "$$$1") // "349.30 AUD" is "$349.30", then said in words
+	s = reMoney.ReplaceAllStringFunc(s, spokenMoney)
 	s = reTimeAMPM.ReplaceAllString(s, "$1 $2")
 	s = speakDates(s)
+	s = reWeekdayAlone.ReplaceAllStringFunc(s, func(m string) string { return weekdays[strings.ToLower(m)] })
 	s = reAbbrevs.Replace(s)
 	s = reSymbols.Replace(s)
 	s = regexp.MustCompile(`[ \t]*—[ \t]*`).ReplaceAllString(s, ", ")

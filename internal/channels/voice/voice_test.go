@@ -29,10 +29,18 @@ func TestStripWake(t *testing.T) {
 func TestSpeakable(t *testing.T) {
 	cases := map[string]string{
 		"**Mirrin** here — see https://example.com now":                     "Mirrin here, see a link now.",
-		"Options:\n1. Jetstar 3:50pm out, A$389\n2. Batik at 7am (AUD 295)": "Options: Jetstar 3:50 pm out, $389. Batik at 7 am ($295).",
+		"Options:\n1. Jetstar 3:50pm out, A$389\n2. Batik at 7am (AUD 295)": "Options: Jetstar 3:50 pm out, 389 dollars. Batik at 7 am (295 dollars).",
 		"## Plan\n- check *fares*\n- e.g. [Google Flights](https://g.co) 🙂": "Plan. check fares. for example Google Flights.",
 		"MEL→DPS is 17°C & 40% humid":                                       "MEL to DPS is 17 degrees and 40 percent humid.",
-		"Pay 349.30 AUD for Uniqlo":                                         "Pay $349.30 for Uniqlo.",
+		// The offline voice's phonemiser (espeak-ng) reads "$349.30" as
+		// "dollar three hundred…", so money is spelt out the way it is said.
+		"Pay 349.30 AUD for Uniqlo": "Pay 349 dollars and 30 cents for Uniqlo.",
+		"all under $700:\n• Hanover St — $500/wk — Sat 12:35pm\n• Koonawarra St — $1/mo — Sun 9am": "all under 700 dollars: Hanover St, 500 dollars a week, Saturday 12:35 pm. Koonawarra St, 1 dollar a month, Sunday 9 am.",
+		"It's $0.99, or $1,250.00 for the year": "It's 99 cents, or 1,250 dollars for the year.",
+		"Asking $5k, sold for $1.2m":            "Asking 5 thousand dollars, sold for 1.2 million dollars.",
+		// A file path is for the screen, never read out; the rest is.
+		"Four places with inspections.\nScreenshot: /Users/me/.mirrin/data/browser-1792066870-2.png\nWant the list?": "Four places with inspections. Want the list?",
+		"Saved it as ~/Desktop/page.png for you": "Saved it as for you.",
 	}
 	for in, want := range cases {
 		if got := speakable(in); got != want {
@@ -265,6 +273,8 @@ func TestDatesAreSaidAsPeopleSayThem(t *testing.T) {
 		"May 5 then June 21":                         "May the fifth then June the twenty-first.",
 		"you may 2 hours or a 2 octagon by Oct 2026": "you may 2 hours or a 2 octagon by Oct 2026.",
 		"I sat 3 dec":                                "I sat the third of December.",
+		"Inspections Sat 9am and Mon. Thu is full.":  "Inspections Saturday 9 am and Monday. Thursday is full.",
+		"we sat in the sun on tue":                   "we sat in the sun on tue.",
 		"Oct 32 is not a day":                        "Oct 32 is not a day.",
 	}
 	for in, want := range cases {
