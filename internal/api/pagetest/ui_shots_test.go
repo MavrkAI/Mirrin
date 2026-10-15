@@ -12,8 +12,10 @@ import (
 
 // busyDay is a realistic presence screen: a request waiting, a task with a
 // question, the day's events and reminders, a conversation, the weather.
-func busyDay() map[string]any {
-	now := time.Now()
+func busyDay() map[string]any { return busyDayAt(time.Now()) }
+
+// busyDayAt is the busy day as of now.
+func busyDayAt(now time.Time) map[string]any {
 	at := func(h int) string { return now.Add(time.Duration(h) * time.Hour).Format(time.RFC3339) }
 	// The day's events fall on the hour, and what the twin said names the
 	// same hours, so a screenshot's timeline and conversation agree.
@@ -41,16 +43,29 @@ func busyDay() map[string]any {
 	})
 }
 
+// shotsNow is when the screenshots are taken: now, or today at
+// MIRRIN_UI_SHOTS_AT (HH:MM), so the busy afternoon in the README is an
+// afternoon whenever it is drawn again.
+func shotsNow() time.Time {
+	now := time.Now()
+	if at, err := time.Parse("15:04", os.Getenv("MIRRIN_UI_SHOTS_AT")); err == nil {
+		return time.Date(now.Year(), now.Month(), now.Day(), at.Hour(), at.Minute(), 0, 0, now.Location())
+	}
+	return now
+}
+
 // MIRRIN_UI_SHOTS=<dir> writes the presence screen, busy, at phone and
-// desktop sizes in light and dark, and the orb.
+// desktop sizes in light and dark, and the orb; MIRRIN_UI_SHOTS_AT=15:10
+// takes them at ten past three today.
 func TestPresenceScreenShots(t *testing.T) {
 	dir := os.Getenv("MIRRIN_UI_SHOTS")
 	if dir == "" {
 		t.Skip("set MIRRIN_UI_SHOTS to a folder to write screenshots of the presence screen")
 	}
 	_ = os.MkdirAll(dir, 0o755)
+	now := shotsNow()
 	d := newDaemon(t)
-	d.handle("GET /screen", jsonH(busyDay()))
+	d.handle("GET /screen", jsonH(busyDayAt(now)))
 	for _, v := range []struct {
 		name, path string
 		w, h       int64
@@ -65,7 +80,7 @@ func TestPresenceScreenShots(t *testing.T) {
 		if v.dark {
 			scheme = "dark"
 		}
-		run(t, ctx, chromedp.EmulateViewport(v.w, v.h), emulateScheme(scheme), chromedp.Navigate(d.url(v.path)))
+		run(t, ctx, chromedp.EmulateViewport(v.w, v.h), emulateScheme(scheme), clockAt(now.Format(time.RFC3339)), chromedp.Navigate(d.url(v.path)))
 		waitFor(t, ctx, loaded, "loaded")
 		run(t, ctx, chromedp.Sleep(1200*time.Millisecond))
 		var png []byte
