@@ -23,7 +23,8 @@ const window = {};
 new Function('window', src)(window);
 const C = window.Characters;
 
-// ui.html: .idle{--c1:#6d7cff}, and the dark theme's --pb1..3, --ice1..2 and --rim.
+// ui.html: .idle{--c1:var(--o1,#6d7cff)} with no --o1 set (the characters as
+// drawn, in no owner's colour), and the dark theme's --pb1..3, --ice1..2 and --rim.
 const vars = '--c1:#6d7cff;--pb1:#7f8ad9;--pb2:#3b4590;--pb3:#262d66;--ice1:#34406c;--ice2:rgba(20,26,48,0)';
 const style = person => `<style>svg{${vars}}.lid{opacity:0}.dots{display:none}` +
   `.bd{stroke:rgba(165,180,255,.22);stroke-width:1.5}` +

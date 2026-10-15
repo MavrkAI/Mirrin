@@ -30,7 +30,7 @@ func viewOnly(p Peer) bool {
 // quiet hours are the twin's own state, as its state is: a wall shows it
 // paused, and dozes at night.
 var shownToAll = []string{"name", "state", "time", "health", "problems", "events", "reminders",
-	"weather", "ambient_after_seconds", "calendar_error", "persona", "can", "paused", "paused_until", "quiet_hours"}
+	"weather", "ambient_after_seconds", "calendar_error", "persona", "look", "can", "paused", "paused_until", "quiet_hours"}
 
 // redactScreen is the screen's data (as withScopes decodes it) cut down for
 // a view-only screen.

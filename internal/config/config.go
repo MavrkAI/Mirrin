@@ -24,8 +24,10 @@ type Config struct {
 	// blunt and funny, with the same rules for money, privacy and safety
 	// (agent/unhinged.go). The Persona menu, or "go unhinged" in chat.
 	Unhinged bool `yaml:"unhinged,omitempty"`
-	User     User `yaml:"user"`
-	LLM      LLM  `yaml:"llm"`
+	// Wardrobe is what each character wears on the screen (wardrobe.go).
+	Wardrobe Wardrobe `yaml:"wardrobe,omitempty"`
+	User     User     `yaml:"user"`
+	LLM      LLM      `yaml:"llm"`
 
 	Channels Channels `yaml:"channels"`
 	Autonomy Autonomy `yaml:"autonomy"`

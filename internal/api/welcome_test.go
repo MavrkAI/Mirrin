@@ -260,7 +260,7 @@ func TestWelcomePersonasInOrder(t *testing.T) {
 	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
 		t.Fatal(err)
 	}
-	keys := []string{"id", "name", "tagline", "greeting", "address", "wake_phrase", "instant_wake", "character"}
+	keys := []string{"id", "name", "tagline", "greeting", "address", "wake_phrase", "instant_wake", "character", "look"}
 	want := []struct {
 		id, name, address, wake, character string
 		instant                            bool

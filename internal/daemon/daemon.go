@@ -93,6 +93,7 @@ type Daemon struct {
 	chmu         sync.RWMutex
 	memoryURL    string
 	persona      persona.Persona
+	wardrobe     wardrobeNotes                // wardrobe.go: what it last said about the wardrobe
 	voiceOwn     voiceOverrides               // the voice settings the owner chose; the persona's are never saved (persona.go)
 	voiceLLM     atomic.Pointer[llm.Provider] // the spoken-reply model, when it differs (retired.go)
 	protocolsURL string
@@ -1036,6 +1037,8 @@ type ScreenData struct {
 	// Persona is the active persona's id (mirrin, nyra, pack/id), which
 	// tells the screen which character to draw.
 	Persona string `json:"persona,omitempty"`
+	// Look is what that character wears (wardrobe.go).
+	Look config.Look `json:"look,omitzero"`
 	// Hellos are the persona's hellos for the owner by part of the day
 	// (morning, afternoon, evening, late), the screen's greeting (hellos.go).
 	Hellos map[string]string `json:"hellos,omitempty"`
@@ -1082,6 +1085,7 @@ func (d *Daemon) screenData(ctx context.Context) ScreenData {
 	}
 	d.cmu.RLock() // usePersona writes it with cmu held
 	sd.Persona = d.persona.ID
+	sd.Look = lookFor(d.cfg, d.persona)     // wardrobe.go
 	sd.Hellos = hellosFor(d.cfg, d.persona) // hellos.go
 	d.cmu.RUnlock()
 	d.screenPortrait(ctx, &sd) // portrait.go: with what's new, and whether it's right

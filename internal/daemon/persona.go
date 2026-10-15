@@ -56,6 +56,7 @@ func (d *Daemon) pickPersona(cfg *config.Config) (persona.Persona, []persona.Per
 	} else {
 		d.log.Warn("persona not found; using Mirrin's character", "persona", cfg.Persona)
 	}
+	d.noteWardrobe(cfg) // wardrobe.go: an outfit or colour it can't use
 	if persona.FormerDefault(cfg.Name) || (persona.IsRetired(cfg.Name) && (was == "" || persona.IsRetired(was))) {
 		cfg.Name = pr.Name
 	}

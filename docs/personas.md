@@ -42,6 +42,24 @@ Any persona can be turned all the way up. Tick **Unhinged mode** under Persona i
 
 What it may do does not change. Money, privacy, health and anything that can't be undone get the plain, careful version that asks first; approvals, memory and the safety rules are untouched, and it is never cruel or unhinged at anyone other than you. "Calm down", "normal mode" or the tick again switches it off. The switch is yours, so it stays on through restarts and persona switches until you turn it off.
 
+## Outfits
+
+What a character wears is yours to choose, under **Persona → Outfit** and **Outfit colour** in the menu bar, and it shows on the presence screen, the floating widget, the dozing figure at night and the welcome page's cast. Each character has its own wardrobe, the one it is drawn in first:
+
+- The penguin (Pickoo, and any persona without a drawing of its own): bow tie, scarf, beanie, sun hat.
+- Nyra: navy blazer, cardigan, turtleneck, denim jacket.
+- Mirrin: dinner jacket, waistcoat, knit jumper, linen shirt.
+
+The colour tints the outfit's main garment (the blazer, the jacket, the scarf, the beanie, the sun hat's band) and is the resting colour of the part that lights up when the twin listens or thinks, so the bow tie, the hair clip and the lapel pin still show its state. The palette is coral, rose, mustard, forest, teal, sky, plum and charcoal, or **As drawn**. The choice is kept per character, so Pickoo's scarf is still there after a week as Nyra, and a pack's persona drawn as the penguin shares the penguin's wardrobe. In `config.yaml` it is the `wardrobe:` section, keyed by character (`mirrin`, `nyra`, `penguin`), and a colour there may also be any `#rrggbb`:
+
+```yaml
+wardrobe:
+  penguin: {outfit: scarf, colour: coral}
+  nyra: {outfit: cardigan}
+```
+
+An outfit or colour the wardrobe doesn't know is noted in the log and the character is drawn as it is. The site shows the characters as drawn.
+
 ## Where they live
 
 - Bundled: `mirrin` (Mirrin, the gentleman-butler, drawn on the screen as a man in a dinner jacket; the default; `persona: mavrk`, his id before he took the product's name, still means him), `pickoo` (a cheerful penguin with a pitched-up voice, drawn as the penguin) and `nyra` (Nyra, warm and composed, drawn as a woman in a navy blazer). Any other persona is drawn as the penguin. The bundled persona `plain` has retired: a config.yaml that still names it means Mirrin, and the next save writes `mirrin`.

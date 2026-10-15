@@ -147,7 +147,7 @@ func TestNumbersMatchTheCode(t *testing.T) {
 		{"internal/daemon/daemon.go", `"0 8 * * 0"`, index, "Every Sunday morning it writes a short portrait"},
 		{"internal/protocols/protocols.go", `schedule: "0 7 * * *"`, index, "a morning briefing at 7:00"},
 		{"internal/heartbeat/heartbeat.go", "BackupIfDue(ctx, 24*time.Hour, 7)", index, "copies it, keeping the last seven"},
-		{"internal/api/ui.html", ".idle{--c1:#6d7cff", index, `text-anchor="middle">#6d7cff</text>`},
+		{"internal/api/ui.html", ".idle{--c1:var(--o1,#6d7cff)", index, `text-anchor="middle">#6d7cff</text>`},
 		{"internal/api/ui.html", ".listening{--c1:var(--ok)", index, "green while listening"},
 		{"internal/api/ui.html", "--ok:#3ddc84", index, `text-anchor="middle">#3ddc84</text>`},
 		{"internal/api/ui.html", ".thinking{--c1:var(--accent)", index, "blue while thinking or speaking"},
@@ -950,7 +950,7 @@ func TestCharactersMatchTheCode(t *testing.T) {
 		"nyra":    `class="smile"`,
 		"penguin": `<path d="M100 152 L79 141 Q73 152 79 163 Z"`,
 	}
-	idle := strings.Contains(repoFile(t, "internal/api/ui.html"), ".idle{--c1:#6d7cff")
+	idle := strings.Contains(repoFile(t, "internal/api/ui.html"), ".idle{--c1:var(--o1,#6d7cff)")
 	for name, mark := range marks {
 		if !strings.Contains(js, mark) {
 			t.Fatalf("internal/api/characters.js no longer draws %q; run node site/assets/characters/draw.js and pick a new mark for %s here", mark, name)

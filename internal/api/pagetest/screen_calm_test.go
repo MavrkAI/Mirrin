@@ -127,7 +127,7 @@ func TestRetiredPersonaIsDrawnAsMirrin(t *testing.T) {
 	waitFor(t, octx, `!!document.querySelector('#widget .orb #mwSuit')`, "Mirrin in the widget")
 }
 
-// Every character keeps the house rules: gradients only (no filter, mask,
+// Every character, in every outfit, keeps the house rules: gradients only (no filter, mask,
 // clip path or blur: Safari draws them as squares), every id under the
 // prefix it is given, so two drawings on one page never share one, and
 // every paint and shape it refers to is drawn within it. Each has the hooks
@@ -140,8 +140,8 @@ func TestCharactersKeepTheHouseRules(t *testing.T) {
 	waitFor(t, ctx, `typeof Characters === 'object'`, "the drawings loaded")
 	bad := eval[[]string](t, ctx, `(() => {
 		const bad = [], hooks = ['pb', 'turn', 'front', 'head', 'eyes', 'eye', 'open', 'lid', 'lower', 'dots', 'bd'];
-		for (const k of ['penguin', 'nyra', 'maverick']) {
-			const s = Characters.draw(k, 'zz');
+		for (const kind of ['penguin', 'nyra', 'maverick']) for (const o of Characters.outfits[kind]) {
+			const k = kind + ' in ' + o, s = Characters.draw(kind, 'zz', o);
 			if (/<filter|<mask|<clipPath|filter=|mask=|blur/i.test(s)) bad.push(k + ': a filter, mask, clip path or blur');
 			const t = document.createElement('template');
 			t.innerHTML = s;

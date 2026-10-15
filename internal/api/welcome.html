@@ -21,8 +21,10 @@
 .way small{display:block;font-size:.85rem;line-height:1.4;margin-top:4px}
 /* each character as the screen draws it (characters.js), standing still:
    focus or the pointer plays its hello once, a wave or a tilt of the head */
-.pic{--pb1:#7f8ad9;--pb2:#3b4590;--pb3:#262d66;--rim:rgba(165,180,255,.22);--ice1:#34406c;--ice2:rgba(20,26,48,0);--c1:#6d7cff;--thought:#e6e8f0;width:112px;height:123px}
-.pic svg{display:block;width:100%;height:100%;overflow:visible}
+.pic{--pb1:#7f8ad9;--pb2:#3b4590;--pb3:#262d66;--rim:rgba(165,180,255,.22);--ice1:#34406c;--ice2:rgba(20,26,48,0);--c1:var(--o1,#6d7cff);--thought:#e6e8f0;width:112px;height:123px}
+/* --o1 is the outfit's colour from the wardrobe (set on the .pic; unset is as drawn): the resting colour too, with its light and shade for the garment */
+.pic svg{display:block;width:100%;height:100%;overflow:visible;--o1l:color-mix(in srgb,var(--o1) 62%,#fff);--o1d:color-mix(in srgb,var(--o1) 50%,#000)}
+@supports not (color:color-mix(in srgb,#000,#fff)){.pic svg{--o1l:var(--o1);--o1d:var(--o1)}}
 .pic .bd{stroke:var(--rim);stroke-width:1.5}
 .pic .eye .lid,.pic .dots{opacity:0}
 .pic .lower{transform-box:fill-box;transform-origin:50% 0;transform:scaleY(.25)}
@@ -139,7 +141,7 @@ function drawCast(){
   const card=document.createElement('div');card.className='who';
   const label=document.createElement('label'),input=document.createElement('input'),pic=document.createElement('span'),name=document.createElement('b'),tag=document.createElement('small');
   input.type='radio';input.name='persona';input.value=p.id;input.checked=i===0;
-  pic.className='pic '+p.character;pic.innerHTML=window.Characters?Characters.draw(p.character,'c'+i):'';
+  pic.className='pic '+p.character;pic.innerHTML=window.Characters?Characters.draw(p.character,'c'+i,(p.look||{}).outfit):'';if(/^#[0-9a-f]{6}$/i.test((p.look||{}).colour||''))pic.style.setProperty('--o1',p.look.colour);
   name.textContent=p.name;tag.textContent=p.tagline;
   label.append(input,pic,name,tag);card.append(label);
   if(canSpeak){const b=document.createElement('button');b.type='button';b.className='hear';b.textContent='Hear '+p.name;card.append(b);

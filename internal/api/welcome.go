@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/MavrkAI/Mirrin/internal/config"
 	"net/http"
 	"slices"
 	"time"
@@ -132,18 +133,26 @@ type WelcomeWakeChecker interface {
 	HasWakeModel(model string) bool
 }
 
+// WelcomeDresser is a WelcomeBackend that knows what each character wears
+// (config.Wardrobe): the cast on the welcome page is drawn in it.
+type WelcomeDresser interface {
+	Look(character string) config.Look
+}
+
 // WelcomePersona is a character the welcome page offers (GET
-// /welcome/personas). Character is how the page draws it (characters.js);
-// InstantWake is true when a wake model for its name is here to use.
+// /welcome/personas). Character is how the page draws it (characters.js),
+// and Look what it wears; InstantWake is true when a wake model for its
+// name is here to use.
 type WelcomePersona struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Tagline     string `json:"tagline"`
-	Greeting    string `json:"greeting"`
-	Address     string `json:"address"`
-	WakePhrase  string `json:"wake_phrase"`
-	InstantWake bool   `json:"instant_wake"`
-	Character   string `json:"character"`
+	ID          string      `json:"id"`
+	Name        string      `json:"name"`
+	Tagline     string      `json:"tagline"`
+	Greeting    string      `json:"greeting"`
+	Address     string      `json:"address"`
+	WakePhrase  string      `json:"wake_phrase"`
+	InstantWake bool        `json:"instant_wake"`
+	Character   string      `json:"character"`
+	Look        config.Look `json:"look"`
 }
 
 // welcomeOrder is the order the welcome page offers the bundled personas.
@@ -151,8 +160,9 @@ type WelcomePersona struct {
 var welcomeOrder = []string{"mirrin", "nyra", "pickoo"}
 
 // welcomePersonas are the bundled personas, as the welcome page offers them.
-// hasModel says whether a persona's wake model is here to use.
-func welcomePersonas(hasModel func(model string) bool) []WelcomePersona {
+// hasModel says whether a persona's wake model is here to use, and look
+// what each character wears.
+func welcomePersonas(hasModel func(model string) bool, look func(character string) config.Look) []WelcomePersona {
 	all := persona.Bundled()
 	rank := func(p persona.Persona) int {
 		if i := slices.Index(welcomeOrder, p.ID); i >= 0 {
@@ -164,7 +174,7 @@ func welcomePersonas(hasModel func(model string) bool) []WelcomePersona {
 	out := make([]WelcomePersona, 0, len(all))
 	for _, p := range all {
 		out = append(out, WelcomePersona{ID: p.ID, Name: p.Name, Tagline: p.Tagline, Greeting: persona.Render(p.Greeting, "", p.Address), Address: p.Address,
-			WakePhrase: "Hey " + p.Spoken(), InstantWake: p.WakeModel != "" && hasModel(p.WakeModel), Character: characterOf(p.ID)})
+			WakePhrase: "Hey " + p.Spoken(), InstantWake: p.WakeModel != "" && hasModel(p.WakeModel), Character: characterOf(p.ID), Look: look(config.CharacterOf(p.ID))})
 	}
 	return out
 }
@@ -178,15 +188,24 @@ func wakeModelCheck(b WelcomeBackend) func(string) bool {
 	return func(string) bool { return true }
 }
 
+// lookCheck asks the backend what a character wears, when it can say
+// (WelcomeDresser); otherwise every character is as drawn.
+func lookCheck(b WelcomeBackend) func(string) config.Look {
+	if d, ok := b.(WelcomeDresser); ok {
+		return d.Look
+	}
+	return func(string) config.Look { return config.Look{} }
+}
+
 // characterOf is how characters.js draws a persona (its kindFor): Nyra
 // and Mirrin as themselves, everyone else as the penguin. Mirrin was MAVRK
 // before, and a restored twin may still say so, or name the retired persona
 // plain, who is Mirrin now.
 func characterOf(id string) string {
-	switch id {
+	switch config.CharacterOf(id) {
 	case "nyra":
 		return "nyra"
-	case "mirrin", "mavrk", "plain":
+	case "mirrin":
 		return "maverick"
 	}
 	return "penguin"
@@ -268,7 +287,7 @@ func (s *Server) WithWelcome(b WelcomeBackend) *Server {
 		})
 		add("POST /welcome/check", welcomeCheck(b)) // model_key.go
 		add("GET /welcome/personas", func(w http.ResponseWriter, r *http.Request) error {
-			writeJSON(w, welcomePersonas(wakeModelCheck(b)))
+			writeJSON(w, welcomePersonas(wakeModelCheck(b), lookCheck(b)))
 			return nil
 		})
 		add("GET /welcome/channels", func(w http.ResponseWriter, r *http.Request) error {

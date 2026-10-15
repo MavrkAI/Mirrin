@@ -4,6 +4,9 @@ All notable changes are listed here. The format follows Keep a Changelog; versio
 
 ## Unreleased
 
+### Dress your twin
+- Under Persona in the menu bar, **Outfit** and **Outfit colour** choose what each character wears on the screen, the widget, the night-time figure and the welcome page. The penguin has a scarf, a beanie and a sun hat; Nyra a cardigan, a turtleneck and a denim jacket; Mirrin a waistcoat, a knit jumper and a linen shirt. The colours are coral, rose, mustard, forest, teal, sky, plum and charcoal, or as drawn, and the one chosen is also the resting colour of the bow tie, the hair clip and the lapel pin, which still light up when the twin listens or thinks. Each character keeps its own choice (the `wardrobe:` section of config.yaml); one the twin doesn't know is noted in the log and drawn as it is.
+
 ### Pickoo, cuter
 - Pickoo delights in little things, is proud of its errands ("All sorted!") and gentle when you're stressed; its acks bounce ("Yip! Looking!", "Flippers up!") and its hellos have a tail ("Morning, Akshay! Ready when you are."). Its voice sits a little higher and quicker, and the penguin on the screen has bigger eyes, rounder cheeks and a smaller beak. Same care about money, privacy and anything that can't be undone.
 

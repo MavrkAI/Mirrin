@@ -38,7 +38,7 @@ Website: [mirrin.app](https://mirrin.app)
 
   <p><img src="docs/media/cast.png" alt="The three personas, drawn as on the presence screen: Mirrin, a butler in a dinner jacket; Nyra, in a blue blazer; Pickoo, a penguin in a bow tie." width="100%"></p>
 
-  Pick one when you start, switch from the menu bar, or write your own: a persona is one short YAML file, and you can call your twin anything.
+  Pick one when you start, switch from the menu bar, or write your own: a persona is one short YAML file, and you can call your twin anything. Dress it from the menu bar too (**Persona → Outfit** and **Outfit colour**). The penguin has a scarf, a beanie and a sun hat; Nyra a cardigan, a turtleneck and a denim jacket; Mirrin a waistcoat, a jumper and a linen shirt; each in one of eight colours, or as drawn.
 - **A face for the room.** The presence screen (**Open screen…** in the menu) shows what it heard, what it's doing, what needs you and what's next, with big Approve and Deny buttons. After a minute of quiet it becomes a clock. Keep it in a laptop tab or on a screen on the wall.
 
 ## Your data stays yours

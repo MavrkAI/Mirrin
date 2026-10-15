@@ -1,6 +1,11 @@
 # Copy to ~/.mirrin/config.yaml (or run `mirrin init`).
 name: Mirrin              # what you call your twin (any name)
 persona: mirrin           # its personality: mirrin | nyra | pickoo | plain | one of yours (mirrin persona list)
+# wardrobe:               # what each character wears on the screen (Persona → Outfit); left out, as drawn
+#   penguin: {outfit: scarf, colour: coral}   # bowtie | scarf | beanie | sunhat
+#   nyra: {outfit: cardigan}                  # blazer | cardigan | turtleneck | denim
+#   mirrin: {outfit: jumper, colour: forest}  # dinner | waistcoat | jumper | linen
+#                           # colours: coral rose mustard forest teal sky plum charcoal, or #rrggbb
 user:
   name: Tony
   honorific: ""             # how it addresses you: sir, ma'am or your name; empty is the persona's own (sir for Mirrin, your name for the others)

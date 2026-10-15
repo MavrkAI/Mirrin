@@ -3,11 +3,27 @@
 // drawing is a function of its id prefix, so two of them on one page never
 // share a gradient id. The pages' styles pose and animate them.
 //
-// window.Characters.draw(kind, prefix) is the svg markup of 'penguin',
-// 'nyra' or 'maverick'; window.Characters.kindFor(personaID) is the kind a
-// persona is drawn as.
+// window.Characters.draw(kind, prefix, outfit) is the svg markup of
+// 'penguin', 'nyra' or 'maverick' in one of its outfits;
+// window.Characters.kindFor(personaID) is the kind a persona is drawn as,
+// and window.Characters.outfits each kind's wardrobe.
 (() => {
 'use strict';
+// Each character's wardrobe (config.Outfits, in Go, offers the same under
+// Persona → Outfit): the first is the character as drawn, and an outfit a
+// character doesn't have is that one. A garment is drawn in the colour the
+// owner chose, --o1 on the figure (with --o1l and --o1d its light and shade,
+// which the pages derive from it), or in its own when --o1 is unset: every
+// garment colour is var(--o1, its own). Each outfit's parts are one
+// <g class="outfit id">, so the pages and the tests can tell what's worn.
+const OUTFITS = {penguin: ['bowtie', 'scarf', 'beanie', 'sunhat'], nyra: ['blazer', 'cardigan', 'turtleneck', 'denim'], maverick: ['dinner', 'waistcoat', 'jumper', 'linen']};
+const wornBy = (kind, outfit) => OUTFITS[kind].includes(outfit) ? outfit : OUTFITS[kind][0];
+// wear is a garment's shading, lit like the rest: the owner's colour or the
+// garment's own [light, base, dark].
+const wear = (p, id, [l, b, d]) => `<radialGradient id="${p}${id}" cx="40%" cy="35%" r="75%"><stop offset="0" style="stop-color:var(--o1l,${l})"/><stop offset=".6" style="stop-color:var(--o1,${b})"/><stop offset="1" style="stop-color:var(--o1d,${d})"/></radialGradient>`;
+// gw is a gradient whose stops are [offset, variable, its own colour]: the
+// owner's colour where it is set, the drawing's where it isn't.
+const gw = (p, num, t, id, at, ...s) => `<${t}Gradient id="${p}${id}"${at ? ' ' + at : ''}>${s.map(([o, v, c]) => `<stop${o ? ` offset="${num(o)}"` : ''} style="stop-color:var(${v},${c})"/>`).join('')}</${t}Gradient>`;
 // The penguin butler (Pickoo and anyone without their own): big eyes,
 // round cheeks and a small beak, lit like
 // clay: a light from the upper left, shading below, a soft shadow on the
@@ -16,8 +32,18 @@
 // are .pb .turn .front .head .eyes .eye .open .lid .lower .dots .bd, and
 // its flippers (.fl) wave hello. p prefixes its ids: 'pg' on the screen,
 // 'pw' in the floating widget.
-function penguinSVG(p){
-  return `<svg viewBox="0 0 200 220" aria-hidden="true" focusable="false"><defs>
+function penguinSVG(p, outfit){
+  const o = wornBy('penguin', outfit);
+  // a scarf round its neck, over the top of the bow tie (.front); a beanie
+  // or a sun hat on its head, under the eyes (.head), so it turns and nods
+  // with the head and the blink still shows
+  const red = ['#ea8a95', '#d6475a', '#7a2634'];
+  const defs = o === 'scarf' ? wear(p, 'Wear', red) : o === 'beanie' ? wear(p, 'Wear', ['#8fb0e6', '#4a7bd0', '#223c6c'])
+    : o === 'sunhat' ? wear(p, 'Wear', red) + `<linearGradient id="${p}Straw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4dfa3"/><stop offset="1" stop-color="#d4a85c"/></linearGradient>` : '';
+  const front = o !== 'scarf' ? '' : `<g class="outfit scarf"><path d="M42 123 Q100 143 158 123 L158 135 Q100 155 42 135 Z" fill="url(#${p}Wear)"/><path d="M50 131 Q100 150 150 131" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="2.2"/><path d="M58 128 L78 134 L72 182 Q62 187 53 180 Z" fill="url(#${p}Wear)"/><path d="M57 181 L58 191 M63 184 L64 194 M69 183 L70 192" stroke="url(#${p}Wear)" stroke-width="3" stroke-linecap="round"/><path d="M61 152 Q68 155 75 152" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="2"/></g>`;
+  const hat = o === 'beanie' ? `<g class="outfit beanie"><circle cx="100" cy="24" r="9" fill="#f3e9d2"/><circle cx="97" cy="21" r="3.5" fill="#fff" opacity=".6"/><path d="M46 80 Q44 32 100 26 Q156 32 154 80 Q100 66 46 80 Z" fill="url(#${p}Wear)"/><path d="M58 60 Q70 44 100 40" fill="none" stroke="#fff" stroke-opacity=".2" stroke-width="4" stroke-linecap="round"/><path d="M44 74 Q100 58 156 74 L156 86 Q100 70 44 86 Z" fill="url(#${p}Wear)"/><path d="M44 74 Q100 58 156 74 L156 86 Q100 70 44 86 Z" fill="#000" opacity=".14"/><path d="M56 72.4V81.4M68 70V79M80 68.5V77.5M92 67.7V76.7M108 67.7V76.7M120 68.5V77.5M132 70V79M144 72.4V81.4" stroke="#000" stroke-opacity=".16" stroke-width="2"/></g>`
+    : o === 'sunhat' ? `<g class="outfit sunhat"><ellipse cx="100" cy="66" rx="80" ry="11" fill="url(#${p}Straw)"/><path d="M62 66 Q64 30 100 28 Q136 30 138 66 Q100 78 62 66 Z" fill="url(#${p}Straw)"/><path d="M62 57 Q100 67 138 57 L138 66 Q100 76 62 66 Z" fill="url(#${p}Wear)"/><path d="M20 66 Q100 92 180 66 Q100 80 20 66 Z" fill="url(#${p}Straw)"/><path d="M28 68 Q100 86 172 68" fill="none" stroke="#000" stroke-opacity=".12" stroke-width="2"/><path d="M72 38 Q84 31 100 31" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="3" stroke-linecap="round"/></g>` : '';
+  return `<svg viewBox="0 0 200 220" aria-hidden="true" focusable="false"><defs>${defs}
 <radialGradient id="${p}Body" cx="36%" cy="26%" r="78%"><stop offset="0" style="stop-color:var(--pb1)"/><stop offset=".42" style="stop-color:var(--pb2)"/><stop offset="1" style="stop-color:var(--pb3)"/></radialGradient>
 <radialGradient id="${p}Belly" gradientUnits="userSpaceOnUse" cx="84" cy="84" r="118"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#f4f0e8"/><stop offset="1" stop-color="#cfc6b6"/></radialGradient>
 <radialGradient id="${p}Beak" cx="38%" cy="30%" r="80%"><stop offset="0" stop-color="#ffd98a"/><stop offset=".6" stop-color="#ffa24a"/><stop offset="1" stop-color="#e06f1e"/></radialGradient>
@@ -34,9 +60,9 @@ function penguinSVG(p){
 <g class="fl l"><ellipse class="bd" cx="36" cy="132" rx="14" ry="36" transform="rotate(22 36 132)" fill="url(#${p}Body)"/></g>
 <g class="fl r"><ellipse class="bd" cx="164" cy="132" rx="14" ry="36" transform="rotate(-22 164 132)" fill="url(#${p}Body)"/></g>
 <path d="M91 44 Q92 27 100 35 M100 37 Q101 21 110 29" fill="none" stroke="url(#${p}Body)" stroke-width="6" stroke-linecap="round"/><ellipse class="bd" cx="100" cy="120" rx="64" ry="80" fill="url(#${p}Body)"/>
-<g class="front"><ellipse cx="100" cy="140" rx="47" ry="57" fill="url(#${p}Belly)"/><g><path d="M100 152 L79 141 Q73 152 79 163 Z" fill="url(#${p}Bow)"/><path d="M100 152 L121 141 Q127 152 121 163 Z" fill="url(#${p}Bow)"/><circle cx="100" cy="152" r="6.5" fill="url(#${p}Bow)"/></g></g>
+<g class="front"><ellipse cx="100" cy="140" rx="47" ry="57" fill="url(#${p}Belly)"/><g><path d="M100 152 L79 141 Q73 152 79 163 Z" fill="url(#${p}Bow)"/><path d="M100 152 L121 141 Q127 152 121 163 Z" fill="url(#${p}Bow)"/><circle cx="100" cy="152" r="6.5" fill="url(#${p}Bow)"/></g>${front}</g>
 <ellipse cx="76" cy="58" rx="30" ry="18" transform="rotate(-24 76 58)" fill="url(#${p}Shine)"/>
-<g class="head"><ellipse cx="80" cy="95" rx="30" ry="28.5" fill="url(#${p}Belly)"/><ellipse cx="120" cy="95" rx="30" ry="28.5" fill="url(#${p}Belly)"/>
+<g class="head"><ellipse cx="80" cy="95" rx="30" ry="28.5" fill="url(#${p}Belly)"/><ellipse cx="120" cy="95" rx="30" ry="28.5" fill="url(#${p}Belly)"/>${hat}
 <g class="eyes"><g class="eye"><g class="open"><ellipse cx="81" cy="98" rx="14.5" ry="17" fill="url(#${p}Eye)"/><circle cx="76.5" cy="91.5" r="5.6" fill="#fff"/><circle cx="85.5" cy="104" r="2.4" fill="#fff" opacity=".85"/></g><path class="lid" d="M66 100 Q81 110 96 100" fill="none" stroke="#1a1d3a" stroke-width="3.4" stroke-linecap="round"/></g>
 <g class="eye"><g class="open"><ellipse cx="119" cy="98" rx="14.5" ry="17" fill="url(#${p}Eye)"/><circle cx="114.5" cy="91.5" r="5.6" fill="#fff"/><circle cx="123.5" cy="104" r="2.4" fill="#fff" opacity=".85"/></g><path class="lid" d="M104 100 Q119 110 134 100" fill="none" stroke="#1a1d3a" stroke-width="3.4" stroke-linecap="round"/></g></g>
 <ellipse cx="67" cy="117" rx="11.5" ry="7" fill="url(#${p}Cheek)"/><ellipse cx="133" cy="117" rx="11.5" ry="7" fill="url(#${p}Cheek)"/>
@@ -55,7 +81,7 @@ function penguinSVG(p){
 // nods hello instead of waving. The sparkle clip in her hair is her only
 // part in the state's colour. p prefixes her ids: 'ny' on the screen, 'nw'
 // in the floating widget.
-function nyraSVG(p){
+function nyraSVG(p, outfit){
   // her markup is kept small (about 9 KB): numbers without a leading 0, a
   // colour's opacity in the colour (#rrggbbaa), path data with no separator
   // before a minus, and fill="none" on the svg, so a line needs no fill and
@@ -87,9 +113,32 @@ function nyraSVG(p){
       + `</g>${P(m('M107.3,92.8c4,3.6 13.5,4 18.8,-1.3l3.2,-1.9c-1.9,2.8 -3.8,4.6 -6.1,5.7c-4.3,2.4 -12.3,2 -15.9,-2.5z'), '#1a0e0a', ' class="lid"')}</g>`;
   };
   const lapel = 'M112.5,144.5l-12.5,42.5c8,-8 19,-18 28.5,-31l-8,-4.5l3.5,-6c-3.5,-3 -8,-3 -11.5,-1z';
+  // what she wears: the body (the shell) and the front of it, in the
+  // outfit's own colours or the owner's (--o1); her hair over her shoulder
+  // lies on every one
+  const o = wornBy('nyra', outfit);
+  const shells = {blazer: ['#4b63ab', '#2b3b73', '#141c3c'], cardigan: ['#d9a3b7', '#b5607e', '#5e2a40'], turtleneck: ['#a98ac4', '#6b4f8a', '#34244a'], denim: ['#8fb0dc', '#4a6fa5', '#223a5e']};
+  const hairOver = P('M126,124c12,-4 30,2 31,18c1,12 -9,16 -8,26c1,10 11,16 7,28c-3,8 -14,12 -24,8c6,-3 9,-8 7,-14c-3,-8 -13,-12 -13,-22c0,-10 10,-16 8,-26c-1,-8 -8,-12 -12,-14z', u('Clump'))
+    + P('M149,129c6.5,7 7,18 2,26c2,-9 2,-18 -2,-26zm-17.5,28c-5,7 -5,15 -1,22c-1.9,-7 -1.9,-15 1,-22zm19,22c5.5,7 5.5,15 1.5,20c1.5,-6 1.4,-13 -1.5,-20z', u('SheenV'));
+  const band = P('M87,135.5c7,3.5 19,3.5 26,0l1.5,11.5c-6.5,3.5 -22.5,3.5 -29,0z', u('Top')); // the cream top's neck band
+  const vee = P('M111,146l-11,40l-11,-40c4,2.5 18,2.5 22,0z', u('Top')) + L('M86.4,141.4c6.6,3.2 20.6,3.2 27.2,0', '#d3c2a5', .8); // the top in a V
+  const thread = ` stroke="${a('#dcc8a0', .5)}" stroke-width=".6"`;
+  const fronts = {
+    // the navy blazer: the top in a V, satin lapels
+    blazer: () => vee + band + `<use href="#${p}Lp" x="1.4" y="1.4" fill="${a('#0b1029', .55)}"/><use href="#${p}Lp" fill="${u('Lapel')}"/>` + L(both('M100,187c8,-8 19,-18 28.5,-31l-8,-4.5'), '#ffffff', .8, .18),
+    // a cardigan, open over the top, pearl buttons down the left front, a ribbed neck
+    cardigan: () => `<g class="outfit cardigan">` + band + P('M93,146c4,1.5 10,1.5 14,0l2,54h-18z', u('Top')) + P('M93,146c-2,.6 -4,.8 -6,.6l-1,53.4h5z', a('#000000', .22)) + P('M107,146c2,.6 4,.8 6,.6l1,53.4h-5z', a('#000000', .22))
+      + L('M84,147c5,3.2 27,3.2 32,0', '#000000', 2.4, .22) + `<g fill="#f1e8d8" stroke="${a('#000000', .35)}" stroke-width=".6"><circle cx="90" cy="161" r="1.8"/><circle cx="90" cy="173" r="1.8"/><circle cx="90" cy="185" r="1.8"/></g></g>`,
+    // a turtleneck: the collar up her neck, ribbed, folded at the top
+    turtleneck: () => `<g class="outfit turtleneck">` + P('M84,113c5,4 27,4 32,0l2,27c-8,4 -28,4 -36,0z', u('Shell')) + L('M89,117v18m5.5,-17v18m5.5,-18v18m5.5,-18v18m5.5,-18v18', '#000000', 1, .16) + L('M84.6,114.2c5,4 25.8,4 30.8,0', '#000000', 1.4, .28) + `</g>`,
+    // a denim jacket, open: the top in a V, collar points, chest pockets with flaps, copper buttons, pale topstitching
+    denim: () => `<g class="outfit denim">` + vee + band + P(both('M100,146l13,-9l4,14l-17,6z'), u('Shell'), thread)
+      + P(both('M110,161l14,-2l1,16l-14,2z'), u('Shell'), thread) + P(both('M110,161l14,-2l.5,5l-14,2z'), a('#000000', .18))
+      + L(both('M100,186c8,-8 19,-18 28.5,-31'), '#dcc8a0', .7, .45) + `<g fill="#b8862b"><circle cx="117" cy="170" r="1.4"/><circle cx="83" cy="170" r="1.4"/></g></g>`,
+  };
   return `<svg viewBox="0 0 200 220" aria-hidden="true" focusable="false" fill="none" stroke-linecap="round"><defs>
-${g('radial', 'Shell', `${US} cx="70" cy="150" r="110"`, [0, '#4b63ab'], [.45, '#2b3b73'], [1, '#141c3c'])}
-${g('linear', 'Lapel', 'x2="1" y2="1"', [0, '#5068b0'], [1, '#1f2b5a'])}
+${gw(p, num, 'radial', 'Shell', `${US} cx="70" cy="150" r="110"`, [0, '--o1l', shells[o][0]], [.45, '--o1', shells[o][1]], [1, '--o1d', shells[o][2]])}
+${gw(p, num, 'linear', 'Lapel', 'x2="1" y2="1"', [0, '--o1l', '#5068b0'], [1, '--o1d', '#1f2b5a'])}
 ${g('radial', 'Skin', `${US} cx="98" cy="88" r="52" fx="86" fy="72"`, [0, '#eeb88f'], [.55, '#cc8d64'], [1, '#97593a'])}
 ${g('linear', 'Clump', 'x2=".6" y2="1"', [0, '#5e3c2d'], [.42, '#2c1912'], [1, '#110907'])}
 ${g('linear', 'Top', V, [0, '#fbf4e6'], [1, '#dccdb3'])}
@@ -109,10 +158,7 @@ ${P('M55,96c-4,10 -2.5,20 -4.5,31c3,-10 2.5,-21 4.5,-31z', u('SheenV'))}
 ${P('M91.5,112c.5,12 -.5,20 -1,29h19c-.5,-9 -1.5,-17 -1,-29z', u('Skin'))}
 ${P('M100,137c-12,0 -20,4 -28,9c-8,4 -20,6 -27,13c-7,7 -9,19 -9,31v6c0,9 26,14 64,14c38,0 64,-5 64,-14v-6c0,-12 -2,-24 -9,-31c-7,-7 -19,-9 -27,-13c-8,-5 -16,-9 -28,-9z', u('Shell'), ' class="bd"')}
 <ellipse cx="62" cy="155" rx="14" ry="5" transform="rotate(-22 62 155)" fill="${u('Shine')}"/>
-<g class="front">${P('M111,146l-11,40l-11,-40c4,2.5 18,2.5 22,0zm-24,-10.5c7,3.5 19,3.5 26,0l1.5,11.5c-6.5,3.5 -22.5,3.5 -29,0z', u('Top'))}${L('M86.4,141.4c6.6,3.2 20.6,3.2 27.2,0', '#d3c2a5', .8)}
-<use href="#${p}Lp" x="1.4" y="1.4" fill="${a('#0b1029', .55)}"/><use href="#${p}Lp" fill="${u('Lapel')}"/>${L(both('M100,187c8,-8 19,-18 28.5,-31l-8,-4.5'), '#ffffff', .8, .18)}
-${P('M126,124c12,-4 30,2 31,18c1,12 -9,16 -8,26c1,10 11,16 7,28c-3,8 -14,12 -24,8c6,-3 9,-8 7,-14c-3,-8 -13,-12 -13,-22c0,-10 10,-16 8,-26c-1,-8 -8,-12 -12,-14z', u('Clump'))}
-${P('M149,129c6.5,7 7,18 2,26c2,-9 2,-18 -2,-26zm-17.5,28c-5,7 -5,15 -1,22c-1.9,-7 -1.9,-15 1,-22zm19,22c5.5,7 5.5,15 1.5,20c1.5,-6 1.4,-13 -1.5,-20z', u('SheenV'))}</g>
+<g class="front">${fronts[o]()}${hairOver}</g>
 <g class="head">${P('M65.5,86c-4.5,-2 -6.5,4 -5.9,10c.6,6 2.9,10.5 6.9,10z', u('Skin'))}<circle cx="62.8" cy="105" r="1.5" fill="#f4ede6"/>
 ${P('M100,46c21,0 35,16 35,38c0,16 -5,28 -14,38c-7,7 -14,12 -21,12c-7,0 -14,-5 -21,-12c-9,-10 -14,-22 -14,-38c0,-22 14,-38 35,-38z', u('Skin'))}
 <g fill="${u('Cheek')}"><ellipse cx="79" cy="107" rx="9" ry="5"/><ellipse cx="121" cy="107" rx="9" ry="5"/></g><g fill="${u('Shine')}"><ellipse cx="78" cy="98" rx="6" ry="3"/><ellipse cx="99.4" cy="105.2" rx="2.8" ry="2.2"/></g>
@@ -140,7 +186,7 @@ ${P('M90,32c15,-8.5 39,-6.5 56,12c-17,-14 -39,-15.5 -56,-12z', u('SheenH'))}${P(
 // corner of his mouth (the viewer's right) lifts and that brow sits a touch
 // higher. The pin on his lapel, Nyra's sparkle, is his only part in the
 // state's colour. p prefixes his ids: 'mg' on the screen, 'mw' in the widget.
-function maverickSVG(p){
+function maverickSVG(p, outfit){
   // kept small (about 9 KB), as Nyra is: numbers without a leading 0, a
   // colour's opacity in the colour, path data with no separator before a
   // minus, whole numbers where half a unit can't be seen
@@ -180,9 +226,33 @@ function maverickSVG(p){
   const hairOut = 'M64,64c-3,-9 -3,-19 2,-27c7,-10 19,-15 34,-15c16,0 28,6 34,15c5,8 5,18 1,27';
   const hair = hairOut + 'c-1.6,-2.6 -3.8,-4.6 -6.2,-5.4c-2.2,-.6 -4.8,-.6 -7.2,-.8c-2.4,-1.6 -5,-2.8 -8.4,-3.5c-4.6,-.9 -9.4,-1.3 -14,-1.3c-5,0 -9.6,.4 -14,1.3c-3.4,.7 -6,1.9 -8.4,3.5c-2.4,.2 -5,.2 -7.2,.8c-2.6,.8 -4.6,2.8 -6,5.8z';
   const side = 'M129,58c3,4 4,10 4,17c1,7 0,13 0,19c1.4,.8 2.6,.8 3.4,0c.4,-8 .6,-18 0,-28c-.4,-8 -1.4,-15 -3.4,-20zm-57,0c-3,4 -4,10 -5,17c0,7 1,13 1,19c-1.4,.8 -2.6,.8 -3.4,0c-.6,-8 -.6,-18 -.2,-28c.4,-8 1.6,-15 3.6,-20z';
+  // what he wears: the body (the suit) and the front of it, in the outfit's
+  // own colours or the owner's (--o1); the pin is on every one. In the
+  // waistcoat the body is his shirt, white whatever the colour, and the
+  // waistcoat takes it.
+  const o = wornBy('maverick', outfit);
+  const suits = {dinner: ['#4c5262', '#262a34', '#0b0c10'], jumper: ['#c9a27a', '#8a6a48', '#3f2e1c'], linen: ['#f6f1e6', '#d9d0bd', '#a89c84']};
+  const pin = `<circle cx="121" cy="164" r="11" fill="${u('Hl')}"/><g transform="matrix(1.18 0 0 1.18 -21.8 -29.5)">${P('M121,158.5q.7,4.8 5.5,5.5q-4.8,.7 -5.5,5.5q-.7,-4.8 -5.5,-5.5q4.8,-.7 5.5,-5.5z', u('Lt'), ' stroke="#ffffff73" stroke-width=".5"')}</g>`;
+  const fronts = {
+    // the dinner jacket: dress shirt with studs, satin lapels, a black bow tie, a white pocket square
+    dinner: () => P('M84,138h32l-16,64z', u('T')) + P(both('M112,131c2,1 4,2 5,5l1,6l-6,11l-12,-4c4,-4 8,-9 10,-15z'), u('T'))
+      + `<g fill="#16181e"><circle cx="100" cy="166" r="1.3"/><circle cx="100" cy="177" r="1.3"/><circle cx="100" cy="188" r="1.3"/></g><use href="#${p}Lp" x="1.4" y="1.4" fill="${a('#000000', .45)}"/><use href="#${p}Lp" fill="${u('La')}"/>`
+      + P(both('M102,146.4l8.8,-3.2c1,-.2 1.6,.6 1.6,2l0,6.4c0,1.4 -.6,2.2 -1.6,2l-8.8,-3.2z'), u('La')) + `<rect x="97" y="146" width="6" height="4.8" rx="1.2" fill="#1c1e25"/>`
+      + P('M134.2,178.6l11.4,-1.2l.3,2.2l-11.4,1.2z', u('T')) + P('M134.6,178.4l2.8,-3.8l2,2.8l3.2,-4.2l2.8,3.8z', u('T')) + pin,
+    // shirt sleeves and a waistcoat, the collar open
+    waistcoat: () => `<g class="outfit waistcoat">` + P('M84,138h32l-16,22z', u('T')) + P('M100,150c-8,0 -16,-4 -22,-10c-6,8 -10,20 -10,32v32c10,3 22,4 32,4c10,0 22,-1 32,-4v-32c0,-12 -4,-24 -10,-32c-6,6 -14,10 -22,10z', u('Vest'))
+      + L('M100,150c-8,0 -16,-4 -22,-10m44,0c-6,6 -14,10 -22,10', '#000000', 1, .25) + P(both('M100,143l11,-11l5,12l-16,8z'), u('T'))
+      + `<g fill="#16181e"><circle cx="100" cy="162" r="1.4"/><circle cx="100" cy="174" r="1.4"/><circle cx="100" cy="186" r="1.4"/></g>` + L('M107,172l14,-2m-50,2l14,-2', '#000000', 1, .3) + pin + `</g>`,
+    // a knit jumper over a shirt, its collar out, a ribbed crew neck
+    jumper: () => `<g class="outfit jumper">` + P('M86,138h28l-14,14z', u('T')) + P(both('M100,146l11,-12l5,13l-16,7z'), u('T'))
+      + P('M80,150c6,-6 34,-6 40,0l-2,5c-8,-5 -28,-5 -36,0z', u('Suit')) + L('M84,152.6v2.4m4,-3.4v2.6m4,-3.4v2.8m4,-3.2v2.8m4,-3v2.8m4,-2.8v2.8m4,-2.8v2.8m4,-2.8v2.8m4,-3v2.8m4,-3.2v2.8', '#000000', 1, .2) + pin + `</g>`,
+    // a linen shirt, open at the collar, buttoned down the front
+    linen: () => `<g class="outfit linen">` + P('M90,140l10,16l10,-16c-4,2 -16,2 -20,0z', u('S')) + P(both('M100,150l14,-14l8,14l-22,10z'), u('Suit'), ` stroke="${a('#000000', .22)}" stroke-width=".7"`)
+      + L('M96,160v40m8,-40v40', '#000000', .8, .14) + `<g fill="#6b5a46"><circle cx="100" cy="168" r="1.4"/><circle cx="100" cy="181" r="1.4"/><circle cx="100" cy="194" r="1.4"/></g>` + pin + `</g>`,
+  };
   return `<svg viewBox="0 0 200 220" aria-hidden="true" focusable="false" fill="none" stroke-linecap="round"><defs>
-${g('radial', 'Suit', `${US} cx="70" cy="150" r="120"`, [0, '#4c5262'], [.45, '#262a34'], [1, '#0b0c10'])}
-${g('linear', 'La', 'x2="1" y2="1"', [0, '#5c6272'], [.45, '#22252e'], [1, '#08090c'])}
+${o === 'waistcoat' ? g('radial', 'Suit', `${US} cx="70" cy="150" r="120"`, [0, '#ffffff'], [.45, '#e9e6df'], [1, '#bfbab0']) + wear(p, 'Vest', ['#6b7080', '#3a3f4b', '#1a1d24']) : gw(p, num, 'radial', 'Suit', `${US} cx="70" cy="150" r="120"`, [0, '--o1l', suits[o][0]], [.45, '--o1', suits[o][1]], [1, '--o1d', suits[o][2]])}
+${gw(p, num, 'linear', 'La', 'x2="1" y2="1"', [0, '--o1l', '#5c6272'], [.45, '--o1', '#22252e'], [1, '--o1d', '#08090c'])}
 ${g('radial', 'S', `${US} cx="98" cy="88" r="54" fx="86" fy="72"`, [0, '#f2c4a0'], [.55, '#d09670'], [1, '#975c3f'])}
 ${g('linear', 'H', 'x2=".6" y2="1"', [0, '#664431'], [.45, '#2c1b12'], [1, '#110906'])}
 ${g('radial', 'B', `${US} cx="100" cy="100" r="40"`, [.3, a('#3a2418', .32)], [.8, a('#24150e', .6)], [1, a('#1e110b', .72)])}
@@ -202,14 +272,7 @@ ${P('M100,34c20,0 34,12 36,30c1,10 0,20 -2,28c-6,4 -20,6 -34,6c-14,0 -28,-2 -34,
 ${P('M87,110c1,12 0,24 -1,36h27c-1,-12 -1,-24 -1,-36z', u('S'))}
 ${P('M100,140c6,0 12,-2 17,-5c5,1 10,3 14,6c8,6 25,8 35,17c7,7 9,20 9,34v2c0,10 -30,16 -75,16c-45,0 -75,-6 -75,-16v-2c0,-14 2,-27 9,-34c10,-9 27,-11 35,-17c4,-3 9,-5 14,-6c5,3 11,5 17,5z', u('Suit'), ' class="bd"')}
 <ellipse cx="58" cy="158" rx="15" ry="5" transform="rotate(-22 58 158)" fill="${u('Sh')}"/>
-<g class="front">${P('M84,138h32l-16,64z', u('T'))}
-${P(both('M112,131c2,1 4,2 5,5l1,6l-6,11l-12,-4c4,-4 8,-9 10,-15z'), u('T'))}
-<g fill="#16181e"><circle cx="100" cy="166" r="1.3"/><circle cx="100" cy="177" r="1.3"/><circle cx="100" cy="188" r="1.3"/></g>
-<use href="#${p}Lp" x="1.4" y="1.4" fill="${a('#000000', .45)}"/><use href="#${p}Lp" fill="${u('La')}"/>
-${P(both('M102,146.4l8.8,-3.2c1,-.2 1.6,.6 1.6,2l0,6.4c0,1.4 -.6,2.2 -1.6,2l-8.8,-3.2z'), u('La'))}
-<rect x="97" y="146" width="6" height="4.8" rx="1.2" fill="#1c1e25"/>
-${P('M134.2,178.6l11.4,-1.2l.3,2.2l-11.4,1.2z', u('T'))}${P('M134.6,178.4l2.8,-3.8l2,2.8l3.2,-4.2l2.8,3.8z', u('T'))}
-<circle cx="121" cy="164" r="11" fill="${u('Hl')}"/><g transform="matrix(1.18 0 0 1.18 -21.8 -29.5)">${P('M121,158.5q.7,4.8 5.5,5.5q-4.8,.7 -5.5,5.5q-.7,-4.8 -5.5,-5.5q4.8,-.7 5.5,-5.5z', u('Lt'), ' stroke="#ffffff73" stroke-width=".5"')}</g></g>
+<g class="front">${fronts[o]()}</g>
 <g class="head">${P(both('M135,85c5,-2 8,4 7,11c-1,7 -3,12 -8,12z'), u('S'))}
 ${P('M100,45.6c21.6,0 35.8,14.8 35.8,36.4c0,12 -1.4,23.6 -5,33c-3.8,9.2 -12,16.8 -20.8,20.2c-3.2,1.2 -6.6,1.8 -10,1.8c-3.4,0 -6.8,-.6 -10,-1.8c-8.8,-3.4 -17,-11 -20.8,-20.2c-3.6,-9.4 -5,-21 -5,-33c0,-21.6 14.2,-36.4 35.8,-36.4z', u('S'))}
 <g fill="${u('Sh')}"><ellipse cx="78" cy="96" rx="6" ry="3"/><ellipse cx="99.4" cy="104" rx="2.6" ry="2"/></g>
@@ -241,7 +304,8 @@ const kindFor = id => {
 };
 const DRAW = {penguin: penguinSVG, nyra: nyraSVG, maverick: maverickSVG};
 window.Characters = Object.freeze({
-  draw: (kind, prefix) => (DRAW[kind] || penguinSVG)(String(prefix || '')),
+  draw: (kind, prefix, outfit) => (DRAW[kind] || penguinSVG)(String(prefix || ''), String(outfit || '')),
   kindFor,
+  outfits: OUTFITS,
 });
 })();

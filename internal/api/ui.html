@@ -48,7 +48,10 @@
    bow tie, the sparkle clip in Nyra's hair); --state the pill's dot, the
    words under the character, the mic and the floating label. Amber (--warn)
    is kept for what needs the owner. */
-.idle{--c1:#6d7cff;--state:var(--dim)}
+.idle{--c1:var(--o1,#6d7cff);--state:var(--dim)}
+/* the outfit's colour (--o1, the owner's from the wardrobe; unset is as drawn) is also the resting state colour, and its light and shade dress the garment */
+.orb svg,.doze svg{--o1l:color-mix(in srgb,var(--o1) 62%,#fff);--o1d:color-mix(in srgb,var(--o1) 50%,#000)}
+@supports not (color:color-mix(in srgb,#000,#fff)){.orb svg,.doze svg{--o1l:var(--o1);--o1d:var(--o1)}}
 .listening{--c1:var(--ok);--state:var(--ok)}
 .thinking{--c1:var(--accent);--state:var(--accent)}
 .speaking{--c1:var(--accent);--state:var(--accent)}
@@ -2210,8 +2213,9 @@ async function load(){
   let d; try { d = await r.json(); } catch { setOnline(false); return 'offline'; }
   const wasUnpaired = hideUnpaired();
   data = d; rememberName(d.name); setOnline(true); renderGreet();
-  // the persona's own character (kindFor): Mirrin and Nyra as themselves, the others as the penguin
-  if (changed('persona', d.persona || '')) useCharacter(d.persona);
+  // the persona's own character (kindFor): Mirrin and Nyra as themselves, the others as the penguin, in what it wears (the wardrobe's look)
+  const personaChanged = changed('persona', d.persona || ''), lookChanged = changed('look', d.look || null);
+  if (personaChanged || lookChanged) useCharacter(d.persona, d.look);
   if (Array.isArray(d.can) && changed('can', d.can)) {
     CAN = d.can;
     applyCan();
@@ -3044,29 +3048,36 @@ renderThemeBtn();
 const characterFor = id => window.Characters ? Characters.kindFor(id) : 'penguin';
 // each character's id prefixes on the screen and in the widget
 const CHARACTERS = {penguin: ['pg', 'pw'], nyra: ['ny', 'nw'], maverick: ['mg', 'mw']};
-let shownChar = '';
+let shownChar = '', shownOutfit = '', shownColour = '';
 // useCharacter draws the character in both places (the screen and the
-// widget), or swaps it. Only one character's svg is in each at a time, so
-// .eyes and the gradient ids never collide.
-function useCharacter(id){
+// widget), or swaps it, in the look the twin sends (data.look: an outfit
+// from its wardrobe and the owner's colour, --o1 on the figure; neither is
+// the character as drawn). Only one character's svg is in each at a time,
+// so .eyes and the gradient ids never collide.
+function useCharacter(id, look){
   if (!window.Characters) return; // /characters.js didn't load: the screen works without the drawing
-  const want = characterFor(id);
-  if (want === shownChar) return;
+  const want = characterFor(id), l = look || {};
+  const outfit = (Characters.outfits[want] || []).includes(l.outfit) ? l.outfit : '';
+  const colour = /^#[0-9a-f]{6}$/i.test(l.colour || '') ? l.colour.toLowerCase() : '';
+  // on the body, where the state's --c1 is set, so the resting colour reads it; the figures inherit it
+  if (colour) document.body.style.setProperty('--o1', colour); else document.body.style.removeProperty('--o1');
   for (const [o, at] of [[$('#talkOrb'), 0], [$('#widget .orb'), 1]]) {
     if (!o) continue;
     const cur = o.querySelector('svg');
+    if (cur && want === shownChar && outfit === shownOutfit) continue;
     if (!o._chars) o._chars = {};
-    if (!o._chars[want]) { const t = document.createElement('template'); t.innerHTML = Characters.draw(want, CHARACTERS[want][at]); o._chars[want] = t.content.firstElementChild; }
-    const next = o._chars[want];
+    const key = want + '/' + outfit;
+    if (!o._chars[key]) { const t = document.createElement('template'); t.innerHTML = Characters.draw(want, CHARACTERS[want][at], outfit); o._chars[key] = t.content.firstElementChild; }
+    const next = o._chars[key];
     const eyes = cur && cur.querySelector('.eyes'); if (eyes) { eyes.classList.remove('follow'); eyes.style.transform = ''; }
     if (!cur) o.prepend(next); else if (cur !== next) cur.replaceWith(next);
     o.classList.toggle('nyra', want === 'nyra'); o.classList.toggle('maverick', want === 'maverick');
   }
-  shownChar = want;
-  try { localStorage.setItem('mirrin.character', want); } catch {}
+  shownChar = want; shownOutfit = outfit; shownColour = colour;
+  try { localStorage.setItem('mirrin.character', want); localStorage.setItem('mirrin.look', JSON.stringify({outfit, colour})); } catch {}
 }
-// the last character shown, at once: Nyra or Mirrin don't flash in as a penguin
-useCharacter((() => { try { return localStorage.getItem('mirrin.character'); } catch { return ''; } })());
+// the last character shown, in its last look, at once: Nyra or Mirrin don't flash in as a penguin
+useCharacter(...(() => { let c = '', l = {}; try { c = localStorage.getItem('mirrin.character'); } catch {} try { l = JSON.parse(localStorage.getItem('mirrin.look') || '{}'); } catch {} return [c, l]; })());
 /* ---------- night: on the clock, the character dozes in the corner ---------- */
 // Quiet hours (data.quiet_hours) are local HH:MM-HH:MM that may run past
 // midnight, read as the twin reads them (push.InQuiet): "off", or what
@@ -3084,9 +3095,9 @@ function inQuiet(spec, d){
 function renderDoze(now){
   const z = $('#doze'), night = !!window.Characters && inQuiet((data && data.quiet_hours) || NIGHT, now);
   $('#ambient').classList.toggle('night', night);
-  const kind = night ? shownChar || 'penguin' : '';
-  if (z._kind !== kind) {
-    z._kind = kind; z.innerHTML = kind ? Characters.draw(kind, 'am') : '';
+  const kind = night ? shownChar || 'penguin' : '', key = kind && kind + '/' + shownOutfit;
+  if (z._kind !== key) {
+    z._kind = key; z.innerHTML = kind ? Characters.draw(kind, 'am', shownOutfit) : '';
     z.classList.toggle('nyra', kind === 'nyra'); z.classList.toggle('maverick', kind === 'maverick');
   }
   const m = Math.floor(now.getTime() / 60000) % 24, k = m % 6, at = [[k, 0], [6, k], [6 - k, 6], [0, 6 - k]][Math.floor(m / 6)];
