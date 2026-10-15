@@ -599,7 +599,7 @@ func TestPreviewPersonaSpeaksInItsOwnVoice(t *testing.T) {
 	stock := config.Default().Channels.Voice.Speed
 	want := []said{
 		{"af_nova", "Nyra", "Hello. Nyra here.", 0, 1.04},
-		{"am_puck", "Pickoo", "Hiya! Pickoo here.", 520, 1.06},
+		{"am_puck", "Pickoo", "Hiya! Pickoo here, ready to help!", 620, 1.08},
 		{"bm_george", "Mirrin", "Good to see you, sir. What can I take off your plate?", 0, stock},
 	}
 	if len(got) != len(want) {

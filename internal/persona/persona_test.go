@@ -3,6 +3,7 @@ package persona
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -16,8 +17,10 @@ func TestBundledAndResolve(t *testing.T) {
 	if p, ok := Find(ps, "nyra"); !ok || p.Name != "Nyra" || p.Spoken() != "Nyra" || p.Voice != "af_nova" || p.WakeWord != "nyra" || p.Character == "" {
 		t.Fatalf("nyra: %+v", p)
 	}
-	// the penguin: a cute character voice, shaped from a Kokoro one
-	if p, ok := Find(ps, "pickoo"); !ok || p.Voice != "am_puck" || p.VoicePitch != 520 || p.VoiceSpeed != 1.06 || p.WakeWord != "pickoo" {
+	// the penguin: a cute character voice, shaped from a Kokoro one, with a
+	// bounce in its words
+	if p, ok := Find(ps, "pickoo"); !ok || p.Voice != "am_puck" || p.VoicePitch != 620 || p.VoiceSpeed != 1.08 || p.WakeWord != "pickoo" ||
+		p.Greeting != "Hiya! Pickoo here, ready to help!" || !slices.Contains(p.Acks, "Flippers up!") || !strings.Contains(p.Character, "delights") {
 		t.Fatalf("pickoo: %+v", p)
 	}
 	home := t.TempDir()

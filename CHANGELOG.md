@@ -4,6 +4,9 @@ All notable changes are listed here. The format follows Keep a Changelog; versio
 
 ## Unreleased
 
+### Pickoo, cuter
+- Pickoo delights in little things, is proud of its errands ("All sorted!") and gentle when you're stressed; its acks bounce ("Yip! Looking!", "Flippers up!") and its hellos have a tail ("Morning, Akshay! Ready when you are."). Its voice sits a little higher and quicker, and the penguin on the screen has bigger eyes, rounder cheeks and a smaller beak. Same care about money, privacy and anything that can't be undone.
+
 ### Said the way people say it
 - Out loud, money is spelt out ("700 dollars a week", "349 dollars and 30 cents", "99 cents") instead of being left for the offline voice to read as "dollar seven hundred"; a weekday written short ("Sat 9am", "Mon.") is said in full; and a screenshot line or a picture's path is never read out, since it is for the screen.
 

@@ -8,7 +8,8 @@
 // persona is drawn as.
 (() => {
 'use strict';
-// The penguin butler (Pickoo and anyone without their own), lit like
+// The penguin butler (Pickoo and anyone without their own): big eyes,
+// round cheeks and a small beak, lit like
 // clay: a light from the upper left, shading below, a soft shadow on the
 // ice. Its body takes the page's --pb1..3 and the ice --ice1..2; the bow tie
 // is its only part in the state's colour (--c1). The hooks every pose uses
@@ -21,7 +22,7 @@ function penguinSVG(p){
 <radialGradient id="${p}Belly" gradientUnits="userSpaceOnUse" cx="84" cy="84" r="118"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#f4f0e8"/><stop offset="1" stop-color="#cfc6b6"/></radialGradient>
 <radialGradient id="${p}Beak" cx="38%" cy="30%" r="80%"><stop offset="0" stop-color="#ffd98a"/><stop offset=".6" stop-color="#ffa24a"/><stop offset="1" stop-color="#e06f1e"/></radialGradient>
 <radialGradient id="${p}Eye" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#262a55"/><stop offset=".75" stop-color="#05060f"/></radialGradient>
-<radialGradient id="${p}Cheek" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ff8fb6" stop-opacity=".85"/><stop offset="1" stop-color="#ff8fb6" stop-opacity="0"/></radialGradient>
+<radialGradient id="${p}Cheek" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ff9cc2" stop-opacity="1"/><stop offset="1" stop-color="#ff8fb6" stop-opacity="0"/></radialGradient>
 <radialGradient id="${p}Shine" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff" stop-opacity=".32"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
 <linearGradient id="${p}Ice" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--ice1)"/><stop offset="1" style="stop-color:var(--ice2)"/></linearGradient>
 <radialGradient id="${p}Shadow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#000" stop-opacity=".5"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
@@ -32,15 +33,15 @@ function penguinSVG(p){
 <ellipse cx="80" cy="199" rx="16" ry="7" fill="url(#${p}Beak)"/><ellipse cx="120" cy="199" rx="16" ry="7" fill="url(#${p}Beak)"/>
 <g class="fl l"><ellipse class="bd" cx="36" cy="132" rx="14" ry="36" transform="rotate(22 36 132)" fill="url(#${p}Body)"/></g>
 <g class="fl r"><ellipse class="bd" cx="164" cy="132" rx="14" ry="36" transform="rotate(-22 164 132)" fill="url(#${p}Body)"/></g>
-<ellipse class="bd" cx="100" cy="120" rx="64" ry="80" fill="url(#${p}Body)"/>
+<path d="M91 44 Q92 27 100 35 M100 37 Q101 21 110 29" fill="none" stroke="url(#${p}Body)" stroke-width="6" stroke-linecap="round"/><ellipse class="bd" cx="100" cy="120" rx="64" ry="80" fill="url(#${p}Body)"/>
 <g class="front"><ellipse cx="100" cy="140" rx="47" ry="57" fill="url(#${p}Belly)"/><g><path d="M100 152 L79 141 Q73 152 79 163 Z" fill="url(#${p}Bow)"/><path d="M100 152 L121 141 Q127 152 121 163 Z" fill="url(#${p}Bow)"/><circle cx="100" cy="152" r="6.5" fill="url(#${p}Bow)"/></g></g>
 <ellipse cx="76" cy="58" rx="30" ry="18" transform="rotate(-24 76 58)" fill="url(#${p}Shine)"/>
-<g class="head"><ellipse cx="80" cy="94" rx="27" ry="25" fill="url(#${p}Belly)"/><ellipse cx="120" cy="94" rx="27" ry="25" fill="url(#${p}Belly)"/>
-<g class="eyes"><g class="eye"><g class="open"><ellipse cx="81" cy="96" rx="11" ry="13" fill="url(#${p}Eye)"/><circle cx="77.5" cy="91" r="4" fill="#fff"/><circle cx="84.5" cy="100" r="1.8" fill="#fff" opacity=".8"/></g><path class="lid" d="M71 97 Q81 105 91 97" fill="none" stroke="#1a1d3a" stroke-width="3.4" stroke-linecap="round"/></g>
-<g class="eye"><g class="open"><ellipse cx="119" cy="96" rx="11" ry="13" fill="url(#${p}Eye)"/><circle cx="115.5" cy="91" r="4" fill="#fff"/><circle cx="122.5" cy="100" r="1.8" fill="#fff" opacity=".8"/></g><path class="lid" d="M109 97 Q119 105 129 97" fill="none" stroke="#1a1d3a" stroke-width="3.4" stroke-linecap="round"/></g></g>
-<ellipse cx="69" cy="113" rx="8.5" ry="5" fill="url(#${p}Cheek)"/><ellipse cx="131" cy="113" rx="8.5" ry="5" fill="url(#${p}Cheek)"/>
-<path class="lower" d="M92 115 Q100 128 108 115 Q100 119 92 115Z" fill="#d8641b"/>
-<path d="M88 112 Q100 103 112 112 Q100 122 88 112Z" fill="url(#${p}Beak)"/></g>
+<g class="head"><ellipse cx="80" cy="95" rx="30" ry="28.5" fill="url(#${p}Belly)"/><ellipse cx="120" cy="95" rx="30" ry="28.5" fill="url(#${p}Belly)"/>
+<g class="eyes"><g class="eye"><g class="open"><ellipse cx="81" cy="98" rx="14.5" ry="17" fill="url(#${p}Eye)"/><circle cx="76.5" cy="91.5" r="5.6" fill="#fff"/><circle cx="85.5" cy="104" r="2.4" fill="#fff" opacity=".85"/></g><path class="lid" d="M66 100 Q81 110 96 100" fill="none" stroke="#1a1d3a" stroke-width="3.4" stroke-linecap="round"/></g>
+<g class="eye"><g class="open"><ellipse cx="119" cy="98" rx="14.5" ry="17" fill="url(#${p}Eye)"/><circle cx="114.5" cy="91.5" r="5.6" fill="#fff"/><circle cx="123.5" cy="104" r="2.4" fill="#fff" opacity=".85"/></g><path class="lid" d="M104 100 Q119 110 134 100" fill="none" stroke="#1a1d3a" stroke-width="3.4" stroke-linecap="round"/></g></g>
+<ellipse cx="67" cy="117" rx="11.5" ry="7" fill="url(#${p}Cheek)"/><ellipse cx="133" cy="117" rx="11.5" ry="7" fill="url(#${p}Cheek)"/>
+<path class="lower" d="M94 117 Q100 127 106 117 Q100 121 94 117Z" fill="#d8641b"/>
+<path d="M91 114 Q100 108 109 114 Q100 122 91 114Z" fill="url(#${p}Beak)"/></g>
 </g></g>
 <g class="dots"><circle cx="160" cy="44" r="5" fill="#fff"/><circle cx="174" cy="32" r="6" fill="#fff"/><circle cx="190" cy="18" r="7" fill="#fff"/></g>
 </svg>`.replace(/\n/g, '');

@@ -49,7 +49,7 @@ func TestBundledHellos(t *testing.T) {
 	want := map[string]map[string]string{
 		"mirrin": {"morning": "Good morning, sir.", "afternoon": "Good afternoon, sir.", "evening": "Good evening, sir.", "late": "Late one, sir."},
 		"nyra":   {"morning": "Morning, Akshaya.", "afternoon": "Afternoon, Akshaya.", "evening": "Evening, Akshaya.", "late": "Hello, Akshaya."},
-		"pickoo": {"morning": "Morning, Akshaya!", "afternoon": "Afternoon, Akshaya!", "evening": "Evening, Akshaya!", "late": "Oh, hello, Akshaya."},
+		"pickoo": {"morning": "Morning, Akshaya! Ready when you are.", "afternoon": "Afternoon, Akshaya! What are we up to?", "evening": "Evening, Akshaya! Cosy hours.", "late": "Oh! Hello, Akshaya. Still up?"},
 	}
 	for _, p := range Bundled() {
 		w, ok := want[p.ID]

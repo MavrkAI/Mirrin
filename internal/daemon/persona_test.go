@@ -385,10 +385,10 @@ func TestOwnersPersonaWordSurvivesRestart(t *testing.T) {
 // A character voice's pitch and pace come with it; the owner's own voice
 // leaves the voice as it is.
 func TestACharacterVoiceBringsItsPitch(t *testing.T) {
-	penguin := persona.Persona{Name: "Pickoo", Voice: "am_puck", VoicePitch: 520, VoiceSpeed: 1.06, WakeWord: "pickoo"}
+	penguin := persona.Persona{Name: "Pickoo", Voice: "am_puck", VoicePitch: 620, VoiceSpeed: 1.08, WakeWord: "pickoo"}
 	vc := config.Default().Channels.Voice
 	resolveVoice(&vc, voiceOverrides{}, penguin)
-	if vc.Voice != "am_puck" || vc.Pitch != 520 || vc.Speed != 1.06 {
+	if vc.Voice != "am_puck" || vc.Pitch != 620 || vc.Speed != 1.08 {
 		t.Fatalf("penguin's voice: %+v", vc)
 	}
 	mine := "af_bella"
@@ -417,7 +417,7 @@ func TestChoosingThePersonasOwnVoiceBringsItsCharacterBack(t *testing.T) {
 	character := func(step string) {
 		t.Helper()
 		r.want(step, "pickoo", "pickoo", "", "am_puck")
-		if vc := r.d.Config().Channels.Voice; vc.Pitch != 520 || vc.Speed != 1.06 {
+		if vc := r.d.Config().Channels.Voice; vc.Pitch != 620 || vc.Speed != 1.08 {
 			t.Fatalf("%s: pitch %d speed %v, want Pickoo's", step, vc.Pitch, vc.Speed)
 		}
 	}
