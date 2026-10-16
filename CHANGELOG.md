@@ -5,6 +5,7 @@ All notable changes are listed here. The format follows Keep a Changelog; versio
 ## Unreleased
 
 ### Dress your twin
+- Setup dresses the twin too. Under the cast on the Welcome window's step 2, the character you pick stands large beside its wardrobe, each outfit a picture of it wearing that outfit, and the colours as dots; a tap redraws it at once, as the screen will draw it, and "Meet my twin" keeps the look. Each character keeps its own choice while you look at the others, and a twin that already has a look starts from it. Setup and the menu bar now write the wardrobe the same way: a character has one entry, whatever spelling of its name a hand-written one used, and an outfit or colour the twin doesn't know goes when the other is changed, since it was drawn as it is anyway.
 - Under Persona in the menu bar, **Outfit** and **Outfit colour** choose what each character wears on the screen, the widget, the night-time figure and the welcome page. The penguin has a scarf, a beanie and a sun hat; Nyra a cardigan, a turtleneck and a denim jacket; Mirrin a waistcoat, a knit jumper and a linen shirt. The colours are coral, rose, mustard, forest, teal, sky, plum and charcoal, or as drawn, and the one chosen is also the resting colour of the bow tie, the hair clip and the lapel pin, which still light up when the twin listens or thinks. Each character keeps its own choice (the `wardrobe:` section of config.yaml); one the twin doesn't know is noted in the log and drawn as it is.
 
 ### Pickoo, cuter

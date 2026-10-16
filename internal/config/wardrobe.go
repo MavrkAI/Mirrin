@@ -110,6 +110,15 @@ func characterKey(k string) string {
 	return k
 }
 
+// Entry is a character's entry as written, by a key in any spelling
+// (entry); nothing for a character without one. The menu bar and setup
+// change one of the outfit and the colour at a time, and the other comes
+// from here.
+func (w Wardrobe) Entry(character string) Outfit {
+	o, _ := w.entry(characterKey(character))
+	return o
+}
+
 // Look is what a character wears: its entry, with anything the wardrobe
 // doesn't know left as drawn.
 func (w Wardrobe) Look(character string) Look {
@@ -196,4 +205,42 @@ func orList(s []string) string {
 		return strings.Join(s, "")
 	}
 	return strings.Join(s[:len(s)-1], ", ") + " or " + s[len(s)-1]
+}
+
+// Dress writes what a character wears, for setup and the menu bar: an
+// outfit from its wardrobe (the drawn one, the first, is nothing to write)
+// and a colour, a palette name or #rrggbb ("" is as drawn). Anything the
+// wardrobe doesn't know, the character included, writes nothing, and an
+// entry with nothing left in it goes, so config.yaml says nothing when
+// nothing is chosen.
+func (c *Config) Dress(character, outfit, colour string) {
+	character = characterKey(character)
+	outfits := wardrobes[character]
+	if outfits == nil {
+		return
+	}
+	o := Outfit{}
+	if id := strings.ToLower(strings.TrimSpace(outfit)); outfitKnown(character, id) && id != outfits[0].ID {
+		o.Outfit = id
+	}
+	if hex, ok := colourHex(colour); ok && hex != "" {
+		o.Colour = strings.ToLower(strings.TrimSpace(colour))
+	}
+	// One entry per character: a hand-written one under another spelling
+	// of its name goes, so there is never a second to pick between.
+	for k := range c.Wardrobe {
+		if characterKey(k) == character {
+			delete(c.Wardrobe, k)
+		}
+	}
+	if o == (Outfit{}) {
+		if len(c.Wardrobe) == 0 {
+			c.Wardrobe = nil
+		}
+		return
+	}
+	if c.Wardrobe == nil {
+		c.Wardrobe = Wardrobe{}
+	}
+	c.Wardrobe[character] = o
 }

@@ -50,7 +50,7 @@ func outfitOf(c config.Config, character string) string {
 // colourOf is the colour to tick: the palette name in the entry, or "" (As
 // drawn) for none, or for a colour that isn't on the menu.
 func colourOf(c config.Config, character string) string {
-	name := strings.ToLower(strings.TrimSpace(c.Wardrobe[character].Colour))
+	name := strings.ToLower(strings.TrimSpace(c.Wardrobe.Entry(character).Colour))
 	for _, p := range config.Palette() {
 		if p.Name == name {
 			return name
@@ -59,38 +59,15 @@ func colourOf(c config.Config, character string) string {
 	return ""
 }
 
-// setOutfit writes a character's outfit; the drawn one (the first of its
-// wardrobe) is nothing to write.
+// setOutfit writes a character's outfit (config.Dress): the drawn one, the
+// first of its wardrobe, is nothing to write.
 func setOutfit(c *config.Config, character, id string) {
-	if outfits := config.Outfits(character); len(outfits) > 0 && outfits[0].ID == id {
-		id = ""
-	}
-	o := c.Wardrobe[character]
-	o.Outfit = id
-	writeOutfit(c, character, o)
+	c.Dress(character, id, c.Wardrobe.Entry(character).Colour)
 }
 
 // setColour writes a character's colour; "" is as drawn.
 func setColour(c *config.Config, character, name string) {
-	o := c.Wardrobe[character]
-	o.Colour = name
-	writeOutfit(c, character, o)
-}
-
-// writeOutfit keeps o for the character, dropping an empty entry and an
-// empty wardrobe so config.yaml says nothing when nothing is chosen.
-func writeOutfit(c *config.Config, character string, o config.Outfit) {
-	if o == (config.Outfit{}) {
-		delete(c.Wardrobe, character)
-		if len(c.Wardrobe) == 0 {
-			c.Wardrobe = nil
-		}
-		return
-	}
-	if c.Wardrobe == nil {
-		c.Wardrobe = config.Wardrobe{}
-	}
-	c.Wardrobe[character] = o
+	c.Dress(character, c.Wardrobe.Entry(character).Outfit, name)
 }
 
 // currentCharacter is the character the persona in c is drawn as.

@@ -19,7 +19,7 @@ import (
 var welcomeCast = []map[string]any{
 	{"id": "mirrin", "name": "Mirrin", "tagline": "The gentleman who's two steps ahead.", "greeting": "Good to see you, sir. What can I take off your plate?", "address": "sir", "wake_phrase": "Hey Mirrin", "instant_wake": true, "character": "maverick"},
 	{"id": "nyra", "name": "Nyra", "tagline": "Composed and warm, with an eye for what others miss.", "greeting": "Hello. Nyra here.", "address": "", "wake_phrase": "Hey Nyra", "instant_wake": false, "character": "nyra"},
-	{"id": "pickoo", "name": "Pickoo", "tagline": "A cheerful little penguin who gets things done.", "greeting": "Hiya! Pickoo here.", "address": "", "wake_phrase": "Hey Pickoo", "instant_wake": false, "character": "penguin"},
+	{"id": "pickoo", "name": "Pickoo", "tagline": "A cheerful little penguin who gets things done.", "greeting": "Hiya! Pickoo here.", "address": "", "wake_phrase": "Hey Pickoo", "instant_wake": false, "character": "penguin", "look": map[string]any{"outfit": "scarf", "colour": "#2bb3a3"}},
 }
 
 // welcomeBodies records what the page posted, by path.
@@ -65,6 +65,7 @@ func welcomeStep2(t *testing.T, voiceReady bool, setup ...chromedp.Action) (cont
 	d.handle("GET /welcome/brains", jsonH([]map[string]any{{"Provider": "ollama", "Label": "Ollama", "Model": "llama3.1", "Ready": true}}))
 	d.handle("GET /welcome/restore/report", jsonH(map[string]string{"detail": ""}))
 	d.handle("GET /welcome/personas", jsonH(welcomeCast))
+	d.handle("GET /welcome/wardrobe", jsonH(welcomeWardrobe))
 	d.handle("GET /voice/setup/status", jsonH(map[string]bool{"ready": voiceReady}))
 	d.handle("POST /welcome/brain", bodies.record(map[string]bool{"ok": true}))
 	d.handle("POST /welcome/preview", bodies.record(map[string]bool{"spoken": true}))

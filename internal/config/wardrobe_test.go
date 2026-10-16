@@ -150,3 +150,55 @@ func TestWardrobeInConfigYAML(t *testing.T) {
 		t.Fatal("a fresh config writes a wardrobe section it doesn't need")
 	}
 }
+
+// Dress is what setup and the menu bar write with: an outfit from the
+// character's wardrobe and a palette colour or #rrggbb. The drawn outfit,
+// "As drawn" and anything the wardrobe doesn't know write nothing, and an
+// entry with nothing in it goes, so config.yaml says nothing when nothing
+// is chosen.
+func TestDressWritesOnlyWhatTheWardrobeKnows(t *testing.T) {
+	var c Config
+	c.Dress("penguin", "scarf", "coral")
+	if c.Wardrobe["penguin"] != (Outfit{Outfit: "scarf", Colour: "coral"}) {
+		t.Fatalf("%+v", c.Wardrobe)
+	}
+	c.Dress("penguin", "Bowtie", " #FF6F61 ") // the drawn outfit, a hex colour
+	if c.Wardrobe["penguin"] != (Outfit{Colour: "#ff6f61"}) {
+		t.Fatalf("%+v", c.Wardrobe)
+	}
+	c.Dress("penguin", "kimono", "octarine") // neither is known: as drawn
+	if c.Wardrobe != nil {
+		t.Fatalf("nothing the wardrobe knows, but it says %+v", c.Wardrobe)
+	}
+	c.Dress("pickoo", "beanie", "") // Pickoo is the penguin
+	c.Dress("nyra", "denim", "sky")
+	c.Dress("robot", "linen", "") // not a character: nothing
+	if !reflect.DeepEqual(c.Wardrobe, Wardrobe{"penguin": {Outfit: "beanie"}, "nyra": {Outfit: "denim", Colour: "sky"}}) {
+		t.Fatalf("%+v", c.Wardrobe)
+	}
+	// A hand-written entry under another spelling of the character goes
+	// when the character is dressed, so there is only ever one entry to
+	// read, not two to pick between at random.
+	c.Wardrobe = Wardrobe{"Pickoo": {Outfit: "sunhat", Colour: "plum"}, " NYRA ": {Colour: "rose"}}
+	c.Dress("penguin", "scarf", "")
+	if !reflect.DeepEqual(c.Wardrobe, Wardrobe{"penguin": {Outfit: "scarf"}, " NYRA ": {Colour: "rose"}}) {
+		t.Fatalf("%+v", c.Wardrobe)
+	}
+	c.Dress("nyra", "", "")
+	if !reflect.DeepEqual(c.Wardrobe, Wardrobe{"penguin": {Outfit: "scarf"}}) {
+		t.Fatalf("%+v", c.Wardrobe)
+	}
+}
+
+// The menu bar and setup change one of the outfit and the colour at a
+// time, so a character's current entry, however its key is spelt, is what
+// the other comes from.
+func TestWardrobeEntryByAnySpelling(t *testing.T) {
+	w := Wardrobe{"Pickoo": {Outfit: "sunhat", Colour: "plum"}}
+	if o := w.Entry("penguin"); o != (Outfit{Outfit: "sunhat", Colour: "plum"}) {
+		t.Fatalf("%+v", o)
+	}
+	if o := w.Entry("nyra"); o != (Outfit{}) {
+		t.Fatalf("%+v", o)
+	}
+}

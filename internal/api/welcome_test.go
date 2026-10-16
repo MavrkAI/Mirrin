@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -335,4 +336,71 @@ func TestCharactersScriptIsPublic(t *testing.T) {
 	w := httptest.NewRecorder()
 	e.s.remoteHandler(RemoteOptions{Hostnames: []string{"twin.test"}}).ServeHTTP(w, httptest.NewRequest("GET", "https://twin.test/characters.js", nil))
 	ok("the HTTPS listener", w)
+}
+
+// dressingWelcome is a welcomeFake that can dress the twin (WelcomeWardrobe).
+type dressingWelcome struct {
+	welcomeFake
+	dressed []string // "persona/outfit/colour" per call
+}
+
+func (b *dressingWelcome) Dress(_ context.Context, persona, outfit, colour string) error {
+	b.dressed = append(b.dressed, persona+"/"+outfit+"/"+colour)
+	return nil
+}
+
+// Step 2 dresses the twin as it names it: an outfit and a colour on the
+// names request go to the backend with the persona, after the names. A
+// request without them dresses nothing, so the look stays as it was, and
+// a backend that can't dress is left alone.
+func TestWelcomeNamesDressTheTwin(t *testing.T) {
+	e := newEnv(t)
+	b := &dressingWelcome{}
+	e.s.WithWelcome(b)
+	w := e.do(onLoopback, req{method: "POST", path: "/welcome/names", body: `{"You":"Akshay","Twin":"Pickoo","Persona":"pickoo","Address":"name","Outfit":"scarf","Colour":"coral"}`, header: bearer(master)})
+	if w.Code != 200 || b.persona != "pickoo" || !reflect.DeepEqual(b.dressed, []string{"pickoo/scarf/coral"}) {
+		t.Fatalf("%d %s: %+v", w.Code, w.Body, b)
+	}
+	w = e.do(onLoopback, req{method: "POST", path: "/welcome/names", body: `{"You":"Akshay","Twin":"Nyra","Persona":"nyra","Address":"name"}`, header: bearer(master)})
+	if w.Code != 200 || len(b.dressed) != 1 {
+		t.Fatalf("%d %s: a names request without a look dressed the twin: %v", w.Code, w.Body, b.dressed)
+	}
+	w = e.do(onLoopback, req{method: "POST", path: "/welcome/names", body: `{"You":"Akshay","Twin":"Nyra","Persona":"nyra","Address":"name","Outfit":"","Colour":""}`, header: bearer(master)})
+	if w.Code != 200 || !reflect.DeepEqual(b.dressed, []string{"pickoo/scarf/coral", "nyra//"}) {
+		t.Fatalf("%d %s: as drawn, chosen, is a look: %v", w.Code, w.Body, b.dressed)
+	}
+	plain := newEnv(t)
+	plain.s.WithWelcome(&welcomeFake{})
+	w = plain.do(onLoopback, req{method: "POST", path: "/welcome/names", body: `{"You":"Akshay","Twin":"Pickoo","Persona":"pickoo","Address":"name","Outfit":"scarf","Colour":"coral"}`, header: bearer(master)})
+	if w.Code != 200 {
+		t.Fatalf("a backend that can't dress: %d %s", w.Code, w.Body)
+	}
+}
+
+// The welcome page's dress-up draws from GET /welcome/wardrobe: each
+// character's outfits as the drawing code names them (characters.js
+// kinds), with labels, the drawn one first, and the palette in its order.
+func TestWelcomeWardrobeListsOutfitsAndPalette(t *testing.T) {
+	e := newEnv(t)
+	e.s.WithWelcome(&welcomeFake{})
+	w := e.do(onLoopback, req{path: "/welcome/wardrobe", header: bearer(master)})
+	if w.Code != 200 {
+		t.Fatal(w.Code, w.Body)
+	}
+	var got struct {
+		Outfits map[string][]struct{ ID, Label string }
+		Palette []struct{ Name, Label, Hex string }
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		t.Fatal(err, w.Body)
+	}
+	if len(got.Outfits) != 3 || len(got.Outfits["maverick"]) != 4 || got.Outfits["maverick"][0].ID != "dinner" || got.Outfits["maverick"][0].Label != "Dinner jacket" || got.Outfits["penguin"][3].ID != "sunhat" || got.Outfits["nyra"][1].Label != "Cardigan" {
+		t.Fatalf("outfits: %s", w.Body)
+	}
+	if len(got.Palette) != 8 || got.Palette[0].Name != "coral" || got.Palette[0].Label != "Coral" || got.Palette[0].Hex != "#ff6f61" || got.Palette[7].Name != "charcoal" {
+		t.Fatalf("palette: %s", w.Body)
+	}
+	if !strings.Contains(w.Body.String(), `"outfits"`) || !strings.Contains(w.Body.String(), `"palette"`) || !strings.Contains(w.Body.String(), `"id"`) || !strings.Contains(w.Body.String(), `"hex"`) {
+		t.Fatalf("keys the page reads: %s", w.Body)
+	}
 }

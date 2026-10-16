@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"context"
 	"strings"
 	"sync"
 
@@ -46,4 +47,11 @@ func (d *Daemon) noteWardrobe(cfg *config.Config) {
 	for _, line := range lines {
 		d.log.Warn("wardrobe: drawn as it is instead", "entry", line)
 	}
+}
+
+// Dress is setup dressing the twin as it names it (api.WelcomeWardrobe):
+// the look goes to the persona's character, through config.Dress, so what
+// the wardrobe doesn't know leaves the character as drawn.
+func (d *Daemon) Dress(ctx context.Context, personaID, outfit, colour string) error {
+	return d.UpdateConfig(func(c *config.Config) { c.Dress(config.CharacterOf(personaID), outfit, colour) })
 }

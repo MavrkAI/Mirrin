@@ -308,12 +308,16 @@ func (s *Server) WithWelcome(b WelcomeBackend) *Server {
 			writeJSON(w, map[string]bool{"spoken": spoken})
 			return nil
 		})
+		add("GET /welcome/wardrobe", welcomeWardrobeHandler) // welcome_wardrobe.go
 		add("POST /welcome/names", func(w http.ResponseWriter, r *http.Request) error {
-			var v struct{ You, Twin, Persona, Address string }
+			var v welcomeNames
 			if err := decode(w, r, &v); err != nil {
 				return err
 			}
 			if err := b.SetNames(r.Context(), v.You, v.Twin, v.Persona, v.Address); err != nil {
+				return err
+			}
+			if err := v.dress(r.Context(), b); err != nil { // welcome_wardrobe.go
 				return err
 			}
 			writeJSON(w, map[string]bool{"ok": true})

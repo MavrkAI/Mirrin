@@ -44,7 +44,7 @@ What it may do does not change. Money, privacy, health and anything that can't b
 
 ## Outfits
 
-What a character wears is yours to choose, under **Persona → Outfit** and **Outfit colour** in the menu bar, and it shows on the presence screen, the floating widget, the dozing figure at night and the welcome page's cast. Each character has its own wardrobe, the one it is drawn in first:
+What a character wears is yours to choose: on the Welcome window's step 2, where the character you pick stands large beside its wardrobe and the palette and a tap redraws it, and any time after under **Persona → Outfit** and **Outfit colour** in the menu bar. It shows on the presence screen, the floating widget, the dozing figure at night and the welcome page's cast. Each character has its own wardrobe, the one it is drawn in first:
 
 - The penguin (Pickoo, and any persona without a drawing of its own): bow tie, scarf, beanie, sun hat.
 - Nyra: navy blazer, cardigan, turtleneck, denim jacket.

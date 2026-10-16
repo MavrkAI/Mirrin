@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"github.com/MavrkAI/Mirrin/internal/config"
@@ -36,5 +37,29 @@ func TestTheScreenIsSentTheCharactersLook(t *testing.T) {
 	}
 	if l := td.Look("penguin"); l != (config.Look{Outfit: "scarf", Colour: "#ff6f61"}) {
 		t.Fatalf("the cast's penguin: %+v", l)
+	}
+}
+
+// Setup dresses the twin as it is named (api.WelcomeWardrobe): the look
+// goes to the chosen persona's character, through config.Dress, so a
+// persona without a drawing of its own dresses the penguin, and what the
+// wardrobe doesn't know leaves the character as drawn.
+func TestSetupDressesTheChosenCharacter(t *testing.T) {
+	td := newTestDaemon(t, nil)
+	ctx := context.Background()
+	if err := td.Dress(ctx, "pickoo", "scarf", "coral"); err != nil {
+		t.Fatal(err)
+	}
+	if got := td.Config().Wardrobe; !reflect.DeepEqual(got, config.Wardrobe{"penguin": {Outfit: "scarf", Colour: "coral"}}) {
+		t.Fatalf("%+v", got)
+	}
+	if err := td.Dress(ctx, "mirrin", "kimono", "#5bb8f5"); err != nil {
+		t.Fatal(err)
+	}
+	if got := td.Config().Wardrobe; !reflect.DeepEqual(got, config.Wardrobe{"penguin": {Outfit: "scarf", Colour: "coral"}, "mirrin": {Colour: "#5bb8f5"}}) {
+		t.Fatalf("%+v", got)
+	}
+	if l := td.Look("mirrin"); l != (config.Look{Colour: "#5bb8f5"}) {
+		t.Fatalf("mirrin for the cast: %+v", l)
 	}
 }
