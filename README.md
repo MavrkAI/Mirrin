@@ -29,7 +29,7 @@ Website: [mirrin.app](https://mirrin.app)
 - **Talk to it.** Say its name ("Hey Mirrin") and ask. Listening and speaking happen on your computer: whisper.cpp hears you and a neural voice answers, sentence by sentence, and you can interrupt it. Voice notes you send it on WhatsApp, Telegram or Discord are transcribed on your computer too.
 - **It asks first.** Every action is read, write or dangerous. Looking things up just happens; sending, creating, paying, running a command or opening a file with keys in it waits for your yes, and the request shows the whole message, command or script. Reply `yes 12` or `no 12`, tap Approve on the screen, or say "stop" and it stops at once.
 - **It remembers you.** It keeps what you tell it, writes a portrait of you each week, notices what you keep asking for, and asks before it stores anything about your health, money, relationships or secrets. You can read and edit all of it.
-- **It does things.** Your calendar, mail and files once you connect Google. Its own Chrome window stays signed in to your sites, so it can do jobs that have no API, and hands the window to you when a site needs you. Long jobs run in the background on a board you can see. Spending has limits it can't change.
+- **It does things.** Your calendar, mail and files once you connect Google. Its own Chrome window stays signed in to your sites, so it can do jobs that have no API: it browses on its own, stops with a screenshot before anything that pays, sends, books or agrees to terms, and hands the window to you when a site needs you. Long jobs run in the background on a board you can see. Spending has limits it can't change.
 - **Routines of its own.** Protocols are standing orders: "every weekday at 7, brief me on the day", "chase that refund". A fresh install comes with a morning briefing. You can write your own in a few lines, ask your twin to write one, or install packs other people share.
 - **Someone you like.** Three personas come with it, each with its own name, character, way of talking and voice, drawn on the presence screen:
   - **Mirrin**, a dry, loyal butler who's two steps ahead (the default)
@@ -38,7 +38,7 @@ Website: [mirrin.app](https://mirrin.app)
 
   <p><img src="docs/media/cast.png" alt="The three personas, drawn as on the presence screen: Mirrin, a butler in a dinner jacket; Nyra, in a blue blazer; Pickoo, a penguin in a bow tie." width="100%"></p>
 
-  Pick one when you start, switch from the menu bar, or write your own: a persona is one short YAML file, and you can call your twin anything. Dress it from the menu bar too (**Persona → Outfit** and **Outfit colour**). The penguin has a scarf, a beanie and a sun hat; Nyra a cardigan, a turtleneck and a denim jacket; Mirrin a waistcoat, a jumper and a linen shirt; each in one of eight colours, or as drawn.
+  Pick one when you start, switch from the menu bar, or write your own: a persona is one short YAML file, and you can call your twin anything. Dress it as you set up, where the one you pick stands beside its wardrobe and a tap redraws it, or later from the menu bar (**Persona → Outfit** and **Outfit colour**). The penguin has a scarf, a beanie and a sun hat; Nyra a cardigan, a turtleneck and a denim jacket; Mirrin a waistcoat, a jumper and a linen shirt; each in one of eight colours, or as drawn.
 - **A face for the room.** The presence screen (**Open screen…** in the menu) shows what it heard, what it's doing, what needs you and what's next, with big Approve and Deny buttons. After a minute of quiet it becomes a clock. Keep it in a laptop tab or on a screen on the wall.
 
 ## Your data stays yours
@@ -53,7 +53,7 @@ You need macOS, Windows or Linux, and a model to think with: a key for Claude, O
 
 Downloads are on the [Releases page](https://github.com/MavrkAI/Mirrin/releases).
 
-**On a Mac:** download `Mirrin-<version>-macos.dmg` (one app for Apple silicon and Intel), drag Mirrin into Applications and open it. It lives in the menu bar. A Welcome window finds or checks your model key, asks which persona you'd like, connects Google if you want it to, and can restore a twin from an encrypted backup. If you do connect it, your twin's first hello says what's next on your calendar and what's waiting in your inbox. Until the Mac builds are notarized by Apple, macOS blocks the app the first time you open it: choose System Settings → Privacy & Security → Open Anyway.
+**On a Mac:** download `Mirrin-<version>-macos.dmg` (one app for Apple silicon and Intel), drag Mirrin into Applications and open it. It lives in the menu bar. A Welcome window finds or checks your model key, asks which persona you'd like and how to dress it, connects Google if you want it to, and can restore a twin from an encrypted backup. If you do connect it, your twin's first hello says what's next on your calendar and what's waiting in your inbox. Until the Mac builds are notarized by Apple, macOS blocks the app the first time you open it: choose System Settings → Privacy & Security → Open Anyway.
 
 **On Windows:** download `Mirrin-<version>-windows-setup.exe` and run it. It installs for you alone, so it needs no administrator, offers to run `mirrin init` when it finishes, and offers to start your twin in the system tray each time you sign in.
 
