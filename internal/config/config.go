@@ -616,6 +616,11 @@ type Browser struct {
 	// agent). With one at ~/jev-ultrafast, or named here, the twin gets
 	// browser_run and hands it whole goals; "off" leaves it out.
 	JevDir string `yaml:"jev_dir,omitempty"`
+	// AskEveryClick asks before every click and every typed word, as the
+	// twin did before 0.2.1. Without it, ordinary browsing runs unasked and
+	// the twin still asks before paying, sending, booking, agreeing to
+	// terms or signing up, and before typing personal details.
+	AskEveryClick bool `yaml:"ask_every_click,omitempty"`
 }
 
 // System exposes the local machine (files, shell).

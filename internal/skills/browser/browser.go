@@ -48,9 +48,6 @@ const inspectJS = `(() => {
   return rows.join('\n');
 })()`
 
-// labelJS returns the visible label of an element by ref or selector.
-const labelJS = `((sel) => { const el = document.querySelector(sel); if (!el) return ''; return ((el.innerText || el.value || el.getAttribute('aria-label') || el.title || '') + ' ' + (el.id || '') + ' ' + (el.name || '')).trim().slice(0, 120); })`
-
 // rePayment spots the clicks that move money.
 var rePayment = regexp.MustCompile(`(?i)\b(pay|payment|buy|purchase|checkout|check out|place (the )?order|confirm (and pay|booking|order|purchase|payment)|book now|complete (order|purchase|booking)|subscribe|transfer|send money|donate|upgrade plan)\b`)
 
@@ -472,7 +469,7 @@ func (s *Session) Tools() []tools.Tool {
 		tools.Schema(map[string]tools.Prop{
 			"url":   {Type: "string", Description: "Optional URL to open first"},
 			"steps": {Type: "string", Description: "JSON array of steps: {\"type\":\"click\",\"ref\":12} | {\"type\":\"type\",\"ref\":3,\"text\":\"...\"} (replaces whatever the field holds, and checks it; add \"enter\":true to press Enter after; never type into a field again to fix it, this already replaces) | {\"type\":\"select\",\"ref\":5,\"value\":\"...\"} | {\"type\":\"press\",\"key\":\"Enter|Tab|Escape|ArrowDown|Backspace\"} (a combination like \"Meta+a\" or \"Shift+Tab\" presses the keys together) | {\"type\":\"scroll\",\"direction\":\"down|up\"} | {\"type\":\"wait\",\"selector\":\"css\"} | {\"type\":\"sleep\",\"ms\":1000} | {\"type\":\"submit\",\"ref\":9}. \"selector\" may replace \"ref\" in any step.", Required: true},
-		}), tools.RiskWrite, s.runAct).WithRiskFor(s.paymentRisk)
+		}), s.browsingRisk(), s.runAct).WithRiskFor(s.actRisk)
 	return append(append(s.teachTools(), s.jevTools()...),
 		tools.New("browse_page",
 			"Open a URL in the twin's real browser (stays signed in to the user's sites) or read the current page. Returns the page text, numbered elements and a screenshot you can see. Use for anything JavaScript-heavy, anything behind a login, and as the first step of any task on a website. Addresses on this computer or the local network are refused unless the user allowed them.",
@@ -878,13 +875,28 @@ func (s *Session) CurrentURL() string {
 	return loc
 }
 
-// paymentRisk raises browser_act to dangerous when a click or submit lands on
-// something that looks like paying, buying or transferring money, so it
-// always goes through approval with a screenshot, whatever the policy says.
-func (s *Session) paymentRisk(ctx context.Context, call tools.Call) tools.Risk {
-	var in actInput
-	if tools.Decode(call, &in) != nil || in.Steps == "" {
+// browsingRisk is what ordinary browsing counts as: a read, so it runs
+// unasked, or a write with ask_every_click, so the twin asks before each
+// click as it did before 0.2.1. actRisk and jevRisk raise it from there.
+func (s *Session) browsingRisk() tools.Risk {
+	if s.cfg.AskEveryClick {
 		return tools.RiskWrite
+	}
+	return tools.RiskRead
+}
+
+// actRisk is browser_act's risk for one call (commit.go stepsRisk):
+// dangerous when a click or submit lands on something that pays, sends,
+// books or agrees to terms, so it always goes through approval with a
+// screenshot, whatever the policy says; a write when it types personal
+// details; otherwise ordinary browsing. A call that can't be read asks.
+func (s *Session) actRisk(ctx context.Context, call tools.Call) tools.Risk {
+	var in actInput
+	if tools.Decode(call, &in) != nil {
+		return tools.RiskWrite
+	}
+	if in.Steps == "" {
+		return s.browsingRisk()
 	}
 	steps, err := parseSteps(in.Steps)
 	if err != nil {
@@ -896,8 +908,11 @@ func (s *Session) paymentRisk(ctx context.Context, call tools.Call) tools.Risk {
 	s.mu.Lock()
 	tab := s.ctx
 	s.mu.Unlock()
-	if stepsCommit(tab, in.URL, steps) { // commit.go: Send, Submit order, Book, Pay
-		return tools.RiskDangerous
-	}
-	return tools.RiskWrite
+	return stepsRisk(tab, in.URL, steps, s.browsingRisk())
+}
+
+// evalRisk runs the risk script in the tab (commit.go); a test swaps it
+// for a page that won't answer, so no browser test may run in parallel.
+var evalRisk = func(ctx context.Context, js string, out any) error {
+	return chromedp.Run(ctx, chromedp.Evaluate(js, out))
 }

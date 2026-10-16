@@ -171,8 +171,9 @@ func TestBrowserRunDrivesTheTwinsChrome(t *testing.T) {
 	}
 }
 
-// A goal that reads like a payment is dangerous, so the approvals floor
-// always asks; other goals are ordinary writes.
+// A goal that reads like a payment, or like signing up or agreeing to
+// terms, is dangerous, so the approvals floor always asks; other goals
+// are reads and run unasked, as browsing does.
 func TestBrowserRunPaymentGoalIsDangerous(t *testing.T) {
 	s := jevSession(t, fakeJevDir(t), nil)
 	var tool tools.Tool
@@ -185,12 +186,48 @@ func TestBrowserRunPaymentGoalIsDangerous(t *testing.T) {
 		in, _ := json.Marshal(map[string]string{"url": "https://example.com", "goals": goal})
 		return tool.(tools.CallRisker).RiskFor(context.Background(), tools.Call{Input: in})
 	}
-	if r := risk("Search for a kettle under $50. Stop when results show"); r != tools.RiskWrite {
+	if r := risk("Search for a kettle under $50. Stop when results show"); r != tools.RiskRead {
 		t.Fatalf("search goal risk %v", r)
 	}
-	if r := risk("Add the kettle to the basket and check out"); r != tools.RiskDangerous {
-		t.Fatalf("checkout goal risk %v", r)
+	if tool.Risk() != tools.RiskRead {
+		t.Fatalf("browser_run declares %v", tool.Risk())
 	}
+	for _, goal := range []string{"Add the kettle to the basket and check out", "Sign up for a free account with sam@x.test", "Accept the terms and continue to the dashboard", "Create an account and stop at the welcome page",
+		"Book a table at Nopa for two", "Fill in the contact form with name Sam Lee, email sam@x.test and send it", "Submit the enquiry form", "Post a comment saying thanks", "Apply for the job", "Unsubscribe from the newsletter", "Reply to the seller asking if it's still available",
+		"Message the seller and ask if it's available", "Delete the old address from my account", "Cancel the booking for Friday", "Order the kettle and stop at the confirmation", "Book now for Saturday"} {
+		if r := risk(goal); r != tools.RiskDangerous {
+			t.Errorf("%q: risk %v, want dangerous", goal, r)
+		}
+	}
+	// Looking things up is browsing, a company register included; filling
+	// in personal details without sending is a write.
+	for _, goal := range []string{"Look up the company register for Acme Pty Ltd. Stop when the entry shows", "Find the phone number of the Fitzroy branch", "Open the bookings page and stop when the calendar shows",
+		"Find the book Dune on the library site", "Open the first post about kettles", "Sort the results in order of price", "Read the latest message in the inbox", "Find order #123456789 in my orders", "Find the delete button and stop", "Dismiss the consent pop-up and search for kettles", "Search rooms for check-in 2026-11-20 to 2026-11-23, 2 adults. Stop when rooms show"} {
+		if r := risk(goal); r != tools.RiskRead {
+			t.Errorf("%q: risk %v, want read", goal, r)
+		}
+	}
+	for _, goal := range []string{"Fill in the form with my name and email sam@x.test. Stop before the last button", "Put in my phone number 0412 345 678 and stop", "Enter the number +61 412 345 678 and stop"} {
+		if r := risk(goal); r != tools.RiskWrite {
+			t.Errorf("%q: risk %v, want write", goal, r)
+		}
+	}
+}
+
+// With ask_every_click, browser_run asks before each goal, as it did.
+func TestBrowserRunAsksEveryGoalWhenAsked(t *testing.T) {
+	s := jevSession(t, fakeJevDir(t), nil)
+	s.cfg.AskEveryClick = true
+	for _, tl := range s.Tools() {
+		if tl.Spec().Name == "browser_run" {
+			in, _ := json.Marshal(map[string]string{"url": "https://example.com", "goals": "Search for a kettle"})
+			if r := tl.(tools.CallRisker).RiskFor(context.Background(), tools.Call{Input: in}); r != tools.RiskWrite || tl.Risk() != tools.RiskWrite {
+				t.Fatalf("risk %v, declared %v", r, tl.Risk())
+			}
+			return
+		}
+	}
+	t.Fatal("no browser_run")
 }
 
 // The checkout is found at ~/jev-ultrafast by default, a named one wins,

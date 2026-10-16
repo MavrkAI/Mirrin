@@ -76,7 +76,7 @@ func (s *Session) jevTools() []tools.Tool {
 			tools.Schema(map[string]tools.Prop{
 				"url":   {Type: "string", Description: "Where to start, an absolute URL", Required: true},
 				"goals": {Type: "string", Description: "What to get done, with a stop condition; or a JSON array of goals done in order", Required: true},
-			}), tools.RiskWrite,
+			}), s.browsingRisk(),
 			func(ctx context.Context, call tools.Call) (string, error) {
 				defer s.using(call.ChatKey)()
 				var in jevInput
@@ -106,7 +106,7 @@ func (s *Session) jevTools() []tools.Tool {
 					return "", jevError(err, out)
 				}
 				return formatJev(out)
-			}).WithRiskFor(jevRisk),
+			}).WithRiskFor(s.jevRisk),
 	}
 }
 
@@ -174,17 +174,17 @@ func (in jevInput) list() ([]string, error) {
 	return []string{raw}, nil
 }
 
-// jevRisk raises browser_run to dangerous when the goal reads like a
-// payment or a purchase, so the approvals floor always asks.
-func jevRisk(ctx context.Context, call tools.Call) tools.Risk {
+// jevRisk is browser_run's risk for one call (commit.go goalRisk):
+// dangerous when the goal reads like a payment, like sending, booking or
+// posting, or like signing up or agreeing to terms, so the approvals floor
+// always asks; a write when it carries personal details; otherwise
+// ordinary browsing.
+func (s *Session) jevRisk(ctx context.Context, call tools.Call) tools.Risk {
 	var in jevInput
 	if tools.Decode(call, &in) != nil {
 		return tools.RiskWrite
 	}
-	if rePayment.MatchString(in.Goals) {
-		return tools.RiskDangerous
-	}
-	return tools.RiskWrite
+	return goalRisk(in.Goals, s.browsingRisk())
 }
 
 // runJev runs the runner script in the checkout through uv, which brings

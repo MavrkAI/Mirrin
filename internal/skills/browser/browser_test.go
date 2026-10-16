@@ -107,7 +107,8 @@ func TestBrowserActFillsAForm(t *testing.T) {
 	if st, err := os.Stat(shot); err != nil || st.Mode().Perm() != 0o600 {
 		t.Fatalf("screenshot %s: %v, mode %v", shot, err, st.Mode())
 	}
-	// A click that lands on a payment button is dangerous; an ordinary one is not.
+	// A click that lands on a payment button is dangerous; an ordinary one
+	// is browsing, a read that runs unasked.
 	if _, err := reg.Run(ctx, "browser_inspect", tools.Call{Input: json.RawMessage(`{"url":"` + srv.URL + `/pay"}`)}); err != nil {
 		t.Fatal(err)
 	}
@@ -118,8 +119,8 @@ func TestBrowserActFillsAForm(t *testing.T) {
 		t.Fatal("clicking Pay now should be dangerous")
 	}
 	cont, _ := json.Marshal(map[string]string{"steps": `[{"type":"click","selector":"#continue"}]`})
-	if cr.RiskFor(ctx, tools.Call{Input: cont}) != tools.RiskWrite {
-		t.Fatal("clicking Continue should stay write")
+	if got := cr.RiskFor(ctx, tools.Call{Input: cont}); got != tools.RiskRead {
+		t.Fatalf("clicking Continue is %v, not ordinary browsing", got)
 	}
 	if _, err := reg.Run(ctx, "browse_page", tools.Call{Input: json.RawMessage(`{"url":"` + srv.URL + `/done?order=A-1234"}`)}); err != nil {
 		t.Fatal(err)

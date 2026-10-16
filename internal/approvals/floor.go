@@ -13,7 +13,7 @@ func SafetyFloor(name string, risk tools.Risk) string {
 		return "shell command"
 	case "browser_act", "browser_run":
 		if risk >= tools.RiskDangerous {
-			return "payment-looking browser action"
+			return "browser action that pays, sends or agrees to something"
 		}
 	case "read_file", "write_file", "list_dir":
 		if risk >= tools.RiskDangerous {

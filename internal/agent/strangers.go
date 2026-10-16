@@ -76,7 +76,8 @@ func (a *Agent) decide(ctx context.Context, chatKey string, tool tools.Tool, ris
 	if outOfScope(chatKey, tool.Spec().Name) { // billsrun.go
 		return approvals.Deny
 	}
-	gate := a.gate() // the live policy, even mid-turn (turn.go)
+	risk = untrustedRisk(chatKey, tool.Spec().Name, risk) // browsing.go
+	gate := a.gate()                                      // the live policy, even mid-turn (turn.go)
 	d := gate.DecideRisk(tool, risk)
 	if memory.IsWatchRun(chatKey) {
 		d = gate.DecideUntrusted(tool, risk)
