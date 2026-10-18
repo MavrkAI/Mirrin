@@ -28,7 +28,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with: { go-version-file: go.mod }
       - run: make dist-portable relay-release VERSION="$GITHUB_REF_NAME"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with: { name: portable, path: dist/, if-no-files-found: error }
 
   macos:
@@ -69,7 +69,7 @@ jobs:
       - name: Remove the signing keychain
         if: always() && env.HAS_CERT == 'true'
         run: security delete-keychain build.keychain || true
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: macos
           path: |
@@ -108,7 +108,7 @@ jobs:
       - run: make voice-bundle
       - id: name
         run: echo "artifact=voice-$(uname -s)-$(uname -m)" >> "$GITHUB_OUTPUT"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with: { name: "${{ steps.name.outputs.artifact }}", path: "dist/mirrin-voice-*.tar.gz", if-no-files-found: error }
 
   windows:
@@ -124,7 +124,7 @@ jobs:
       - run: choco install innosetup -y --no-progress
       - run: iscc packaging\windows\mirrin.iss
         env: { VERSION: "${{ github.ref_name }}" }
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with: { name: windows, path: "dist/Mirrin-*-windows-setup.exe", if-no-files-found: error }
 
   # What the binaries are made of, kept apart from the job that can sign and
@@ -167,7 +167,7 @@ jobs:
           "$SYFT" scan "dir:$RUNNER_TEMP/bin" --override-default-catalogers go-module-binary-cataloger \
             --source-name Mirrin --source-version "$GITHUB_REF_NAME" \
             -o "spdx-json=dist/Mirrin-$GITHUB_REF_NAME-sbom.spdx.json"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with: { name: bom, path: dist/, if-no-files-found: error }
 
   publish:
@@ -223,7 +223,7 @@ jobs:
           case "$GITHUB_REF_NAME" in *-*) prerelease=--prerelease ;; esac
           gh release create "$GITHUB_REF_NAME" dist/* --verify-tag $prerelease \
             --title "Mirrin $GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with: { name: sums, path: dist/SHA256SUMS }
 
   # The hosted-twin image (packaging/docker), for amd64 and arm64, from the
