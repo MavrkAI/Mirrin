@@ -189,7 +189,7 @@ jobs:
       # be what its name says.
       - name: Check every file and write SHA256SUMS
         run: go run ./scripts/releasecheck -sums dist
-      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      - uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
       - name: Sign SHA256SUMS with Sigstore
         run: cosign sign-blob --yes --bundle dist/SHA256SUMS.sigstore.json dist/SHA256SUMS
       # SLSA build provenance for every file in SHA256SUMS (actions/attest is
@@ -279,7 +279,7 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.licenses=GPL-3.0-only
             org.opencontainers.image.title=Mirrin hosted twin
-      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      - uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
         if: env.PUSH == 'true'
       # Signed by digest, so every tag of this build carries the signature.
       # Check it with: cosign verify <image> --certificate-identity
@@ -379,7 +379,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # With cosign installed, install.sh also checks the Sigstore signature.
-      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      - uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
         if: runner.os != 'Windows'
       - name: install.sh
         if: runner.os != 'Windows'
